@@ -20,6 +20,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "demo": "node --no-deprecation node_modules/newman/bin/newman.js run docs/postman/valandine.postman_collection.json -e docs/postman/valandine.local.postman_environment.json --reporters cli --reporter-cli-no-banner",
+    "openapi:export": "npm run openapi:export --workspace apps/api",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate --workspace apps/api",

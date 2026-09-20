@@ -20,6 +20,9 @@ Kauno technologijos universitetas, Informatikos fakultetas
 2. [Sistemos architektūra](#2-sistemos-architektūra)
 3. [Pasirinktų technologijų aprašymas](#3-pasirinktų-technologijų-aprašymas)
 4. [Projekto paleidimas](#4-projekto-paleidimas)
+5. [Klaidų apdorojimas](#5-klaidų-apdorojimas)
+6. [Sąsajos demonstracija](#6-sąsajos-demonstracija)
+7. [Reikalavimų atitiktis](#7-reikalavimų-atitiktis)
 
 ---
 
@@ -133,25 +136,101 @@ Prie projekto taip pat siejami du hierarchijai nepriklausantys objektai. **Pasi�
 
 ### 1.4. Sąsajos metodai
 
-| Objektas | Metodai |
-|---|---|
-| Projektas | `GET /projects`, `GET /projects/{id}`, `POST /projects`, `PATCH /projects/{id}`, `DELETE /projects/{id}` |
-| Užduotis | `GET /tasks`, `GET /tasks/{id}`, `POST /tasks`, `PATCH /tasks/{id}`, `DELETE /tasks/{id}` |
-| Darbo sesija | `GET /sessions`, `GET /sessions/{id}`, `POST /sessions`, `PATCH /sessions/{id}`, `DELETE /sessions/{id}` |
+Sąsaja suprojektuota pagal taikomosios srities objektų hierarchiją: kiekvienas
+iš trijų pagrindinių objektų turi pilną penkių metodų rinkinį (sąrašas,
+peržiūra, kūrimas, redagavimas, šalinimas).
+
+**Projektas**
+
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /projects` | Projektų sąrašas | 200 | 400 |
+| `GET /projects/{id}` | Projekto duomenys | 200 | 400, 404 |
+| `POST /projects` | Sukurti projektą | 201 | 400, 422 |
+| `PATCH /projects/{id}` | Redaguoti, paskelbti arba užbaigti | 200 | 400, 403, 404, 422 |
+| `DELETE /projects/{id}` | Šalinti projektą | 204 | 400, 403, 404 |
+
+**Užduotis**
+
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /tasks` | Naudotojo projektų užduotys | 200 | 400 |
+| `GET /tasks/{id}` | Užduoties duomenys | 200 | 400, 404 |
+| `POST /tasks` | Sukurti užduotį | 201 | 400, 403, 422 |
+| `PATCH /tasks/{id}` | Redaguoti, perstumti, keisti būseną, patvirtinti | 200 | 400, 403, 404, 422 |
+| `DELETE /tasks/{id}` | Šalinti užduotį | 204 | 400, 403, 404, 422 |
+
+**Darbo sesija**
+
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /sessions` | Naudotojo darbo žurnalas | 200 | 400 |
+| `GET /sessions/{id}` | Sesijos duomenys | 200 | 400, 404 |
+| `POST /sessions` | Pradėti sesiją arba įvesti rankiniu būdu | 201 | 400, 403, 409, 422 |
+| `PATCH /sessions/{id}` | Redaguoti arba užbaigti sesiją | 200 | 400, 403, 404, 409, 422 |
+| `DELETE /sessions/{id}` | Šalinti sesiją | 204 | 400, 403, 404, 422 |
 
 **Hierarchiniai sąsajos metodai:**
 
-- `GET /projects/{id}/tasks` – grąžina visas konkretaus projekto užduotis;
-- `GET /tasks/{id}/sessions` – grąžina visas konkrečios užduoties darbo sesijas;
-- `GET /projects/{id}/proposals` – grąžina konkrečiam projektui pateiktus pasiūlymus.
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /projects/{id}/tasks` | Konkretaus projekto užduotys | 200 | 400, 404 |
+| `GET /tasks/{id}/sessions` | Konkrečios užduoties darbo sesijos | 200 | 400, 404 |
+| `GET /projects/{id}/proposals` | Konkrečiam projektui pateikti pasiūlymai | 200 | 400, 403, 404 |
 
-Projektų sąrašo metodas priima `scope` parametrą, nurodantį, kurios projektų aibės prašoma: `GET /projects?scope=marketplace` grąžina viešai paskelbtus, `scope=owned` – naudotojo sukurtus, `scope=assigned` – jo vykdomus. Toks sprendimas pasirinktas vietoj atskirų adresų (pvz., `/my-projects`), nes resursas išlieka tas pats, o keičiasi tik jo atrankos kriterijus.
+Nerastas tėvinis resursas grąžina 404, o ne tuščią sąrašą: „projekto nėra“ ir
+„projektas yra, bet be užduočių“ yra du skirtingi atsakymai.
 
-**Papildomi metodai, skirti autentifikacijai:** `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`.
+Projektų sąrašo metodas priima `scope` parametrą, nurodantį, kurios projektų
+aibės prašoma: `GET /projects?scope=marketplace` grąžina viešai paskelbtus,
+`scope=owned` – naudotojo sukurtus, `scope=assigned` – jo vykdomus. Toks
+sprendimas pasirinktas vietoj atskirų adresų (pvz., `/my-projects`), nes
+resursas išlieka tas pats, o keičiasi tik jo atrankos kriterijus. Papildomai
+priimami `q` (paieška), `status`, `page` ir `perPage`.
 
-**Papildomi metodai, skirti pasiūlymų valdymui:** `POST /projects/{id}/proposals`, `PATCH /proposals/{id}`, `DELETE /proposals/{id}`.
+**Pasiūlymų valdymo metodai:**
 
-**Papildomi metodai, skirti peržiūros nuorodoms ir ataskaitoms:** `POST /projects/{id}/shares`, `GET /projects/{id}/shares`, `DELETE /shares/{id}`, `GET /public/projects/{token}`, `GET /projects/{id}/report`.
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /proposals` | Savo pateiktų pasiūlymų sąrašas ir būsenos | 200 | 400 |
+| `POST /projects/{id}/proposals` | Pateikti pasiūlymą | 201 | 400, 403, 404, 409, 422 |
+| `PATCH /proposals/{id}` | Priimti, atmesti arba atšaukti | 200 | 400, 403, 404, 409, 422 |
+| `DELETE /proposals/{id}` | Šalinti savo pasiūlymą | 204 | 400, 403, 404, 422 |
+
+Pasiūlymo priėmimas vykdomas viena duomenų bazės transakcija: pasiūlymas įgyja
+būseną `ACCEPTED`, kiti to projekto pasiūlymai atmetami, o projektas pereina į
+`IN_PROGRESS` ir gauna vykdytoją. Būtent todėl `PATCH /projects/{id}` neleidžia
+perėjimo `PUBLISHED → IN_PROGRESS` tiesiogiai – kitaip projektas galėtų atsidurti
+vykdomoje būsenoje be priskirto specialisto.
+
+**Peržiūros nuorodų ir ataskaitų metodai:**
+
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /projects/{id}/shares` | Projekto peržiūros nuorodų sąrašas | 200 | 400, 403, 404 |
+| `POST /projects/{id}/shares` | Sugeneruoti peržiūros nuorodą | 201 | 400, 403, 404, 422 |
+| `DELETE /shares/{id}` | Atšaukti peržiūros nuorodą | 204 | 400, 403, 404 |
+| `GET /public/projects/{token}` | Projekto darbo eiga pagal nuorodą | 200 | 400, 404 |
+| `GET /projects/{id}/report` | Projekto ataskaita (JSON arba CSV) | 200 | 400, 403, 404, 406 |
+
+Ataskaitos metodas taiko turinio derybas (angl. content negotiation): tas pats
+resursas grąžinamas kaip `application/json` arba, nurodžius
+`Accept: text/csv`, – kaip parsisiunčiamas CSV failas. Nepalaikomas tipas
+grąžina 406, o ne tyliai JSON.
+
+**Tarnybiniai metodai:** `GET /health` ir `GET /health/ready` (pastarasis tikrina
+ir jungtį su duomenų baze).
+
+**Papildomi metodai, skirti autentifikacijai** (numatyti 2 laboratoriniam
+darbui): `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
+`POST /auth/logout`, `GET /auth/me`.
+
+> **Pastaba apie 1 laboratorinį darbą.** Autentifikacija dar nerealizuota, todėl
+> veiksmą atliekančio naudotojo tapatybė perduodama `X-Actor-Id` antrašte. Tai
+> nėra saugumo priemonė – ji leidžia realizuoti dalykines taisykles (savininko
+> teisės, `scope=owned`), kol žetonų dar nėra. 2 laboratoriniame darbe keičiamas
+> tik vienas failas (`src/lib/actor.ts`), kuriame antraštė pakeičiama patikrintu
+> JWT turiniu, o patys sąsajos metodai lieka nepakitę.
 
 ---
 
@@ -206,6 +285,11 @@ Pats „Valandinė“ API vykdo duomenų mainus su duomenų baze – tam naudoja
 - Node.js 22 (žr. [.nvmrc](.nvmrc))
 - Docker (PostgreSQL duomenų bazei) arba vietinė PostgreSQL 17
 
+Duomenų bazės konteineris skelbiamas **5433** prievade, o ne įprastame 5432 –
+taip išvengiama konflikto su kompiuteryje jau veikiančiu PostgreSQL. Prievadas
+nurodytas [docker-compose.yml](docker-compose.yml) ir `apps/api/.env.example`
+failuose.
+
 ### Saugyklos sandara
 
 ```
@@ -251,6 +335,8 @@ tarpinis sluoksnis ir leidžia atnaujinimo žetoną laikyti `httpOnly` slapuke.
 | `npm run db:studio` | Prisma Studio duomenų peržiūrai |
 | `npm run lint` | Statinė analizė |
 | `npm run test` | Testai |
+| `npm run demo` | Sąsajos demonstracija (žr. 6 skyrių) |
+| `npm run openapi:export` | Atnaujinti `docs/openapi.json` |
 | `npm run build` | Sukompiliuoti visas dalis |
 
 ### Demonstracinės paskyros
@@ -276,3 +362,138 @@ identifikatoriai nesikeičia.
 
 Sukurti identifikatoriai ir peržiūros nuorodų žetonai įrašomi į
 `docs/postman/demo-data.json` (failas negrįžta į Git, nes generuojamas iš naujo).
+
+---
+
+## 5. Klaidų apdorojimas
+
+Visos klaidos grąžinamos vienodu formatu, nepriklausomai nuo to, kuriame
+sluoksnyje jos kilo – schemos validavime, dalykinėje taisyklėje ar duomenų
+bazės apribojime:
+
+```json
+{
+  "error": {
+    "code": "INVALID_STATUS_TRANSITION",
+    "message": "Cannot change project status from PUBLISHED to IN_PROGRESS.",
+    "details": { "from": "PUBLISHED", "to": "IN_PROGRESS" }
+  }
+}
+```
+
+`code` skirtas programai, `message` – žmogui, o neprivalomas `details` nurodo
+konkretų lauką ar apribojimą. Validavimo klaidų atveju `details` yra laukų
+medis, todėl kliento pusė gali pažymėti būtent tą įvedimo lauką, kuris
+neatitiko reikalavimų.
+
+### 5.1. Statuso kodų politika
+
+| Kodas | Kada grąžinamas | Pavyzdys |
+|---|---|---|
+| 400 | Užklausos **sintaksė** netinkama – serveris jos net negali suprasti | netaisyklingas JSON, `id` ne UUID, `scope=nesamas` |
+| 403 | Naudotojas atpažintas, bet neturi teisių į šį resursą | svetimo projekto redagavimas |
+| 404 | Resurso nėra | nesamas projekto identifikatorius |
+| 406 | Prašomas turinio tipas neprieinamas | `Accept: application/xml` ataskaitai |
+| 409 | Konfliktas su esama duomenų būsena | antra neužbaigta darbo sesija |
+| 422 | Užklausa suprantama, bet jos **turinys** prieštarauja taisyklėms | per trumpas pavadinimas, neleistinas būsenos perėjimas |
+
+Skirtumas tarp 400 ir 422 yra esminis ir nuoseklus visoje sąsajoje: 400 reiškia
+netvarkingą užklausą, 422 – tvarkingą užklausą su netinkamu turiniu. Dėl to
+identifikatorius adreso eilutėje ir identifikatorius užklausos kūne elgiasi
+skirtingai:
+
+- `GET /projects/{nesamas-id}` → **404**, nes adresas nurodo neegzistuojantį resursą;
+- `POST /tasks` su nesamu `projectId` → **422**, nes adresas teisingas, o klaida yra turinyje.
+
+### 5.2. Mašininiai klaidų kodai
+
+| Kodas | Reikšmė |
+|---|---|
+| `MALFORMED_JSON` | Užklausos kūnas nėra taisyklingas JSON |
+| `INVALID_PATH_PARAM`, `INVALID_QUERY` | Netinkamas adreso arba užklausos parametras |
+| `VALIDATION_ERROR` | Turinys neatitinka duomenų schemos |
+| `ACTOR_REQUIRED`, `INVALID_ACTOR` | Trūksta arba netinkama `X-Actor-Id` antraštė |
+| `FORBIDDEN` | Naudotojas neturi teisių į resursą |
+| `NOT_FOUND` | Resursas nerastas |
+| `INVALID_REFERENCE` | Nurodytas neegzistuojantis susijęs įrašas |
+| `INVALID_STATUS_TRANSITION` | Neleistinas projekto būsenos perėjimas |
+| `INVALID_BUDGET_RANGE`, `INVALID_TIME_RANGE`, `TIMESTAMP_IN_FUTURE` | Nenuoseklios reikšmės |
+| `PROJECT_CLOSED`, `PROJECT_NOT_IN_PROGRESS`, `PROJECT_NOT_PUBLISHED` | Veiksmas neatitinka projekto būsenos |
+| `NO_PROPOSAL_STAGE`, `PROPOSAL_NOT_PENDING`, `PROPOSAL_ACCEPTED` | Pasiūlymų gyvavimo ciklo taisyklės |
+| `SESSION_ALREADY_RUNNING`, `PROPOSAL_ALREADY_SUBMITTED`, `CONFLICT` | Konfliktai su esama būsena |
+| `NOT_ACCEPTABLE` | Neprieinamas prašomas turinio tipas |
+| `INTERNAL_ERROR` | Vidinė serverio klaida (gamyboje priežastis neatskleidžiama) |
+
+Dalis konfliktų tikrinama dviem lygmenimis: programa pateikia aiškų pranešimą,
+o galutinę garantiją duoda duomenų bazės daliniai unikalūs indeksai
+(`work_sessions_one_open_per_specialist`, `proposals_one_accepted_per_project`).
+Tik pastarieji apsaugo tuo atveju, kai dvi užklausos ateina vienu metu.
+
+---
+
+## 6. Sąsajos demonstracija
+
+Sąsajos veikimą galima patikrinti trimis būdais.
+
+**1. Swagger UI** – adresu `http://localhost:4000/api/docs`. Specifikacija
+generuojama iš tų pačių Zod schemų, kuriomis validuojamos užklausos, todėl
+dokumentacija negali nutolti nuo realizacijos. Ta pati specifikacija saugoma ir
+saugykloje: [docs/openapi.json](docs/openapi.json); nepertraukiamo integravimo
+darbo eiga tikrina, ar įrašytas failas atitinka kodą.
+
+**2. Automatinė demonstracija** – Postman kolekcija, paleidžiama per Newman:
+
+```bash
+npm run dev:api   # viename terminale
+npm run demo      # kitame
+```
+
+Kolekciją taip pat galima importuoti į Postman
+([kolekcija](docs/postman/valandine.postman_collection.json),
+[aplinka](docs/postman/valandine.local.postman_environment.json)) ir paleisti
+mygtuku „Run collection“.
+
+Kolekciją sudaro trys dalys:
+
+| Dalis | Turinys |
+|---|---|
+| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda |
+| 2. Klaidų apdorojimas | Kodai 400, 403, 404, 406 ir 422 su skirtingomis priežastimis |
+| 3. Valymas | Sukurtų duomenų šalinimas ir 204 bei 404 atsakymų patikra |
+
+Scenarijus sukuria viską, ko jam reikia, ir pabaigoje ištrina, todėl
+demonstraciją galima kartoti nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
+
+```
+requests 44 | assertions 96 | failed 0 | total run duration: ~4s
+```
+
+Kadangi laikai užklausose fiksuoti, testai tikrina ne „kažkokį skaičių“, o
+konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekto
+paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
+tiek ataskaitoje, tiek viešoje peržiūroje.
+
+**3. Vienetiniai testai** – `npm run test` paleidžia 105 testus, tikrinančius
+dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
+skaičiavimą, klaidų kodų politiką) ir tai, kad atsakymų struktūra atitinka
+OpenAPI specifikaciją.
+
+---
+
+## 7. Reikalavimų atitiktis
+
+| Reikalavimas | Kaip tenkinamas |
+|---|---|
+| Realizuoti visi numatyti API metodai | 27 dalykiniai metodai, iš jų 15 pagrindinių CRUD (1.4 skyrius) |
+| OpenAPI specifikacija kiekvienam metodui | Generuojama iš Zod schemų, pateikiama `/api/docs` ir [docs/openapi.json](docs/openapi.json) |
+| Patogi paleidimo aplinka | `npm install` → `npm run db:up` → `db:migrate` → `db:seed` → `npm run dev` |
+| Duomenų bazės sprendimas | PostgreSQL 17 su Prisma ORM, migracijos saugykloje |
+| Prasmingi duomenys gynimo metu | 8 naudotojai, 7 projektai (visos būsenos), 20 užduočių, 24 darbo sesijos, 7 pasiūlymai, 3 peržiūros nuorodos |
+| Teisingas turinio tipas | `application/json` ir `text/csv` (ataskaitos parsisiuntimas) |
+| 404, kai resursas nerandamas | 5 skyrius; demonstracijos 2 ir 3 dalys |
+| 400 / 422 netinkamam turiniui | 5.1 skyrius; demonstracijoje – trys 400 ir trys 422 atvejai |
+| 201 sukūrus resursą | Visi kūrimo metodai, kartu grąžinama `Location` antraštė |
+| 200 / 204 ištrynus resursą | Visi šalinimo metodai grąžina 204 be turinio |
+| Demonstracija iki ~15 s | `npm run demo` – 44 užklausos per ~4 s |
+| Kodas Git saugykloje, dokumentacija | GitHub; ataskaita – šis `README.md`, darbų planas – [docs/planas.md](docs/planas.md) |
+

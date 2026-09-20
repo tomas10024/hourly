@@ -13,29 +13,25 @@ Sprendimai, priimti prieš pradedant:
 
 ---
 
-## 0. Dabartinė būklė
+## 0. Būklė
 
-**Yra:**
+**1 laboratorinio darbo dalis baigta.** Realizuoti visi 27 dalykiniai sąsajos
+metodai (iš jų 15 pagrindinių CRUD), paruošti demonstraciniai duomenys, Postman
+kolekcija ir dokumentacija.
 
-- monorepo (`apps/api`, `apps/web`, `packages/shared`), Node 22, npm workspaces;
-- Prisma schema su visais modeliais + pradinė migracija su dviem daliniais unikaliais indeksais;
-- `packages/shared` – Zod schemos visiems resursams ir įvedimo formoms;
-- `apps/api/src/openapi.ts` – OpenAPI 3.1 aprašas **visiems** metodams, Swagger UI `/api/docs`;
-- klaidų apdorojimas (`middleware/error.ts`), `HttpError`, `notFound`;
-- `routes/health.ts`, Next.js proxy `/api/[...path]`, CI su PostgreSQL servisu, `docker-compose.yml`, seed su 3 paskyromis ir 2 projektais.
+| Etapas | Turinys | Būklė |
+|---|---|---|
+| A | Pamatai: validavimas, serializavimas, klaidų žemėlapis, naudotojo siūlė | atlikta |
+| B | Projektai, užduotys, darbo sesijos (15 metodų) | atlikta |
+| C | Pasiūlymai, peržiūros nuorodos, ataskaita (JSON + CSV) | atlikta |
+| D | Prasmingi ir pakartojami demonstraciniai duomenys | atlikta |
+| E | Postman kolekcija, `npm run demo`, CI integracija | atlikta |
+| F | README: metodų lentelė, klaidų politika, demonstracija, `docs/openapi.json` | atlikta |
 
-**Nėra (tai ir yra 1 lab. darbas):**
+Toliau – 2 laboratorinis darbas (žr. 9 skyrių) ir 3 laboratorinis (10 skyrius).
 
-- nė vieno dalykinio maršruto – `app.ts` prijungia tik `healthRouter`;
-- užklausų validavimo tarpinės programinės įrangos;
-- Prisma objektų pavertimo į atsakymo formatą (`Decimal` ir `Date` neatitinka Zod schemų);
-- verslo taisyklių (sesijos trukmė, įkainio paveldėjimas, pasiūlymo priėmimas);
-- Postman kolekcijos ir demonstracijos;
-- prasmingo duomenų kiekio duomenų bazėje.
-
-> Svarbu: OpenAPI šiuo metu aprašo tai, ko dar nėra. Kol maršrutai nerealizuoti, specifikacija meluoja – todėl **specifikacija tvarkoma kartu su kiekvienu maršrutu**, o ne pabaigoje.
-
----
+Žemiau paliekamas pradinis planas – jis rodo, kaip darbas buvo suskaidytas ir
+kodėl priimti vienokie ar kitokie sprendimai.
 
 ## 1. Etapas A – pamatai (be jų nerašysime nė vieno maršruto)
 

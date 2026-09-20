@@ -57,6 +57,12 @@ jobs:
       - name: Tests
         run: npm run test --workspaces --if-present
 
+      # The committed specification must match the code it is generated from.
+      - name: Check the exported OpenAPI document is current
+        run: |
+          npm run openapi:export
+          git diff --exit-code docs/openapi.json
+
       - name: Build
         run: |
           npm run build --workspace apps/api
