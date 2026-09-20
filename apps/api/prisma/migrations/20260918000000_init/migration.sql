@@ -199,15 +199,15 @@ ALTER TABLE "proposals" ADD CONSTRAINT "proposals_specialistId_fkey" FOREIGN KEY
 -- AddForeignKey
 ALTER TABLE "share_links" ADD CONSTRAINT "share_links_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Daliniai unikalūs indeksai (angl. partial unique index).
--- Prisma schemoje jų aprašyti negalima, todėl kuriami tiesiogiai SQL.
+-- Partial unique indexes.
+-- They cannot be expressed in the Prisma schema, so they are created in SQL.
 
--- Vienam projektui gali būti priimtas tik vienas pasiūlymas.
+-- Only one proposal per project may be accepted.
 CREATE UNIQUE INDEX "proposals_one_accepted_per_project"
     ON "proposals" ("projectId")
     WHERE "status" = 'ACCEPTED';
 
--- Vienas naudotojas tuo pačiu metu gali turėti tik vieną neužbaigtą darbo sesiją.
+-- A user may have at most one unfinished work session at a time.
 CREATE UNIQUE INDEX "work_sessions_one_open_per_specialist"
     ON "work_sessions" ("specialistId")
     WHERE "endedAt" IS NULL;

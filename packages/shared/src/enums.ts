@@ -1,21 +1,21 @@
 import { z } from 'zod';
 
-/** Naudotojo rolė platformoje. */
+/** A user role on the platform. */
 export const Role = z.enum(['CLIENT', 'SPECIALIST', 'ADMIN']);
 export type Role = z.infer<typeof Role>;
 
 /**
- * Projekto kilmė: paskelbtas aikštelėje (su pasiūlymų etapu)
- * arba tiesiogiai sutartas darbas, kurį susikuria pats specialistas.
+ * Where the project came from: published on the marketplace (with a proposal
+ * stage) or work agreed directly and created by the specialist.
  */
 export const ProjectOrigin = z.enum(['MARKETPLACE', 'DIRECT']);
 export type ProjectOrigin = z.infer<typeof ProjectOrigin>;
 
-/** Kas sudaro projekto užduočių sąrašą. */
+/** Who authors the project task list. */
 export const TaskAuthoring = z.enum(['CLIENT', 'SPECIALIST']);
 export type TaskAuthoring = z.infer<typeof TaskAuthoring>;
 
-/** Projekto gyvavimo ciklo būsena. */
+/** Project lifecycle status. */
 export const ProjectStatus = z.enum([
   'DRAFT',
   'PUBLISHED',
@@ -25,11 +25,11 @@ export const ProjectStatus = z.enum([
 ]);
 export type ProjectStatus = z.infer<typeof ProjectStatus>;
 
-/** Užduoties būsena. */
+/** Task status. */
 export const TaskStatus = z.enum(['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE']);
 export type TaskStatus = z.infer<typeof TaskStatus>;
 
-/** Pasiūlymo būsena. */
+/** Proposal status. */
 export const ProposalStatus = z.enum([
   'PENDING',
   'ACCEPTED',
@@ -38,6 +38,6 @@ export const ProposalStatus = z.enum([
 ]);
 export type ProposalStatus = z.infer<typeof ProposalStatus>;
 
-/** Projektų sąrašo atrankos kriterijus (`GET /projects?scope=...`). */
+/** Selection criterion for the project list (`GET /projects?scope=...`). */
 export const ProjectScope = z.enum(['marketplace', 'owned', 'assigned']);
 export type ProjectScope = z.infer<typeof ProjectScope>;

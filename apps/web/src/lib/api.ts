@@ -1,6 +1,6 @@
 import type { ApiError } from "@valandine/shared";
 
-/** API klaida su HTTP kodu ir serverio grąžintu mašininiu kodu. */
+/** An API failure carrying the HTTP status and the server error code. */
 export class ApiRequestError extends Error {
   constructor(
     readonly status: number,
@@ -16,8 +16,8 @@ export class ApiRequestError extends Error {
 type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 /**
- * Užklausos siunčiamos į tos pačios kilmės `/api/...` maršrutą,
- * kuris jas persiunčia Valandinė API (žr. `src/app/api/[...path]/route.ts`).
+ * Requests are sent to the same-origin `/api/...` route, which forwards them
+ * to the Valandinė API (see `src/app/api/[...path]/route.ts`).
  */
 export async function apiFetch<T>(
   path: string,
@@ -42,7 +42,7 @@ export async function apiFetch<T>(
     throw new ApiRequestError(
       response.status,
       error?.code ?? "UNKNOWN",
-      error?.message ?? `Užklausa nepavyko (${response.status})`,
+      error?.message ?? `Request failed (${response.status})`,
       error?.details,
     );
   }

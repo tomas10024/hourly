@@ -6,8 +6,8 @@ import { apiFetch } from "@/lib/api";
 type Health = { status: string; database: string };
 
 /**
- * Patikrina, ar per tarpinį sluoksnį pasiekiama API ir duomenų bazė.
- * Naudinga aplinkos paruošimui: iš karto matyti, kurios dalies trūksta.
+ * Checks whether the API and the database are reachable through the proxy.
+ * Useful while setting up the environment: it shows which part is missing.
  */
 export function ApiStatus() {
   const { data, error, isPending } = useQuery({

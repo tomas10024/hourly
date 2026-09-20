@@ -6,13 +6,13 @@ import { PrismaClient } from '../src/generated/prisma/client.js';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  console.error('Trūksta DATABASE_URL (žr. apps/api/.env.example).');
+  console.error('DATABASE_URL is missing (see apps/api/.env.example).');
   process.exit(1);
 }
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
-/** Bendras demonstracinių paskyrų slaptažodis. */
+/** Shared password for the demo accounts. */
 const DEMO_PASSWORD = 'slaptazodis123';
 
 async function main() {
@@ -53,7 +53,7 @@ async function main() {
     }),
   ]);
 
-  // 1. Aikštelės projektas: paskelbtas, su priimtu pasiūlymu.
+  // 1. Marketplace project: published, with an accepted proposal.
   const marketplace = await prisma.project.create({
     data: {
       title: 'Internetinės parduotuvės administravimo sritis',
@@ -88,7 +88,7 @@ async function main() {
     include: { tasks: { orderBy: { position: 'asc' } } },
   });
 
-  // Kelios užbaigtos darbo sesijos, kad ataskaita turėtų ką rodyti.
+  // A few finished work sessions so the report has something to show.
   const [firstTask, secondTask] = marketplace.tasks;
   if (firstTask && secondTask) {
     const day = (offset: number, hour: number) => {
@@ -122,7 +122,7 @@ async function main() {
     });
   }
 
-  // 2. Tiesiogiai sutartas darbas: be pasiūlymų etapo, su peržiūros nuoroda.
+  // 2. Directly agreed work: no proposal stage, with a share link.
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
@@ -152,16 +152,16 @@ async function main() {
     },
   });
 
-  console.log('Pradiniai duomenys įrašyti:');
+  console.log('Seed data written:');
   console.table([
-    { paskyra: admin.email, role: 'ADMIN' },
-    { paskyra: client.email, role: 'CLIENT' },
-    { paskyra: specialist.email, role: 'SPECIALIST' },
+    { account: admin.email, role: 'ADMIN' },
+    { account: client.email, role: 'CLIENT' },
+    { account: specialist.email, role: 'SPECIALIST' },
   ]);
-  console.log(`Slaptažodis visoms paskyroms: ${DEMO_PASSWORD}`);
-  console.log(`Aikštelės projektas: ${marketplace.id}`);
-  console.log(`Tiesioginis projektas: ${direct.id}`);
-  console.log(`Peržiūros nuoroda: http://localhost:3000/p/${token}`);
+  console.log(`Password for all accounts: ${DEMO_PASSWORD}`);
+  console.log(`Marketplace project: ${marketplace.id}`);
+  console.log(`Direct project: ${direct.id}`);
+  console.log(`Share link: http://localhost:3000/p/${token}`);
 }
 
 main()

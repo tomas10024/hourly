@@ -16,9 +16,9 @@ const parsed = EnvSchema.safeParse(process.env);
 
 if (!parsed.success) {
   console.error(
-    'Netinkama aplinkos konfigūracija:\n' +
+    'Invalid environment configuration:\n' +
       z.prettifyError(parsed.error) +
-      '\n\nPatikrinkite apps/api/.env (pavyzdys: apps/api/.env.example).',
+      '\n\nCheck apps/api/.env (template: apps/api/.env.example).',
   );
   process.exit(1);
 }

@@ -22,8 +22,8 @@ export function buildApp(): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
-  // Peržiūros nuorodos žetonas keliauja adreso eilutėje, todėl viešų
-  // atsakymų neleidžiame indeksuoti paieškos sistemoms.
+  // A share-link token travels in the URL, so public responses must not be
+  // indexed by search engines.
   app.use('/api/public', (_req, res, next) => {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     next();
@@ -31,8 +31,8 @@ export function buildApp(): Express {
 
   app.use('/api', healthRouter);
 
-  // Specifikacija generuojama iš tų pačių Zod schemų, kurios naudojamos
-  // validavimui, todėl dokumentacija nenutolsta nuo realizacijos.
+  // The document is generated from the same Zod schemas used for request
+  // validation, so the documentation cannot drift from the implementation.
   app.get('/api/openapi.json', (_req, res) => {
     res.json(openApiDocument);
   });

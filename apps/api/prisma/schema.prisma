@@ -1,7 +1,7 @@
-// Valandinė - duomenų schema.
-// Hierarchija: Projektas -> Užduotis -> Darbo sesija.
-// Šalia hierarchijos: Pasiūlymas (valdo aikštelės projekto gyvavimo ciklą)
-// ir Peržiūros nuoroda (gebėjimo žetonas paskyros neturinčiam užsakovui).
+// Valandinė - data schema.
+// Hierarchy: Project -> Task -> Work session.
+// Alongside the hierarchy: Proposal (drives the marketplace project lifecycle)
+// and ShareLink (a capability token for a client without an account).
 
 generator client {
   provider = "prisma-client"
@@ -70,9 +70,9 @@ model User {
   @@map("users")
 }
 
-/// Atnaujinimo žetonai: DB laikoma tik maiša, taikoma rotacija.
-/// `familyId` leidžia panaikinti visą naudotojo žetonų šeimą,
-/// jei pakartotinai panaudojamas jau anuliuotas žetonas.
+/// Refresh tokens: only the hash is stored and rotation is applied.
+/// `familyId` makes it possible to revoke a whole token family when an
+/// already revoked token is replayed.
 model RefreshToken {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @db.Uuid
@@ -99,11 +99,11 @@ model Project {
 
   budgetMin  Decimal?  @db.Decimal(10, 2)
   budgetMax  Decimal?  @db.Decimal(10, 2)
-  /// Numatytasis įkainis; atskira užduotis jį gali perrašyti.
+  /// Default rate; an individual task may override it.
   hourlyRate Decimal?  @db.Decimal(10, 2)
   deadline   DateTime?
 
-  /// Tiesiogiai sutarto darbo užsakovas, kai jis platformoje paskyros neturi.
+  /// Client of directly agreed work who has no account on the platform.
   externalClientName String?
 
   clientId     String? @db.Uuid
@@ -132,10 +132,10 @@ model Task {
   status      TaskStatus @default(TODO)
   position    Int        @default(0)
 
-  /// Perrašo projekto įkainį; null - paveldima iš projekto.
+  /// Overrides the project rate; null means inherited from the project.
   hourlyRate     Decimal?  @db.Decimal(10, 2)
   estimatedHours Decimal?  @db.Decimal(8, 2)
-  /// Kada užsakovas patvirtino specialisto pasiūlytą užduotį.
+  /// When the client approved a task proposed by the specialist.
   approvedAt     DateTime?
 
   createdAt DateTime @default(now())
@@ -154,13 +154,13 @@ model WorkSession {
   specialistId String @db.Uuid
 
   startedAt DateTime
-  /// null - sesija dar vykdoma. Daline unikalia sąlyga (žr. migraciją)
-  /// užtikrinama, kad naudotojas vienu metu turėtų ne daugiau kaip vieną tokią.
+  /// null - the session is still running. A partial unique index (see the
+  /// migration) ensures a user has at most one such session at a time.
   endedAt   DateTime?
-  /// Užpildoma užbaigiant sesiją; leidžia kaupti sumas be laiko skirtumų.
+  /// Filled in when the session ends; lets totals be summed without recomputing.
   durationMinutes Int?
   comment         String?
-  /// Įkainis, galiojęs sesijos metu (užduoties arba projekto).
+  /// The rate in force during the session (task rate or project rate).
   appliedRate     Decimal? @db.Decimal(10, 2)
 
   createdAt DateTime @default(now())
@@ -190,15 +190,15 @@ model Proposal {
   project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   specialist User    @relation(fields: [specialistId], references: [id], onDelete: Cascade)
 
-  /// Vienas specialistas teikia ne daugiau kaip vieną pasiūlymą projektui.
-  /// Priimtas pasiūlymas gali būti tik vienas - žr. dalinį unikalų indeksą migracijoje.
+  /// A specialist may submit at most one proposal per project.
+  /// Only one proposal can be accepted - see the partial unique index in the migration.
   @@unique([projectId, specialistId])
   @@index([specialistId, status])
   @@map("proposals")
 }
 
-/// Peržiūros nuoroda: gebėjimo žetonas, suteikiantis tik skaitymo teisę
-/// vienam konkrečiam projektui. DB laikoma tik žetono maiša.
+/// Share link: a capability token granting read-only access to exactly one
+/// project. Only the hash of the token is stored.
 model ShareLink {
   id           String    @id @default(uuid()) @db.Uuid
   projectId    String    @db.Uuid

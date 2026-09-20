@@ -3,10 +3,10 @@ import path from 'node:path';
 import { defineConfig } from 'prisma/config';
 
 /**
- * Prisma 7 konfigūracija.
- * Nuo 7 versijos prisijungimo eilutė nebelaikoma `schema.prisma` faile -
- * migracijoms ji nurodoma čia, o vykdymo metu klientei perduodama per adapterį
- * (žr. `src/lib/prisma.ts`).
+ * Prisma 7 configuration.
+ * Since version 7 the connection string no longer lives in `schema.prisma`:
+ * migrations read it from here, while at runtime it is handed to the client
+ * through the driver adapter (see `src/lib/prisma.ts`).
  */
 export default defineConfig({
   schema: path.join('prisma', 'schema.prisma'),

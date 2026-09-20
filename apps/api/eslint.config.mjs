@@ -23,7 +23,7 @@ export default tseslint.config(
     },
   },
   {
-    // Testuose `res.body` yra `any` - griežtų tipų taisyklių čia netaikome.
+    // `res.body` is `any` in tests - the strict type rules do not apply here.
     files: ['**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-member-access': 'off',

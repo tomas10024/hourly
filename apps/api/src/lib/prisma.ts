@@ -3,12 +3,12 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { env, isProduction } from '../env.js';
 
 /**
- * Viena bendra Prisma klientės instancija.
- * Prisma 7 jungiasi per tvarkyklės adapterį (`@prisma/adapter-pg`),
- * o ne per schemos faile nurodytą URL.
+ * A single shared Prisma client instance.
+ * Prisma 7 connects through a driver adapter (`@prisma/adapter-pg`) instead of
+ * a URL declared in the schema file.
  *
- * Instancija saugoma `globalThis`, kad `tsx watch` perkrovimai
- * nekurtų naujo jungčių telkinio kiekvienam pakeitimui.
+ * The instance is stored on `globalThis` so that `tsx watch` reloads do not
+ * open a new connection pool on every change.
  */
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 

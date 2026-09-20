@@ -3,12 +3,12 @@ import { prisma } from '../lib/prisma.js';
 
 export const healthRouter: Router = Router();
 
-/** Paprastas gyvybingumo patikrinimas - be priklausomybių. */
+/** Liveness probe - no dependencies. */
 healthRouter.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-/** Parengties patikrinimas - tikrina ir jungtį su duomenų baze. */
+/** Readiness probe - also verifies the database connection. */
 healthRouter.get('/health/ready', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;

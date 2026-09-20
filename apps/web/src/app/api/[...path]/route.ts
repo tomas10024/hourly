@@ -1,17 +1,17 @@
 import { type NextRequest } from "next/server";
 
 /**
- * Tarpinis sluoksnis tarp naršyklės ir Valandinė API.
+ * Proxy between the browser and the Valandinė API.
  *
- * Naršyklė į API tiesiogiai nesikreipia: užklausos eina per šį maršrutą,
- * todėl atnaujinimo žetonas gali likti `httpOnly` slapuke toje pačioje
- * kilmėje ir nėra pasiekiamas kliento pusės scenarijams.
+ * The browser never calls the API directly: requests travel through this
+ * route, which lets the refresh token stay in a same-origin `httpOnly`
+ * cookie, out of reach of client-side scripts.
  */
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
-/** Antraštės, kurias persiunčiame API pusei. */
+/** Headers forwarded to the API. */
 const FORWARD_REQUEST_HEADERS = ["authorization", "content-type", "cookie", "accept"];
-/** Antraštės, kurias grąžiname naršyklei. */
+/** Headers forwarded back to the browser. */
 const FORWARD_RESPONSE_HEADERS = ["content-type", "set-cookie", "x-robots-tag"];
 
 async function proxy(req: NextRequest, ctx: RouteContext<"/api/[...path]">) {
@@ -38,7 +38,7 @@ async function proxy(req: NextRequest, ctx: RouteContext<"/api/[...path]">) {
     });
   } catch {
     return Response.json(
-      { error: { code: "API_UNREACHABLE", message: "Nepavyko pasiekti API" } },
+      { error: { code: "API_UNREACHABLE", message: "Could not reach the API" } },
       { status: 502 },
     );
   }

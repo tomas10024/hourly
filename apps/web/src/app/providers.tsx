@@ -4,9 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 
 /**
- * TanStack Query klientas kuriamas komponento būsenoje, o ne modulio lygmenyje -
- * taip kiekvienas serverio užklausos apdorojimas gauna savo podėlį ir
- * naudotojų duomenys nesusimaišo.
+ * The TanStack Query client is created in component state rather than at
+ * module level, so each server request gets its own cache and data from
+ * different users cannot mix.
  */
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(

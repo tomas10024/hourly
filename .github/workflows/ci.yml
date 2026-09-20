@@ -42,22 +42,22 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Įdiegti priklausomybes
+      - name: Install dependencies
         run: npm ci
 
-      - name: Sukompiliuoti bendrus tipus
+      - name: Build shared types
         run: npm run build --workspace packages/shared
 
-      - name: Pritaikyti duomenų bazės migracijas
+      - name: Apply database migrations
         run: npm run db:deploy --workspace apps/api
 
-      - name: Statinė analizė
+      - name: Lint
         run: npm run lint --workspaces --if-present
 
-      - name: Testai
+      - name: Tests
         run: npm run test --workspaces --if-present
 
-      - name: Kompiliavimas
+      - name: Build
         run: |
           npm run build --workspace apps/api
           npm run build --workspace apps/web

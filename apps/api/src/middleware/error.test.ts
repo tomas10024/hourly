@@ -1,0 +1,98 @@
+import { describe, expect, it } from 'vitest';
+import express from 'express';
+import request from 'supertest';
+import { z } from 'zod';
+import { HttpError, errorHandler } from './error.js';
+
+/**
+ * Error handling tests.
+ *
+ * They cover exactly the status codes the lab assignment asks us to
+ * demonstrate: 400 for a bad request, 404 for a missing resource and 422 for
+ * unacceptable content. A minimal app is assembled here because error
+ * handling must not depend on the routes, which do not exist yet.
+ */
+function appThatThrows(error: unknown) {
+  const app = express();
+  app.use(express.json());
+  app.post('/test', (_req, _res) => {
+    throw error;
+  });
+  app.use(errorHandler);
+  return app;
+}
+
+describe('errorHandler', () => {
+  it('maps HttpError to the status it carries', async () => {
+    const app = appThatThrows(new HttpError(404, 'NOT_FOUND', 'Project not found'));
+    const res = await request(app).post('/test').send({}).expect(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body.error.message).toBe('Project not found');
+  });
+
+  it('maps ZodError to 422 with a tree of field errors', async () => {
+    const schema = z.object({ title: z.string().min(3) });
+    let thrown: unknown;
+    try {
+      schema.parse({ title: 'ab' });
+    } catch (error) {
+      thrown = error;
+    }
+
+    const res = await request(appThatThrows(thrown)).post('/test').send({}).expect(422);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.details).toBeDefined();
+  });
+
+  it('maps malformed JSON to 400 rather than 500', async () => {
+    const app = express();
+    app.use(express.json());
+    app.post('/test', (_req, res) => res.json({ ok: true }));
+    app.use(errorHandler);
+
+    const res = await request(app)
+      .post('/test')
+      .set('content-type', 'application/json')
+      .send('{"title": ')
+      .expect(400);
+    expect(res.body.error.code).toBe('MALFORMED_JSON');
+  });
+
+  it('maps Prisma P2025 (record not found) to 404', async () => {
+    const prismaError = Object.assign(new Error('Record to update not found'), {
+      name: 'PrismaClientKnownRequestError',
+      code: 'P2025',
+    });
+    const res = await request(appThatThrows(prismaError)).post('/test').send({}).expect(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('maps Prisma P2002 (unique constraint) to 409', async () => {
+    const prismaError = Object.assign(new Error('Unique constraint failed'), {
+      name: 'PrismaClientKnownRequestError',
+      code: 'P2002',
+      meta: { target: 'work_sessions_one_open_per_specialist' },
+    });
+    const res = await request(appThatThrows(prismaError)).post('/test').send({}).expect(409);
+    expect(res.body.error.code).toBe('CONFLICT');
+    expect(res.body.error.details.constraint).toContain('one_open_per_specialist');
+  });
+
+  it('maps Prisma P2003 (missing foreign key) to 422', async () => {
+    const prismaError = Object.assign(new Error('Foreign key constraint failed'), {
+      name: 'PrismaClientKnownRequestError',
+      code: 'P2003',
+      meta: { field_name: 'projectId' },
+    });
+    const res = await request(appThatThrows(prismaError)).post('/test').send({}).expect(422);
+    expect(res.body.error.code).toBe('INVALID_REFERENCE');
+  });
+
+  it('maps an unknown error to 500', async () => {
+    const res = await request(appThatThrows(new Error('unexpected')))
+      .post('/test')
+      .send({})
+      .expect(500);
+    expect(res.body.error.code).toBe('INTERNAL_ERROR');
+  });
+});

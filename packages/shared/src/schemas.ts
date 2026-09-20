@@ -11,7 +11,7 @@ import {
 } from './enums.js';
 
 /* -------------------------------------------------------------------------- */
-/* Naudotojas ir autentifikacija                                              */
+/* User and authentication                                                    */
 /* -------------------------------------------------------------------------- */
 
 export const PublicUser = z.object({
@@ -43,7 +43,7 @@ export const LoginInput = z.object({
 });
 export type LoginInput = z.infer<typeof LoginInput>;
 
-/** Atnaujinimo žetonas keliauja `httpOnly` slapuku, todėl čia jo nėra. */
+/** The refresh token travels in an `httpOnly` cookie, so it is not here. */
 export const AuthResponse = z.object({
   accessToken: z.string(),
   user: CurrentUser,
@@ -51,7 +51,7 @@ export const AuthResponse = z.object({
 export type AuthResponse = z.infer<typeof AuthResponse>;
 
 /* -------------------------------------------------------------------------- */
-/* Projektas                                                                  */
+/* Project                                                                    */
 /* -------------------------------------------------------------------------- */
 
 export const Project = z.object({
@@ -65,7 +65,7 @@ export const Project = z.object({
   budgetMax: Money.nullable(),
   hourlyRate: Money.nullable(),
   deadline: z.iso.datetime().nullable(),
-  /** Tiesiogiai sutarto darbo užsakovo pavadinimas, kai jis paskyros neturi. */
+  /** Name of a directly agreed client who has no account on the platform. */
   externalClientName: z.string().nullable(),
   clientId: Id.nullable(),
   specialistId: Id.nullable(),
@@ -88,10 +88,10 @@ export const CreateProjectInput = z
   })
   .refine(
     (v) => v.budgetMin == null || v.budgetMax == null || v.budgetMin <= v.budgetMax,
-    { message: 'budgetMin negali būti didesnis už budgetMax', path: ['budgetMin'] },
+    { message: 'budgetMin must not be greater than budgetMax', path: ['budgetMin'] },
   )
   .refine((v) => v.origin !== 'DIRECT' || v.externalClientName != null, {
-    message: 'Tiesiogiai sutartam darbui privalomas užsakovo pavadinimas',
+    message: 'Directly agreed work requires a client name',
     path: ['externalClientName'],
   });
 export type CreateProjectInput = z.infer<typeof CreateProjectInput>;
@@ -115,7 +115,7 @@ export const ProjectListQuery = PageQuery.extend({
 export type ProjectListQuery = z.infer<typeof ProjectListQuery>;
 
 /* -------------------------------------------------------------------------- */
-/* Užduotis                                                                   */
+/* Task                                                                       */
 /* -------------------------------------------------------------------------- */
 
 export const Task = z.object({
@@ -125,7 +125,7 @@ export const Task = z.object({
   description: z.string().nullable(),
   status: TaskStatus,
   position: z.number().int(),
-  /** Perrašo projekto įkainį; null - paveldima iš projekto. */
+  /** Overrides the project rate; null means it is inherited from the project. */
   hourlyRate: Money.nullable(),
   estimatedHours: z.number().nonnegative().nullable(),
   approvedAt: z.iso.datetime().nullable(),
@@ -150,7 +150,7 @@ export const UpdateTaskInput = CreateTaskInput.omit({ projectId: true })
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInput>;
 
 /* -------------------------------------------------------------------------- */
-/* Darbo sesija                                                               */
+/* Work session                                                               */
 /* -------------------------------------------------------------------------- */
 
 export const WorkSession = z.object({
@@ -158,17 +158,17 @@ export const WorkSession = z.object({
   taskId: Id,
   specialistId: Id,
   startedAt: z.iso.datetime(),
-  /** null - sesija dar vykdoma (vienu metu leidžiama tik viena tokia). */
+  /** null means the session is still running (only one is allowed at a time). */
   endedAt: z.iso.datetime().nullable(),
   durationMinutes: z.number().int().nonnegative().nullable(),
   comment: z.string().nullable(),
-  /** Įkainis, galiojęs sesijos metu (užduoties arba projekto). */
+  /** The rate in force during the session (task rate or project rate). */
   appliedRate: Money.nullable(),
   createdAt: z.iso.datetime(),
 });
 export type WorkSession = z.infer<typeof WorkSession>;
 
-/** Rankinis sesijos įvedimas: nurodoma pradžia ir pabaiga. */
+/** Manual session entry: both start and end are supplied. */
 export const CreateWorkSessionInput = z
   .object({
     taskId: Id,
@@ -177,7 +177,7 @@ export const CreateWorkSessionInput = z
     comment: z.string().max(2000).nullish(),
   })
   .refine((v) => v.endedAt == null || new Date(v.endedAt) > new Date(v.startedAt), {
-    message: 'Pabaigos laikas turi būti vėlesnis už pradžios',
+    message: 'End time must be later than the start time',
     path: ['endedAt'],
   });
 export type CreateWorkSessionInput = z.infer<typeof CreateWorkSessionInput>;
@@ -190,7 +190,7 @@ export const UpdateWorkSessionInput = z.object({
 export type UpdateWorkSessionInput = z.infer<typeof UpdateWorkSessionInput>;
 
 /* -------------------------------------------------------------------------- */
-/* Pasiūlymas                                                                 */
+/* Proposal                                                                   */
 /* -------------------------------------------------------------------------- */
 
 export const Proposal = z.object({
@@ -214,7 +214,7 @@ export const CreateProposalInput = z
     message: z.string().max(5000).nullish(),
   })
   .refine((v) => v.price != null || v.hourlyRate != null, {
-    message: 'Nurodykite bent kainą arba valandinį įkainį',
+    message: 'Provide at least a price or an hourly rate',
     path: ['price'],
   });
 export type CreateProposalInput = z.infer<typeof CreateProposalInput>;
@@ -225,7 +225,7 @@ export const UpdateProposalInput = z.object({
 export type UpdateProposalInput = z.infer<typeof UpdateProposalInput>;
 
 /* -------------------------------------------------------------------------- */
-/* Peržiūros nuoroda (gebėjimo žetonas)                                       */
+/* Share link (capability token)                                              */
 /* -------------------------------------------------------------------------- */
 
 export const ShareLink = z.object({
@@ -238,7 +238,7 @@ export const ShareLink = z.object({
 });
 export type ShareLink = z.infer<typeof ShareLink>;
 
-/** Žetonas grąžinamas tik kuriant nuorodą - DB laikoma tik jo maiša. */
+/** The token is returned only on creation - the database stores its hash. */
 export const ShareLinkCreated = ShareLink.extend({
   token: z.string(),
   url: z.url(),
@@ -251,7 +251,7 @@ export const CreateShareLinkInput = z.object({
 export type CreateShareLinkInput = z.infer<typeof CreateShareLinkInput>;
 
 /* -------------------------------------------------------------------------- */
-/* Ataskaita                                                                  */
+/* Report                                                                     */
 /* -------------------------------------------------------------------------- */
 
 export const ReportTaskLine = z.object({
@@ -273,7 +273,7 @@ export const ProjectReport = z.object({
 });
 export type ProjectReport = z.infer<typeof ProjectReport>;
 
-/** Tik skaitymo vaizdas, pasiekiamas per peržiūros nuorodą. */
+/** Read-only view reachable through a share link. */
 export const PublicProjectView = z.object({
   project: Project.pick({
     id: true,
