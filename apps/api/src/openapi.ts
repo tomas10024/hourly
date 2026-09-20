@@ -407,16 +407,17 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Share links'],
         summary: 'Share links of a project',
-        security: bearer,
-        requestParams: { path: pathId },
+        description: 'Answers what exists and until when - never how to get in.',
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '200': json(z.array(ShareLink), 'Share link list'), ...errors },
       },
       post: {
         tags: ['Share links'],
         summary: 'Generate a share link',
-        description: 'The token is returned only once - the database stores its hash.',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'The token is readable only in this response: the database keeps nothing but ' +
+          'its SHA-256 hash, so a lost link cannot be recovered, only replaced.',
+        requestParams: { path: pathId, header: actorHeader },
         requestBody: {
           content: { 'application/json': { schema: CreateShareLinkInput } },
         },
@@ -427,8 +428,10 @@ export const openApiDocument = createDocument({
       delete: {
         tags: ['Share links'],
         summary: 'Revoke a share link',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'The record is kept and stamped with `revokedAt`, because the fact that a ' +
+          'project was shared is part of its history. Revoking twice answers 204 again.',
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '204': { description: 'Revoked' }, ...errors },
       },
     },
@@ -437,11 +440,14 @@ export const openApiDocument = createDocument({
         tags: ['Share links'],
         summary: 'Project progress behind a share link',
         description:
-          'Accessible without an account, read-only. ' +
-          'The response carries an `X-Robots-Tag: noindex` header.',
-        requestParams: { path: z.object({ token: z.string().min(20) }) },
+          'Accessible without an account, read-only. A link that does not exist, one ' +
+          'that was revoked and one that expired all answer an identical 404, so a ' +
+          'visitor cannot probe which tokens once existed. The response carries an ' +
+          '`X-Robots-Tag: noindex` header because the token travels in the address.',
+        requestParams: { path: z.object({ token: z.string().min(20).max(200) }) },
         responses: {
           '200': json(PublicProjectView, 'Project progress'),
+          '400': json(ApiError, 'Malformed token in the address'),
           '404': json(ApiError, 'Link is invalid, revoked or not found'),
         },
       },
