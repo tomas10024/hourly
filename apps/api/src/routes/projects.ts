@@ -1,0 +1,177 @@
+import { Router } from 'express';
+import {
+  CreateProjectInput,
+  ProjectListQuery,
+  UpdateProjectInput,
+} from '@valandine/shared';
+import type { Prisma } from '../generated/prisma/client.js';
+import { prisma } from '../lib/prisma.js';
+import { requireActor } from '../lib/actor.js';
+import { created, noContent } from '../lib/http.js';
+import { money, toProject } from '../lib/serialize.js';
+import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
+import { HttpError } from '../middleware/error.js';
+import {
+  assertBudgetRange,
+  assertCanManage,
+  assertStatusTransition,
+} from '../services/projects.js';
+
+export const projectsRouter: Router = Router();
+
+/** Loads a project or fails with 404 - used by every single-resource route. */
+async function findProjectOr404(id: string) {
+  const project = await prisma.project.findUnique({ where: { id } });
+  if (!project) {
+    throw new HttpError(404, 'NOT_FOUND', `Project ${id} does not exist`);
+  }
+  return project;
+}
+
+/**
+ * GET /projects - list projects.
+ *
+ * `scope` decides which set is being asked for; it is a query parameter rather
+ * than a separate address (`/my-projects`) because the resource stays the same
+ * and only the selection criterion changes.
+ *
+ * The filters are collected into an `AND` array instead of a single object so
+ * that a narrowing `status` cannot silently overwrite the scope filter.
+ */
+projectsRouter.get('/projects', async (req, res) => {
+  const { scope, q, status, page, perPage } = parseQuery(ProjectListQuery, req);
+
+  const filters: Prisma.ProjectWhereInput[] = [];
+
+  if (scope === 'marketplace') {
+    // Anyone may browse the marketplace, so no actor is required here.
+    filters.push({ origin: 'MARKETPLACE', status: 'PUBLISHED' });
+  } else if (scope === 'owned') {
+    filters.push({ clientId: requireActor(req) });
+  } else {
+    filters.push({ specialistId: requireActor(req) });
+  }
+
+  if (status) filters.push({ status });
+
+  if (q) {
+    filters.push({
+      OR: [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  const where: Prisma.ProjectWhereInput = { AND: filters };
+
+  // One round trip for both the page and the total, so the count cannot be
+  // taken from a different state of the data than the rows.
+  const [rows, total] = await prisma.$transaction([
+    prisma.project.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * perPage,
+      take: perPage,
+    }),
+    prisma.project.count({ where }),
+  ]);
+
+  res.json({ items: rows.map(toProject), page, perPage, total });
+});
+
+/** GET /projects/{id} - a single project; readable without an actor. */
+projectsRouter.get('/projects/:id', async (req, res) => {
+  const { id } = parseParams(IdParam, req);
+  res.json(toProject(await findProjectOr404(id)));
+});
+
+/**
+ * POST /projects - create a project.
+ *
+ * The two origins differ in more than a flag, so the server derives the rest
+ * instead of trusting the client:
+ *   MARKETPLACE - the actor is the client, the project starts as a DRAFT and
+ *                 has to go through the proposal stage;
+ *   DIRECT      - the actor is the specialist, the client is a plain name, and
+ *                 there is nothing to bid on, so work starts immediately.
+ */
+projectsRouter.post('/projects', async (req, res) => {
+  const actor = requireActor(req);
+  const input = parseBody(CreateProjectInput, req);
+  const isDirect = input.origin === 'DIRECT';
+
+  const row = await prisma.project.create({
+    data: {
+      title: input.title,
+      description: input.description,
+      origin: input.origin,
+      taskAuthoring: input.taskAuthoring,
+      status: isDirect ? 'IN_PROGRESS' : 'DRAFT',
+      budgetMin: input.budgetMin ?? null,
+      budgetMax: input.budgetMax ?? null,
+      hourlyRate: input.hourlyRate ?? null,
+      deadline: input.deadline ? new Date(input.deadline) : null,
+      externalClientName: isDirect ? (input.externalClientName ?? null) : null,
+      clientId: isDirect ? null : actor,
+      specialistId: isDirect ? actor : null,
+    },
+  });
+
+  created(res, `/api/projects/${row.id}`, toProject(row));
+});
+
+/**
+ * PATCH /projects/{id} - update a project.
+ *
+ * Only the keys actually present in the body are written, so sending
+ * `{"status":"PUBLISHED"}` cannot wipe the budget. `null` is a meaningful
+ * value here (clear the field) and is therefore distinguished from "absent".
+ */
+projectsRouter.patch('/projects/:id', async (req, res) => {
+  const { id } = parseParams(IdParam, req);
+  const actor = requireActor(req);
+  const input = parseBody(UpdateProjectInput, req);
+
+  const existing = await findProjectOr404(id);
+  assertCanManage(existing, actor);
+
+  if (input.status) assertStatusTransition(existing.status, input.status);
+
+  // The range has to hold after the update, so it is checked on the merged
+  // values: whatever the request did not mention keeps its stored value.
+  assertBudgetRange(
+    input.budgetMin === undefined ? money(existing.budgetMin) : (input.budgetMin ?? null),
+    input.budgetMax === undefined ? money(existing.budgetMax) : (input.budgetMax ?? null),
+  );
+
+  const data: Prisma.ProjectUpdateInput = {};
+  if (input.title !== undefined) data.title = input.title;
+  if (input.description !== undefined) data.description = input.description;
+  if (input.status !== undefined) data.status = input.status;
+  if (input.budgetMin !== undefined) data.budgetMin = input.budgetMin;
+  if (input.budgetMax !== undefined) data.budgetMax = input.budgetMax;
+  if (input.hourlyRate !== undefined) data.hourlyRate = input.hourlyRate;
+  if (input.deadline !== undefined) {
+    data.deadline = input.deadline === null ? null : new Date(input.deadline);
+  }
+
+  res.json(toProject(await prisma.project.update({ where: { id }, data })));
+});
+
+/**
+ * DELETE /projects/{id} - remove a project.
+ *
+ * Tasks, work sessions, proposals and share links go with it through the
+ * cascade declared in the migration. 204 because there is nothing left to
+ * return.
+ */
+projectsRouter.delete('/projects/:id', async (req, res) => {
+  const { id } = parseParams(IdParam, req);
+  const actor = requireActor(req);
+
+  assertCanManage(await findProjectOr404(id), actor);
+  await prisma.project.delete({ where: { id } });
+
+  noContent(res);
+});

@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: valandine
       POSTGRES_DB: valandine
     ports:
-      - '5432:5432'
+      # Host port 5433: 5432 is often taken by another local postgres.
+      - '5433:5432'
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:

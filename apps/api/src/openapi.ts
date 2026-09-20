@@ -45,6 +45,23 @@ const errors = {
 const pathId = z.object({ id: z.uuid() });
 
 /**
+ * Lab 1 has no authentication yet, so the acting user is passed in a header.
+ * Endpoints already implemented document this header; the ones still waiting
+ * for lab 2 keep `security: bearerAuth`. See `src/lib/actor.ts`.
+ */
+const actorHeader = z.object({
+  'X-Actor-Id': z.uuid().meta({
+    description: 'Acting user. Replaced by a JWT in lab 2.',
+  }),
+});
+
+const optionalActorHeader = z.object({
+  'X-Actor-Id': z.uuid().optional().meta({
+    description: 'Acting user. Required only for scope=owned and scope=assigned.',
+  }),
+});
+
+/**
  * The API specification is generated from the very Zod schemas that validate
  * incoming requests, so the documentation cannot drift from the implementation.
  *
@@ -138,13 +155,17 @@ export const openApiDocument = createDocument({
         description:
           '`scope=marketplace` - publicly published, `scope=owned` - created by the user, ' +
           '`scope=assigned` - carried out by the user.',
-        requestParams: { query: ProjectListQuery },
+        requestParams: { query: ProjectListQuery, header: optionalActorHeader },
         responses: { '200': json(paginated(Project), 'Project list'), ...errors },
       },
       post: {
         tags: ['Projects'],
         summary: 'Create a project',
-        security: bearer,
+        description:
+          'MARKETPLACE: the actor becomes the client and the project starts as DRAFT. ' +
+          'DIRECT: the actor becomes the specialist, `externalClientName` is required ' +
+          'and the project starts as IN_PROGRESS.',
+        requestParams: { header: actorHeader },
         requestBody: { content: { 'application/json': { schema: CreateProjectInput } } },
         responses: { '201': json(Project, 'Project created'), ...errors },
       },
@@ -159,16 +180,18 @@ export const openApiDocument = createDocument({
       patch: {
         tags: ['Projects'],
         summary: 'Update a project',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'Only the fields present in the body are written. Status changes follow the ' +
+          'project lifecycle; PUBLISHED -> IN_PROGRESS happens by accepting a proposal.',
+        requestParams: { path: pathId, header: actorHeader },
         requestBody: { content: { 'application/json': { schema: UpdateProjectInput } } },
         responses: { '200': json(Project, 'Project updated'), ...errors },
       },
       delete: {
         tags: ['Projects'],
         summary: 'Delete a project',
-        security: bearer,
-        requestParams: { path: pathId },
+        description: 'Tasks, work sessions, proposals and share links are removed with it.',
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
