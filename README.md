@@ -19,6 +19,7 @@ Kauno technologijos universitetas, Informatikos fakultetas
    - [1.4. Sąsajos metodai](#14-sąsajos-metodai)
 2. [Sistemos architektūra](#2-sistemos-architektūra)
 3. [Pasirinktų technologijų aprašymas](#3-pasirinktų-technologijų-aprašymas)
+4. [Projekto paleidimas](#4-projekto-paleidimas)
 
 ---
 
@@ -195,3 +196,69 @@ Pats „Valandinė“ API vykdo duomenų mainus su duomenų baze – tam naudoja
 **Microsoft Azure** – debesų technologijų platforma, pasirinkta dėl universiteto suteikiamo studento kredito. Naudojamos Azure Static Web Apps, Azure App Service ir Azure Database for PostgreSQL Flexible Server paslaugos.
 
 **Git ir GitHub Actions** – versijavimo sistema ir nepertraukiamo integravimo priemonė. Sujungus pakeitimus į pagrindinę šaką automatiškai paleidžiami testai, vykdomos duomenų bazės migracijos ir atnaujinamos Azure paslaugos.
+
+---
+
+## 4. Projekto paleidimas
+
+### Reikalavimai
+
+- Node.js 22 (žr. [.nvmrc](.nvmrc))
+- Docker (PostgreSQL duomenų bazei) arba vietinė PostgreSQL 17
+
+### Saugyklos sandara
+
+```
+apps/api        Node.js + Express sąsaja (Prisma, Zod, OpenAPI)
+apps/web        Next.js internetinė aplikacija (TanStack Query, Tailwind)
+packages/shared Bendri Zod aprašai ir tipai, naudojami abiejose pusėse
+```
+
+### Paruošimas
+
+```bash
+npm install
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+npm run db:up
+npm run db:migrate
+npm run db:seed
+```
+
+### Kasdienis darbas
+
+```bash
+npm run dev
+```
+
+| Adresas | Paskirtis |
+|---|---|
+| http://localhost:3000 | Internetinė aplikacija |
+| http://localhost:4000/api/health | Sąsajos būsenos patikrinimas |
+| http://localhost:4000/api/docs | Sąsajos dokumentacija (Swagger UI) |
+
+Naršyklė į API tiesiogiai nesikreipia – užklausos eina per Next.js maršrutą
+[`/api/[...path]`](apps/web/src/app/api/%5B...path%5D/route.ts), kuris veikia kaip
+tarpinis sluoksnis ir leidžia atnaujinimo žetoną laikyti `httpOnly` slapuke.
+
+### Naudingos komandos
+
+| Komanda | Paskirtis |
+|---|---|
+| `npm run dev:api` / `npm run dev:web` | Paleisti tik vieną dalį |
+| `npm run db:up` / `npm run db:down` | Pakelti / sustabdyti duomenų bazės konteinerį |
+| `npm run db:migrate` | Sukurti ir pritaikyti migraciją |
+| `npm run db:studio` | Prisma Studio duomenų peržiūrai |
+| `npm run lint` | Statinė analizė |
+| `npm run test` | Testai |
+| `npm run build` | Sukompiliuoti visas dalis |
+
+### Demonstracinės paskyros
+
+Po `npm run db:seed` sukuriamos paskyros su slaptažodžiu `slaptazodis123`:
+
+| Paskyra | Rolė |
+|---|---|
+| `admin@valandine.lt` | Administratorius |
+| `uzsakovas@valandine.lt` | Užsakovas |
+| `specialistas@valandine.lt` | Specialistas |

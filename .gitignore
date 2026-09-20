@@ -1,0 +1,32 @@
+# Priklausomybės
+node_modules/
+.npm
+
+# Sukompiliuoti failai
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Prisma sugeneruota klientė
+apps/api/src/generated/
+
+# Aplinkos kintamieji
+.env
+.env.*
+!.env.example
+
+# Testų ir įrankių išvestis
+coverage/
+.vitest/
+.eslintcache
+
+# Operacinės sistemos / redaktorių failai
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/*
+!.vscode/extensions.json
+.idea/

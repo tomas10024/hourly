@@ -1,0 +1,12 @@
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Aplinkos kintamieji (bendros taisyklės - saugyklos šaknies .gitignore)
+.env*
+!.env.example
+
+# Vercel
+.vercel

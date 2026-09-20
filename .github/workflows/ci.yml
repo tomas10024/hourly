@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://valandine:valandine@localhost:5432/valandine_test
+  JWT_ACCESS_SECRET: ci-access-secret-0123456789
+  JWT_REFRESH_SECRET: ci-refresh-secret-0123456789
+  WEB_ORIGIN: http://localhost:3000
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: valandine
+          POSTGRES_PASSWORD: valandine
+          POSTGRES_DB: valandine_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U valandine -d valandine_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Įdiegti priklausomybes
+        run: npm ci
+
+      - name: Sukompiliuoti bendrus tipus
+        run: npm run build --workspace packages/shared
+
+      - name: Pritaikyti duomenų bazės migracijas
+        run: npm run db:deploy --workspace apps/api
+
+      - name: Statinė analizė
+        run: npm run lint --workspaces --if-present
+
+      - name: Testai
+        run: npm run test --workspaces --if-present
+
+      - name: Kompiliavimas
+        run: |
+          npm run build --workspace apps/api
+          npm run build --workspace apps/web

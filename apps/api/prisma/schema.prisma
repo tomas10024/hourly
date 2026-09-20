@@ -1,0 +1,215 @@
+// Valandinė - duomenų schema.
+// Hierarchija: Projektas -> Užduotis -> Darbo sesija.
+// Šalia hierarchijos: Pasiūlymas (valdo aikštelės projekto gyvavimo ciklą)
+// ir Peržiūros nuoroda (gebėjimo žetonas paskyros neturinčiam užsakovui).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CLIENT
+  SPECIALIST
+  ADMIN
+}
+
+enum ProjectOrigin {
+  MARKETPLACE
+  DIRECT
+}
+
+enum TaskAuthoring {
+  CLIENT
+  SPECIALIST
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  role         Role
+  bio          String?
+  isBlocked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedProjects    Project[]      @relation("ProjectClient")
+  assignedProjects Project[]      @relation("ProjectSpecialist")
+  proposals        Proposal[]
+  workSessions     WorkSession[]
+  refreshTokens    RefreshToken[]
+
+  @@map("users")
+}
+
+/// Atnaujinimo žetonai: DB laikoma tik maiša, taikoma rotacija.
+/// `familyId` leidžia panaikinti visą naudotojo žetonų šeimą,
+/// jei pakartotinai panaudojamas jau anuliuotas žetonas.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  familyId  String    @db.Uuid
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model Project {
+  id            String        @id @default(uuid()) @db.Uuid
+  title         String
+  description   String
+  origin        ProjectOrigin @default(MARKETPLACE)
+  status        ProjectStatus @default(DRAFT)
+  taskAuthoring TaskAuthoring @default(CLIENT)
+
+  budgetMin  Decimal?  @db.Decimal(10, 2)
+  budgetMax  Decimal?  @db.Decimal(10, 2)
+  /// Numatytasis įkainis; atskira užduotis jį gali perrašyti.
+  hourlyRate Decimal?  @db.Decimal(10, 2)
+  deadline   DateTime?
+
+  /// Tiesiogiai sutarto darbo užsakovas, kai jis platformoje paskyros neturi.
+  externalClientName String?
+
+  clientId     String? @db.Uuid
+  specialistId String? @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client     User?       @relation("ProjectClient", fields: [clientId], references: [id], onDelete: SetNull)
+  specialist User?       @relation("ProjectSpecialist", fields: [specialistId], references: [id], onDelete: SetNull)
+  tasks      Task[]
+  proposals  Proposal[]
+  shareLinks ShareLink[]
+
+  @@index([status, origin])
+  @@index([clientId])
+  @@index([specialistId])
+  @@map("projects")
+}
+
+model Task {
+  id          String     @id @default(uuid()) @db.Uuid
+  projectId   String     @db.Uuid
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  position    Int        @default(0)
+
+  /// Perrašo projekto įkainį; null - paveldima iš projekto.
+  hourlyRate     Decimal?  @db.Decimal(10, 2)
+  estimatedHours Decimal?  @db.Decimal(8, 2)
+  /// Kada užsakovas patvirtino specialisto pasiūlytą užduotį.
+  approvedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessions WorkSession[]
+
+  @@index([projectId, position])
+  @@map("tasks")
+}
+
+model WorkSession {
+  id           String @id @default(uuid()) @db.Uuid
+  taskId       String @db.Uuid
+  specialistId String @db.Uuid
+
+  startedAt DateTime
+  /// null - sesija dar vykdoma. Daline unikalia sąlyga (žr. migraciją)
+  /// užtikrinama, kad naudotojas vienu metu turėtų ne daugiau kaip vieną tokią.
+  endedAt   DateTime?
+  /// Užpildoma užbaigiant sesiją; leidžia kaupti sumas be laiko skirtumų.
+  durationMinutes Int?
+  comment         String?
+  /// Įkainis, galiojęs sesijos metu (užduoties arba projekto).
+  appliedRate     Decimal? @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  specialist User @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([specialistId, startedAt])
+  @@map("work_sessions")
+}
+
+model Proposal {
+  id            String         @id @default(uuid()) @db.Uuid
+  projectId     String         @db.Uuid
+  specialistId  String         @db.Uuid
+  price         Decimal?       @db.Decimal(10, 2)
+  hourlyRate    Decimal?       @db.Decimal(10, 2)
+  estimatedDays Int?
+  message       String?
+  status        ProposalStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  specialist User    @relation(fields: [specialistId], references: [id], onDelete: Cascade)
+
+  /// Vienas specialistas teikia ne daugiau kaip vieną pasiūlymą projektui.
+  /// Priimtas pasiūlymas gali būti tik vienas - žr. dalinį unikalų indeksą migracijoje.
+  @@unique([projectId, specialistId])
+  @@index([specialistId, status])
+  @@map("proposals")
+}
+
+/// Peržiūros nuoroda: gebėjimo žetonas, suteikiantis tik skaitymo teisę
+/// vienam konkrečiam projektui. DB laikoma tik žetono maiša.
+model ShareLink {
+  id           String    @id @default(uuid()) @db.Uuid
+  projectId    String    @db.Uuid
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  lastViewedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("share_links")
+}
