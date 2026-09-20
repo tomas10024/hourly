@@ -255,10 +255,24 @@ tarpinis sluoksnis ir leidžia atnaujinimo žetoną laikyti `httpOnly` slapuke.
 
 ### Demonstracinės paskyros
 
-Po `npm run db:seed` sukuriamos paskyros su slaptažodžiu `slaptazodis123`:
+Po `npm run db:seed` sukuriamos aštuonios paskyros, visos su slaptažodžiu
+`slaptazodis123`:
 
-| Paskyra | Rolė |
-|---|---|
-| `admin@valandine.lt` | Administratorius |
-| `uzsakovas@valandine.lt` | Užsakovas |
-| `specialistas@valandine.lt` | Specialistas |
+| Paskyra | Rolė | Pastaba |
+|---|---|---|
+| `admin@valandine.lt` | Administratorius | |
+| `uzsakovas@valandine.lt` | Užsakovas | Turi vykdomą ir užbaigtą projektą |
+| `rasa@zalialanka.lt` | Užsakovas | Turi paskelbtą projektą su pasiūlymais |
+| `mindaugas@kavinepupa.lt` | Užsakovas | Turi juodraštinį projektą |
+| `specialistas@valandine.lt` | Specialistas | Pagrindinė demonstracijos paskyra |
+| `gabija@dizainas.lt` | Specialistas | Užbaigė projektą su ataskaita |
+| `tomas@frontend.lt` | Specialistas | Turi atmestą ir atsiimtą pasiūlymą |
+| `ieva@duomenys.lt` | Specialistas | **Turi vykdomą darbo sesiją** |
+
+Duomenyse yra visos projekto ir pasiūlymo būsenos, 20 užduočių, 24 darbo sesijos
+(iš jų viena vykdoma) ir trys peržiūros nuorodos: galiojanti, pasibaigusi ir
+atšaukta. Seed yra pakartojamas – paleidus iš naujo duomenys atstatomi, o
+identifikatoriai nesikeičia.
+
+Sukurti identifikatoriai ir peržiūros nuorodų žetonai įrašomi į
+`docs/postman/demo-data.json` (failas negrįžta į Git, nes generuojamas iš naujo).

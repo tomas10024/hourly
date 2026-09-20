@@ -17,6 +17,9 @@ apps/api/src/generated/
 .env.*
 !.env.example
 
+# Seed output: regenerated on every db:seed, tokens differ each time
+docs/postman/demo-data.json
+
 # Test and tooling output
 coverage/
 .vitest/
