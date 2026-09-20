@@ -63,7 +63,8 @@ export function assertBudgetRange(min: number | null, max: number | null): void 
 }
 
 /**
- * Only the two parties of a project may modify it.
+ * Only the two parties of a project may act on it - editing it, managing its
+ * tasks, sharing it or reading its report.
  *
  * In lab 1 the actor comes from a header and is therefore not trustworthy;
  * the check exists to express the domain rule. Once lab 2 derives the actor
@@ -74,6 +75,10 @@ export function assertCanManage(
   actorId: string,
 ): void {
   if (project.clientId !== actorId && project.specialistId !== actorId) {
-    throw new HttpError(403, 'FORBIDDEN', 'Only the client or the assigned specialist may modify this project');
+    throw new HttpError(
+      403,
+      'FORBIDDEN',
+      'Only the client or the assigned specialist of this project may do that',
+    );
   }
 }

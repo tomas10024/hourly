@@ -1,4 +1,5 @@
-import type { ReportTaskLine, TaskStatus } from '@valandine/shared';
+import type { ProjectReport, ReportTaskLine, TaskStatus } from '@valandine/shared';
+import { csvNumber } from '../lib/csv.js';
 
 /**
  * Turning logged work into money.
@@ -93,4 +94,43 @@ export function summarizeTasks(tasks: TaskInput[], projectRate: number | null): 
   }
 
   return { lines, totalMinutes, totalAmount: totalCents / 100 };
+}
+
+/**
+ * The same report as a table.
+ *
+ * The rows are built here, next to the numbers they come from, so the JSON and
+ * the CSV can never disagree about what a report contains. Turning the rows
+ * into a file is left to `lib/csv.ts`.
+ */
+export function reportToCsvRows(report: ProjectReport): string[][] {
+  const rows: string[][] = [
+    ['Project', report.project.title],
+    ['Status', report.project.status],
+    ['Generated at', report.generatedAt],
+    [],
+    ['Task', 'Status', 'Minutes', 'Hours', 'Rate, EUR/h', 'Amount, EUR'],
+  ];
+
+  for (const line of report.lines) {
+    rows.push([
+      line.title,
+      line.status,
+      String(line.totalMinutes),
+      csvNumber(line.totalMinutes / 60),
+      csvNumber(line.appliedRate),
+      csvNumber(line.amount),
+    ]);
+  }
+
+  rows.push([
+    'Total',
+    '',
+    String(report.totalMinutes),
+    csvNumber(report.totalMinutes / 60),
+    '',
+    csvNumber(report.totalAmount),
+  ]);
+
+  return rows;
 }

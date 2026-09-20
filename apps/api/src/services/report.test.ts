@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ProjectReport, PublicProjectView } from '@valandine/shared';
-import { summarizeTasks } from './report.js';
+import { toCsv } from '../lib/csv.js';
+import { reportToCsvRows, summarizeTasks } from './report.js';
 
 type Session = {
   endedAt: Date | null;
@@ -132,5 +133,58 @@ describe('summarizeTasks', () => {
         expiresAt: new Date().toISOString(),
       }),
     ).not.toThrow();
+  });
+});
+
+describe('reportToCsvRows', () => {
+  const report = {
+    project: { id: ID, title: 'Kavines sistema', status: 'IN_PROGRESS' as const, hourlyRate: 35 },
+    generatedAt: '2026-09-20T12:00:00.000Z',
+    lines: [
+      {
+        taskId: ID,
+        title: 'Meniu, su kableliu',
+        status: 'DONE' as const,
+        totalMinutes: 240,
+        appliedRate: 35,
+        amount: 140,
+      },
+      {
+        taskId: '22222222-2222-4222-8222-222222222222',
+        title: 'Neapmokamas darbas',
+        status: 'TODO' as const,
+        totalMinutes: 30,
+        appliedRate: null,
+        amount: 0,
+      },
+    ],
+    totalMinutes: 270,
+    totalAmount: 140,
+  };
+
+  it('starts with the project heading and a column row', () => {
+    const rows = reportToCsvRows(report);
+    expect(rows[0]).toEqual(['Project', 'Kavines sistema']);
+    expect(rows[4]).toEqual(['Task', 'Status', 'Minutes', 'Hours', 'Rate, EUR/h', 'Amount, EUR']);
+  });
+
+  it('converts minutes into hours and formats money', () => {
+    const rows = reportToCsvRows(report);
+    expect(rows[5]).toEqual(['Meniu, su kableliu', 'DONE', '240', '4.00', '35.00', '140.00']);
+  });
+
+  it('leaves the rate empty when no rate applied', () => {
+    expect(reportToCsvRows(report)[6]?.[4]).toBe('');
+  });
+
+  it('ends with a total row', () => {
+    const rows = reportToCsvRows(report);
+    expect(rows.at(-1)).toEqual(['Total', '', '270', '4.50', '', '140.00']);
+  });
+
+  it('produces a file whose fields are escaped', () => {
+    const csv = toCsv(reportToCsvRows(report));
+    expect(csv).toContain('"Meniu, su kableliu"');
+    expect(csv.split('\r\n')[0]).toBe('Project,Kavines sistema');
   });
 });

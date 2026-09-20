@@ -210,9 +210,23 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Projects'],
         summary: 'Project report by task and accumulated hours',
-        security: bearer,
-        requestParams: { path: pathId },
-        responses: { '200': json(ProjectReport, 'Report'), ...errors },
+        description:
+          'One resource in two representations, selected with the `Accept` header: ' +
+          '`application/json` (the default) or `text/csv`, which is returned as a ' +
+          'download. Anything else answers 406. Only finished work sessions are ' +
+          'counted - a running session has no duration yet.',
+        requestParams: { path: pathId, header: actorHeader },
+        responses: {
+          '200': {
+            description: 'Report',
+            content: {
+              'application/json': { schema: ProjectReport },
+              'text/csv': { schema: z.string() },
+            },
+          },
+          '406': json(ApiError, 'The requested media type is not available'),
+          ...errors,
+        },
       },
     },
 

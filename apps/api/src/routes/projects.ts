@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   CreateProjectInput,
+  type ProjectReport,
   ProjectListQuery,
   UpdateProjectInput,
 } from '@valandine/shared';
@@ -9,6 +10,7 @@ import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { money, toProject } from '../lib/serialize.js';
+import { UTF8_BOM, toCsv } from '../lib/csv.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import {
@@ -16,6 +18,7 @@ import {
   assertCanManage,
   assertStatusTransition,
 } from '../services/projects.js';
+import { reportToCsvRows, summarizeTasks } from '../services/report.js';
 
 export const projectsRouter: Router = Router();
 
@@ -159,6 +162,85 @@ projectsRouter.patch('/projects/:id', async (req, res) => {
   }
 
   res.json(toProject(await prisma.project.update({ where: { id }, data })));
+});
+
+/**
+ * GET /projects/{id}/report - what was done, for how long, and for how much.
+ *
+ * One resource in two representations, chosen by the `Accept` header rather
+ * than by a `?format=` parameter or a separate address: it is the same report
+ * either way, only the media type differs. That is what content negotiation is
+ * for, and an unsupported type is answered with 406 instead of quietly
+ * sending JSON.
+ *
+ * Running sessions are left out - only finished work is reported.
+ */
+projectsRouter.get('/projects/:id/report', async (req, res) => {
+  const { id } = parseParams(IdParam, req);
+  const actor = requireActor(req);
+
+  const project = await prisma.project.findUnique({
+    where: { id },
+    include: {
+      tasks: {
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        include: { sessions: true },
+      },
+    },
+  });
+  if (!project) {
+    throw new HttpError(404, 'NOT_FOUND', `Project ${id} does not exist`);
+  }
+  assertCanManage(project, actor);
+
+  // `req.accepts` returns the best match for the client's Accept header, or
+  // false when nothing offered here is acceptable. No header at all, or */*,
+  // resolves to the first entry - so JSON stays the default.
+  const format = req.accepts(['application/json', 'text/csv']);
+  if (format === false) {
+    throw new HttpError(
+      406,
+      'NOT_ACCEPTABLE',
+      'This report is available as application/json or text/csv',
+    );
+  }
+
+  const summary = summarizeTasks(
+    project.tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      hourlyRate: money(task.hourlyRate),
+      sessions: task.sessions.map((session) => ({
+        endedAt: session.endedAt,
+        durationMinutes: session.durationMinutes,
+        appliedRate: money(session.appliedRate),
+      })),
+    })),
+    money(project.hourlyRate),
+  );
+
+  const report: ProjectReport = {
+    project: {
+      id: project.id,
+      title: project.title,
+      status: project.status,
+      hourlyRate: money(project.hourlyRate),
+    },
+    generatedAt: new Date().toISOString(),
+    lines: summary.lines,
+    totalMinutes: summary.totalMinutes,
+    totalAmount: summary.totalAmount,
+  };
+
+  if (format === 'text/csv') {
+    res.type('text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="report-${project.id}.csv"`);
+    res.send(UTF8_BOM + toCsv(reportToCsvRows(report)));
+    return;
+  }
+
+  res.json(report);
 });
 
 /**
