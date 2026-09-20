@@ -61,3 +61,17 @@ jobs:
         run: |
           npm run build --workspace apps/api
           npm run build --workspace apps/web
+
+      - name: Seed demo data
+        run: npm run db:seed
+
+      # The Postman collection doubles as an integration test: it drives a full
+      # project lifecycle against a real server and cleans up after itself.
+      - name: Run API demo collection
+        run: |
+          npm run start --workspace apps/api &
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:4000/api/health > /dev/null && break
+            sleep 1
+          done
+          npm run demo

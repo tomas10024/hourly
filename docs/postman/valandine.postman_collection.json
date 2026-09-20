@@ -1,0 +1,1752 @@
+{
+  "info": {
+    "name": "Valandinė API",
+    "description": "Automatinė sąsajos demonstracija.\n\nScenarijus: projektas sukuriamas, paskelbiamas, gaunamas ir priimamas pasiūlymas, sudaroma užduotis, fiksuojamos valandos, suformuojama ataskaita (JSON ir CSV), sugeneruojama peržiūros nuoroda — ir viskas pabaigoje ištrinama. Todėl demonstraciją galima kartoti nepaleidžiant duomenų iš naujo.\n\nReikia veikiančio API (`npm run dev:api`). Paleidimas: `npm run demo`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Darbo eiga (visi 15 metodų)",
+      "item": [
+        {
+          "name": "GET /health — servisas veikia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Fixed timestamps for the whole run, rounded to whole minutes so the",
+                  "// durations the server computes are exact and can be asserted.",
+                  "const minute = 60 * 1000;",
+                  "const now = new Date(Math.floor(Date.now() / minute) * minute);",
+                  "const at = (minutesAgo) => new Date(now.getTime() - minutesAgo * minute).toISOString();",
+                  "",
+                  "pm.collectionVariables.set('timerStart', at(90));   // 90 min timer session",
+                  "pm.collectionVariables.set('timerEnd', at(0));",
+                  "pm.collectionVariables.set('manualStart', at(300)); // 120 min entered by hand",
+                  "pm.collectionVariables.set('manualEnd', at(180));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('atsakoma JSON formatu', () =>",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "pm.test('būsena „ok“', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /projects — sukurti projektą (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Demonstracinis projektas\",\n  \"description\": \"Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.\",\n  \"taskAuthoring\": \"SPECIALIST\",\n  \"budgetMin\": 500,\n  \"budgetMax\": 1500,\n  \"hourlyRate\": 40\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Location antraštė rodo naują resursą', () =>",
+                  "  pm.expect(pm.response.headers.get('Location')).to.include('/api/projects/'));",
+                  "const project = pm.response.json();",
+                  "pm.test('serveris nustatė būseną DRAFT', () => pm.expect(project.status).to.eql('DRAFT'));",
+                  "pm.test('užsakovu tapo veiksmą atlikęs naudotojas', () =>",
+                  "  pm.expect(project.clientId).to.eql(pm.environment.get('clientId')));",
+                  "pm.collectionVariables.set('projectId', project.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id} — perskaityti projektą (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('grąžinamas tas pats projektas', () =>",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('projectId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /projects/{id} — paskelbti (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('būsena pasikeitė į PUBLISHED', () => pm.expect(pm.response.json().status).to.eql('PUBLISHED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects?scope=marketplace — sąrašas (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?scope=marketplace&perPage=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "scope",
+                  "value": "marketplace"
+                },
+                {
+                  "key": "perPage",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json();",
+                  "pm.test('atsakymas puslapiuotas', () => {",
+                  "  pm.expect(page).to.have.property('items');",
+                  "  pm.expect(page).to.have.property('total');",
+                  "});",
+                  "pm.test('paskelbtas projektas matomas aikštelėje', () =>",
+                  "  pm.expect(page.items.map((p) => p.id)).to.include(pm.collectionVariables.get('projectId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /projects/{id}/proposals — pateikti pasiūlymą (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 1200,\n  \"hourlyRate\": 40,\n  \"estimatedDays\": 10,\n  \"message\": \"Galiu pradėti šią savaitę.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const proposal = pm.response.json();",
+                  "pm.test('pasiūlymas laukia sprendimo', () => pm.expect(proposal.status).to.eql('PENDING'));",
+                  "pm.collectionVariables.set('proposalId', proposal.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id}/proposals — užsakovas mato pasiūlymus (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('sąraše yra vienas pasiūlymas', () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /proposals/{id} — priimti pasiūlymą (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proposals/{{proposalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proposals",
+                "{{proposalId}}"
+              ]
+            },
+            "description": "Transakcija: pasiūlymas priimamas, konkurentai atmetami, projektas gauna vykdytoją.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACCEPTED\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('pasiūlymas priimtas', () => pm.expect(pm.response.json().status).to.eql('ACCEPTED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id} — projektas gavo vykdytoją (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const project = pm.response.json();",
+                  "pm.test('projektas vykdomas', () => pm.expect(project.status).to.eql('IN_PROGRESS'));",
+                  "pm.test('specialistas priskirtas', () =>",
+                  "  pm.expect(project.specialistId).to.eql(pm.environment.get('specialistId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /tasks — sukurti užduotį (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"title\": \"Demonstracinė užduotis\",\n  \"estimatedHours\": 8\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const task = pm.response.json();",
+                  "pm.test('pozicija paskirta automatiškai', () => pm.expect(task.position).to.eql(0));",
+                  "pm.collectionVariables.set('taskId', task.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id}/tasks — hierarchija (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks"
+              ]
+            },
+            "description": "Hierarchinis metodas: projektas → užduotys."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('projektas turi vieną užduotį', () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /tasks/{id} — perskaityti užduotį (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('užduotis pradedama nuo TODO', () => pm.expect(pm.response.json().status).to.eql('TODO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /tasks?projectId= — užduočių sąrašas (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('grąžinamas masyvas', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /tasks/{id} — keisti būseną (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('būsena pasikeitė', () => pm.expect(pm.response.json().status).to.eql('IN_PROGRESS'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /tasks/{id} — užsakovas patvirtina (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Patvirtinimas galimas tik tada, kai užduočių sąrašą sudarė specialistas.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('patvirtinimo laikas užsirašė', () => pm.expect(pm.response.json().approvedAt).to.not.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /sessions — paleisti laikmatį (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"startedAt\": \"{{timerStart}}\",\n  \"comment\": \"Vykdoma sesija\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const session = pm.response.json();",
+                  "pm.test('sesija dar vykdoma', () => pm.expect(session.endedAt).to.eql(null));",
+                  "pm.test('trukmė dar neskaičiuojama', () => pm.expect(session.durationMinutes).to.eql(null));",
+                  "pm.collectionVariables.set('sessionId', session.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /sessions — antra vykdoma sesija (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions"
+              ]
+            },
+            "description": "Dalinis unikalus indeksas neleidžia dviejų neužbaigtų sesijų.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"startedAt\": \"{{timerStart}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('klaidos kodas paaiškina priežastį', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('SESSION_ALREADY_RUNNING'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /sessions/{id} — sustabdyti laikmatį (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}"
+              ]
+            },
+            "description": "Trukmę ir įkainį nustato serveris — klientas jų atsiųsti negali.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endedAt\": \"{{timerEnd}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const session = pm.response.json();",
+                  "pm.test('serveris apskaičiavo 90 minučių', () => pm.expect(session.durationMinutes).to.eql(90));",
+                  "pm.test('įkainis paveldėtas iš projekto', () => pm.expect(session.appliedRate).to.eql(40));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /sessions — rankinis įvedimas (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"startedAt\": \"{{manualStart}}\",\n  \"endedAt\": \"{{manualEnd}}\",\n  \"comment\": \"Rankiniu būdu įvesta sesija\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const session = pm.response.json();",
+                  "pm.test('trukmė 120 minučių', () => pm.expect(session.durationMinutes).to.eql(120));",
+                  "pm.collectionVariables.set('manualSessionId', session.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /tasks/{id}/sessions — hierarchija (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}",
+                "sessions"
+              ]
+            },
+            "description": "Hierarchinis metodas: užduotis → darbo sesijos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('užduotis turi dvi sesijas', () => pm.expect(pm.response.json()).to.have.lengthOf(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /sessions/{id} — perskaityti sesiją (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{sessionId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('sesija užbaigta', () => pm.expect(pm.response.json().endedAt).to.not.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /sessions?taskId= — sesijų sąrašas (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions?taskId={{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "taskId",
+                  "value": "{{taskId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('grąžinamos abi sesijos', () => pm.expect(pm.response.json()).to.have.lengthOf(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id}/report — ataskaita JSON (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "report"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('turinio tipas application/json', () =>",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "const report = pm.response.json();",
+                  "pm.test('sumuota 210 minučių (90 + 120)', () => pm.expect(report.totalMinutes).to.eql(210));",
+                  "pm.test('suma 140 EUR (3,5 val. × 40)', () => pm.expect(report.totalAmount).to.eql(140));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id}/report — ataskaita CSV (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Accept",
+                "value": "text/csv"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "report"
+              ]
+            },
+            "description": "Tas pats resursas kitu turinio tipu — derybos vyksta per Accept antraštę."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('turinio tipas text/csv', () =>",
+                  "  pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'));",
+                  "pm.test('siūloma parsisiųsti failą', () =>",
+                  "  pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment'));",
+                  "pm.test('faile yra suvestinės eilutė', () => pm.expect(pm.response.text()).to.include('Total'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /projects/{id}/shares — peržiūros nuoroda (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/shares",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "shares"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expiresInDays\": 7\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const link = pm.response.json();",
+                  "pm.test('žetonas grąžinamas vienintelį kartą', () => pm.expect(link.token).to.be.a('string'));",
+                  "pm.test('žetono maiša neišduodama', () => pm.expect(link).to.not.have.property('tokenHash'));",
+                  "pm.collectionVariables.set('shareId', link.id);",
+                  "pm.collectionVariables.set('shareToken', link.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id}/shares — nuorodų sąrašas (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/shares",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "shares"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('sąraše žetonų nėra', () => pm.expect(pm.response.json()[0]).to.not.have.property('token'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /public/projects/{token} — vieša peržiūra (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/projects/{{shareToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "projects",
+                "{{shareToken}}"
+              ]
+            },
+            "description": "Prieiga be paskyros: gebėjimo žetonas suteikia teisę skaityti vieną projektą."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('paieškos sistemoms uždrausta indeksuoti', () =>",
+                  "  pm.expect(pm.response.headers.get('X-Robots-Tag')).to.include('noindex'));",
+                  "const view = pm.response.json();",
+                  "pm.test('rodoma ta pati suvestinė kaip ataskaitoje', () => {",
+                  "  pm.expect(view.totalMinutes).to.eql(210);",
+                  "  pm.expect(view.totalAmount).to.eql(140);",
+                  "});",
+                  "pm.test('biudžetas viešai nerodomas', () => pm.expect(view.project).to.not.have.property('budgetMin'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /shares/{id} — atšaukti nuorodą (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shares/{{shareId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shares",
+                "{{shareId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));",
+                  "pm.test('atsakymas be turinio', () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /public/projects/{token} — po atšaukimo (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/projects/{{shareToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "projects",
+                "{{shareToken}}"
+              ]
+            },
+            "description": "Nesama, pasibaigusi ir atšaukta nuoroda atsako vienodai."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Pilnas gyvavimo ciklas: 5 projektų, 5 užduočių ir 5 darbo sesijų metodai, hierarchiniai metodai, pasiūlymai, ataskaita ir peržiūros nuoroda."
+    },
+    {
+      "name": "2. Klaidų apdorojimas",
+      "item": [
+        {
+          "name": "404 — nesamas projektas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('klaidos formatas vienodas visiems metodams', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — netaisyklingas id adrese",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/ne-uuid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "ne-uuid"
+              ]
+            },
+            "description": "Adreso sintaksė bloga, todėl 400, o ne 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('kodas INVALID_PATH_PARAM', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_PATH_PARAM'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — netaisyklingas JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": "
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('kodas MALFORMED_JSON', () => pm.expect(pm.response.json().error.code).to.eql('MALFORMED_JSON'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — netinkamas užklausos parametras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?scope=nesamas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "scope",
+                  "value": "nesamas"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('kodas INVALID_QUERY', () => pm.expect(pm.response.json().error.code).to.eql('INVALID_QUERY'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "422 — netinkamas turinys",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "description": "JSON taisyklingas, bet neatitinka schemos — semantikos, o ne sintaksės klaida.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ab\",\n  \"description\": \"Per trumpas pavadinimas.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                  "const error = pm.response.json().error;",
+                  "pm.test('kodas VALIDATION_ERROR', () => pm.expect(error.code).to.eql('VALIDATION_ERROR'));",
+                  "pm.test('nurodomas konkretus laukas', () => pm.expect(error.details.properties).to.have.property('title'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "422 — nuoroda į nesamą įrašą",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "description": "Identifikatorius kūne, o ne adrese, todėl 422, o ne 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"00000000-0000-4000-8000-000000000000\",\n  \"title\": \"Užduotis be projekto\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                  "pm.test('kodas INVALID_REFERENCE', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_REFERENCE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "422 — neleistinas būsenos perėjimas",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "description": "Vykdomas projektas negali grįžti į juodraštį.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DRAFT\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                  "pm.test('kodas INVALID_STATUS_TRANSITION', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_STATUS_TRANSITION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 — svetimas naudotojas",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{outsiderId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bandymas perimti projektą\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('kodas FORBIDDEN', () => pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — trūkstama X-Actor-Id antraštė",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "description": "2 laboratoriniame ši vieta taps 401 atsakymu.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Projektas be naudotojo\",\n  \"description\": \"Turėtų būti atmestas dėl antraštės.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('kodas ACTOR_REQUIRED', () => pm.expect(pm.response.json().error.code).to.eql('ACTOR_REQUIRED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "406 — neprieinamas turinio tipas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "report"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('406 Not Acceptable', () => pm.response.to.have.status(406));",
+                  "pm.test('kodas NOT_ACCEPTABLE', () => pm.expect(pm.response.json().error.code).to.eql('NOT_ACCEPTABLE'));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Kodai 400, 403, 404, 406 ir 422 — kiekvienas su savo priežastimi."
+    },
+    {
+      "name": "3. Valymas",
+      "item": [
+        {
+          "name": "DELETE /sessions/{id} — šalinti sesiją (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{manualSessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{manualSessionId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /sessions/{id} — po šalinimo (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sessions/{{manualSessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sessions",
+                "{{manualSessionId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /tasks/{id} — šalinti užduotį (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{specialistId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tasks",
+                "{{taskId}}"
+              ]
+            },
+            "description": "Kaskadiškai pašalinama ir likusi darbo sesija."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /projects/{id} — šalinti projektą (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Actor-Id",
+                "value": "{{clientId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /projects/{id} — po šalinimo (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Ištrina viską, ką scenarijus sukūrė, ir patikrina 204 bei 404 atsakymus."
+    }
+  ],
+  "variable": [
+    {
+      "key": "projectId",
+      "value": ""
+    },
+    {
+      "key": "proposalId",
+      "value": ""
+    },
+    {
+      "key": "taskId",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "manualSessionId",
+      "value": ""
+    },
+    {
+      "key": "shareId",
+      "value": ""
+    },
+    {
+      "key": "shareToken",
+      "value": ""
+    },
+    {
+      "key": "timerStart",
+      "value": ""
+    },
+    {
+      "key": "timerEnd",
+      "value": ""
+    },
+    {
+      "key": "manualStart",
+      "value": ""
+    },
+    {
+      "key": "manualEnd",
+      "value": ""
+    }
+  ]
+}

@@ -19,6 +19,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "demo": "node --no-deprecation node_modules/newman/bin/newman.js run docs/postman/valandine.postman_collection.json -e docs/postman/valandine.local.postman_environment.json --reporters cli --reporter-cli-no-banner",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate --workspace apps/api",
@@ -26,6 +27,7 @@
     "db:seed": "npm run db:seed --workspace apps/api"
   },
   "devDependencies": {
+    "newman": "^6.2.2",
     "npm-run-all2": "^7.0.2"
   }
 }
