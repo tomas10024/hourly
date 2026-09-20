@@ -267,7 +267,7 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Work sessions'],
         summary: 'Work sessions of a given task',
-        security: bearer,
+        description: 'A missing task answers 404, which is not the same as an empty list.',
         requestParams: { path: pathId },
         responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
       },
@@ -278,46 +278,58 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Work sessions'],
         summary: 'List work sessions',
-        security: bearer,
-        requestParams: { query: z.object({ taskId: z.uuid().optional() }) },
+        description: 'The work log of the actor; `taskId` narrows it to one task.',
+        requestParams: {
+          query: z.object({ taskId: z.uuid().optional() }),
+          header: actorHeader,
+        },
         responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
       },
       post: {
         tags: ['Work sessions'],
         summary: 'Start a work session or enter one manually',
         description:
-          'Without `endedAt` the session is treated as running. ' +
-          'A user may have only one unfinished session at a time.',
-        security: bearer,
+          'Without `endedAt` the session is treated as running. A user may have only one ' +
+          'unfinished session at a time, so a second one answers 409. `durationMinutes` ' +
+          'and `appliedRate` are computed by the server and cannot be sent in.',
+        requestParams: { header: actorHeader },
         requestBody: {
           content: { 'application/json': { schema: CreateWorkSessionInput } },
         },
-        responses: { '201': json(WorkSession, 'Session created'), ...errors },
+        responses: {
+          '201': json(WorkSession, 'Session created'),
+          '409': json(ApiError, 'A work session is already running'),
+          ...errors,
+        },
       },
     },
     '/sessions/{id}': {
       get: {
         tags: ['Work sessions'],
         summary: 'Work session details',
-        security: bearer,
         requestParams: { path: pathId },
         responses: { '200': json(WorkSession, 'Session'), ...errors },
       },
       patch: {
         tags: ['Work sessions'],
         summary: 'Update or finish a work session',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'Sending `endedAt` stops the timer: the server then measures the duration and ' +
+          'locks in the rate that was in force. Only the author may change a session.',
+        requestParams: { path: pathId, header: actorHeader },
         requestBody: {
           content: { 'application/json': { schema: UpdateWorkSessionInput } },
         },
-        responses: { '200': json(WorkSession, 'Session updated'), ...errors },
+        responses: {
+          '200': json(WorkSession, 'Session updated'),
+          '409': json(ApiError, 'Reopening would leave two sessions running'),
+          ...errors,
+        },
       },
       delete: {
         tags: ['Work sessions'],
         summary: 'Delete a work session',
-        security: bearer,
-        requestParams: { path: pathId },
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
