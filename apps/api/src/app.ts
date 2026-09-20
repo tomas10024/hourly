@@ -8,6 +8,7 @@ import { openApiDocument } from './openapi.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { healthRouter } from './routes/health.js';
 import { projectsRouter } from './routes/projects.js';
+import { tasksRouter } from './routes/tasks.js';
 
 export function buildApp(): Express {
   const app = express();
@@ -32,6 +33,7 @@ export function buildApp(): Express {
 
   app.use('/api', healthRouter);
   app.use('/api', projectsRouter);
+  app.use('/api', tasksRouter);
 
   // The document is generated from the same Zod schemas used for request
   // validation, so the documentation cannot drift from the implementation.

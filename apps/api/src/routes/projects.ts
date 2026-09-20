@@ -106,7 +106,9 @@ projectsRouter.post('/projects', async (req, res) => {
       title: input.title,
       description: input.description,
       origin: input.origin,
-      taskAuthoring: input.taskAuthoring,
+      // Directly agreed work has no client account, so its task list can only
+      // ever be written by the specialist - the requested mode is ignored.
+      taskAuthoring: isDirect ? 'SPECIALIST' : input.taskAuthoring,
       status: isDirect ? 'IN_PROGRESS' : 'DRAFT',
       budgetMin: input.budgetMin ?? null,
       budgetMax: input.budgetMax ?? null,

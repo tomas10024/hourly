@@ -146,7 +146,14 @@ export type CreateTaskInput = z.infer<typeof CreateTaskInput>;
 
 export const UpdateTaskInput = CreateTaskInput.omit({ projectId: true })
   .partial()
-  .extend({ status: TaskStatus.optional() });
+  .extend({
+    status: TaskStatus.optional(),
+    /**
+     * Client approval of a task authored by the specialist.
+     * `true` stamps `approvedAt`, `false` clears it.
+     */
+    approved: z.boolean().optional(),
+  });
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInput>;
 
 /* -------------------------------------------------------------------------- */

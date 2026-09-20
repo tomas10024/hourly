@@ -199,7 +199,7 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Tasks'],
         summary: 'Tasks of a given project',
-        security: bearer,
+        description: 'A missing project answers 404, which is not the same as an empty list.',
         requestParams: { path: pathId },
         responses: { '200': json(z.array(Task), 'Task list'), ...errors },
       },
@@ -219,14 +219,21 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Tasks'],
         summary: 'List tasks',
-        security: bearer,
-        requestParams: { query: z.object({ projectId: z.uuid().optional() }) },
+        description:
+          'Tasks of the projects the actor takes part in; `projectId` narrows it to one.',
+        requestParams: {
+          query: z.object({ projectId: z.uuid().optional() }),
+          header: actorHeader,
+        },
         responses: { '200': json(z.array(Task), 'Task list'), ...errors },
       },
       post: {
         tags: ['Tasks'],
         summary: 'Create a task',
-        security: bearer,
+        description:
+          'Written by whoever the project named in `taskAuthoring`. Omitting `position` ' +
+          'appends the task to the end of the list. An unknown `projectId` answers 422.',
+        requestParams: { header: actorHeader },
         requestBody: { content: { 'application/json': { schema: CreateTaskInput } } },
         responses: { '201': json(Task, 'Task created'), ...errors },
       },
@@ -235,23 +242,24 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Tasks'],
         summary: 'Task details',
-        security: bearer,
         requestParams: { path: pathId },
         responses: { '200': json(Task, 'Task'), ...errors },
       },
       patch: {
         tags: ['Tasks'],
-        summary: 'Update a task or change its status',
-        security: bearer,
-        requestParams: { path: pathId },
+        summary: 'Update a task, move it, change its status or approve it',
+        description:
+          'Both parties of the project may edit and reorder tasks. `approved` is the ' +
+          'decision of the client and applies only when the specialist authored the list.',
+        requestParams: { path: pathId, header: actorHeader },
         requestBody: { content: { 'application/json': { schema: UpdateTaskInput } } },
         responses: { '200': json(Task, 'Task updated'), ...errors },
       },
       delete: {
         tags: ['Tasks'],
         summary: 'Delete a task',
-        security: bearer,
-        requestParams: { path: pathId },
+        description: 'Work sessions of the task are removed with it.',
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
