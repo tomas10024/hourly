@@ -14,12 +14,14 @@ import {
   ProjectListQuery,
   ProjectReport,
   Proposal,
+  ProposalStatus,
   PublicProjectView,
   RegisterInput,
   ShareLink,
   ShareLinkCreated,
   Task,
   UpdateProjectInput,
+  UpdateProposalInput,
   UpdateTaskInput,
   UpdateWorkSessionInput,
   WorkSession,
@@ -335,46 +337,67 @@ export const openApiDocument = createDocument({
     },
 
     /* --------------------------------- Proposals --------------------------------- */
+    '/proposals': {
+      get: {
+        tags: ['Proposals'],
+        summary: 'Offers submitted by the actor, with their statuses',
+        requestParams: {
+          query: z.object({ status: ProposalStatus.optional() }),
+          header: actorHeader,
+        },
+        responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
+      },
+    },
     '/projects/{id}/proposals': {
       get: {
         tags: ['Proposals'],
         summary: 'Proposals submitted for a project',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'Competing bids reveal prices, so the client sees every offer while a ' +
+          'specialist sees only their own.',
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
       },
       post: {
         tags: ['Proposals'],
         summary: 'Submit a proposal for a project',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'Only while the project is a PUBLISHED marketplace project. One offer per ' +
+          'specialist per project, so a repeated attempt answers 409.',
+        requestParams: { path: pathId, header: actorHeader },
         requestBody: { content: { 'application/json': { schema: CreateProposalInput } } },
-        responses: { '201': json(Proposal, 'Proposal submitted'), ...errors },
+        responses: {
+          '201': json(Proposal, 'Proposal submitted'),
+          '409': json(ApiError, 'This specialist has already bid on the project'),
+          ...errors,
+        },
       },
     },
     '/proposals/{id}': {
       patch: {
         tags: ['Proposals'],
         summary: 'Accept, reject or withdraw a proposal',
-        description: 'Only one proposal per project may be accepted.',
-        security: bearer,
-        requestParams: { path: pathId },
+        description:
+          'ACCEPTED and REJECTED are decisions of the client, WITHDRAWN belongs to the ' +
+          'specialist, and only a PENDING proposal can be changed. Accepting runs in one ' +
+          'transaction: the offer wins, the competing offers are rejected, and the project ' +
+          'moves to IN_PROGRESS with the specialist assigned. Only one proposal per project ' +
+          'may be accepted.',
+        requestParams: { path: pathId, header: actorHeader },
         requestBody: {
-          content: {
-            'application/json': {
-              schema: z.object({
-                status: z.enum(['ACCEPTED', 'REJECTED', 'WITHDRAWN']),
-              }),
-            },
-          },
+          content: { 'application/json': { schema: UpdateProposalInput } },
         },
-        responses: { '200': json(Proposal, 'Proposal updated'), ...errors },
+        responses: {
+          '200': json(Proposal, 'Proposal updated'),
+          '409': json(ApiError, 'Another proposal of this project is already accepted'),
+          ...errors,
+        },
       },
       delete: {
         tags: ['Proposals'],
         summary: 'Delete your own proposal',
-        security: bearer,
-        requestParams: { path: pathId },
+        description: 'An accepted proposal is kept as the record of how the work was awarded.',
+        requestParams: { path: pathId, header: actorHeader },
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },

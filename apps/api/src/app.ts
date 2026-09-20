@@ -8,6 +8,7 @@ import { openApiDocument } from './openapi.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { healthRouter } from './routes/health.js';
 import { projectsRouter } from './routes/projects.js';
+import { proposalsRouter } from './routes/proposals.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { tasksRouter } from './routes/tasks.js';
 
@@ -34,6 +35,7 @@ export function buildApp(): Express {
 
   app.use('/api', healthRouter);
   app.use('/api', projectsRouter);
+  app.use('/api', proposalsRouter);
   app.use('/api', tasksRouter);
   app.use('/api', sessionsRouter);
 
