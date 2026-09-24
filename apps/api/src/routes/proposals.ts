@@ -4,7 +4,7 @@ import {
   CreateProposalInput,
   ProposalStatus,
   UpdateProposalInput,
-} from '@valandine/shared';
+} from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';

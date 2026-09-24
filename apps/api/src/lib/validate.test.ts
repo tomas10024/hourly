@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
 import { z } from 'zod';
-import { ProjectListQuery } from '@valandine/shared';
+import { ProjectListQuery } from '@hourly/shared';
 import { HttpError } from '../middleware/error.js';
 import { IdParam, parseBody, parseParams, parseQuery } from './validate.js';
 

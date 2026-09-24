@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Valandinė API",
+    "name": "Hourly API",
     "description": "Automatinė sąsajos demonstracija.\n\nScenarijus: projektas sukuriamas, paskelbiamas, gaunamas ir priimamas pasiūlymas, sudaroma užduotis, fiksuojamos valandos, suformuojama ataskaita (JSON ir CSV), sugeneruojama peržiūros nuoroda — ir viskas pabaigoje ištrinama. Todėl demonstraciją galima kartoti nepaleidžiant duomenų iš naujo.\n\nReikia veikiančio API (`npm run dev:api`). Paleidimas: `npm run demo`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

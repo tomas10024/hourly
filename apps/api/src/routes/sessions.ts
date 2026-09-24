@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CreateWorkSessionInput, UpdateWorkSessionInput } from '@valandine/shared';
+import { CreateWorkSessionInput, UpdateWorkSessionInput } from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';

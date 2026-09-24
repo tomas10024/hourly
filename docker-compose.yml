@@ -1,19 +1,19 @@
 services:
   db:
     image: postgres:17-alpine
-    container_name: valandine-db
+    container_name: hourly-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: valandine
-      POSTGRES_PASSWORD: valandine
-      POSTGRES_DB: valandine
+      POSTGRES_USER: hourly
+      POSTGRES_PASSWORD: hourly
+      POSTGRES_DB: hourly
     ports:
       # Host port 5433: 5432 is often taken by another local postgres.
       - '5433:5432'
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U valandine -d valandine']
+      test: ['CMD-SHELL', 'pg_isready -U hourly -d hourly']
       interval: 5s
       timeout: 5s
       retries: 10

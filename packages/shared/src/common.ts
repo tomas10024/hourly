@@ -3,6 +3,16 @@ import { z } from 'zod';
 export const Id = z.uuid();
 export type Id = z.infer<typeof Id>;
 
+/*
+ * The examples below keep Swagger UI from generating a random string that
+ * matches the validation regex - it prefers an explicit example.
+ */
+
+export const Email = z.email().meta({ example: 'specialistas@hourly.lt' });
+
+/** An ISO 8601 timestamp in UTC. */
+export const DateTime = z.iso.datetime().meta({ example: '2026-09-24T09:00:00.000Z' });
+
 /** A monetary amount in euros, kept to two decimal places. */
 export const Money = z.number().nonnegative().multipleOf(0.01);
 

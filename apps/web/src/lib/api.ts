@@ -1,4 +1,4 @@
-import type { ApiError } from "@valandine/shared";
+import type { ApiError } from "@hourly/shared";
 
 /** An API failure carrying the HTTP status and the server error code. */
 export class ApiRequestError extends Error {
@@ -17,7 +17,7 @@ type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 /**
  * Requests are sent to the same-origin `/api/...` route, which forwards them
- * to the Valandinė API (see `src/app/api/[...path]/route.ts`).
+ * to the Hourly API (see `src/app/api/[...path]/route.ts`).
  */
 export async function apiFetch<T>(
   path: string,

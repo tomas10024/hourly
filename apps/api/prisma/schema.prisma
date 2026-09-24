@@ -1,4 +1,4 @@
-// Valandinė - data schema.
+// Hourly - data schema.
 // Hierarchy: Project -> Task -> Work session.
 // Alongside the hierarchy: Proposal (drives the marketplace project lifecycle)
 // and ShareLink (a capability token for a client without an account).

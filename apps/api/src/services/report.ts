@@ -1,4 +1,4 @@
-import type { ProjectReport, ReportTaskLine, TaskStatus } from '@valandine/shared';
+import type { ProjectReport, ReportTaskLine, TaskStatus } from '@hourly/shared';
 import { csvNumber } from '../lib/csv.js';
 
 /**

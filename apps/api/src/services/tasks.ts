@@ -1,4 +1,4 @@
-import type { ProjectStatus, TaskAuthoring } from '@valandine/shared';
+import type { ProjectStatus, TaskAuthoring } from '@hourly/shared';
 import { HttpError } from '../middleware/error.js';
 
 /**

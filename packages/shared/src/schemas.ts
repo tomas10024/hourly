@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Id, Money, PageQuery } from './common.js';
+import { DateTime, Email, Id, Money, PageQuery } from './common.js';
 import {
   ProjectOrigin,
   ProjectScope,
@@ -19,27 +19,27 @@ export const PublicUser = z.object({
   displayName: z.string(),
   role: Role,
   bio: z.string().nullable(),
-  createdAt: z.iso.datetime(),
+  createdAt: DateTime,
 });
 export type PublicUser = z.infer<typeof PublicUser>;
 
 export const CurrentUser = PublicUser.extend({
-  email: z.email(),
+  email: Email,
   isBlocked: z.boolean(),
 });
 export type CurrentUser = z.infer<typeof CurrentUser>;
 
 export const RegisterInput = z.object({
-  email: z.email(),
-  password: z.string().min(8).max(128),
-  displayName: z.string().min(2).max(80),
+  email: Email.meta({ example: 'naujas@hourly.lt' }),
+  password: z.string().min(8).max(128).meta({ example: 'slaptazodis123' }),
+  displayName: z.string().min(2).max(80).meta({ example: 'Jonas Jonaitis' }),
   role: z.enum(['CLIENT', 'SPECIALIST']),
 });
 export type RegisterInput = z.infer<typeof RegisterInput>;
 
 export const LoginInput = z.object({
-  email: z.email(),
-  password: z.string().min(1),
+  email: Email,
+  password: z.string().min(1).meta({ example: 'slaptazodis123' }),
 });
 export type LoginInput = z.infer<typeof LoginInput>;
 
@@ -88,13 +88,13 @@ export const Project = z.object({
   budgetMin: Money.nullable(),
   budgetMax: Money.nullable(),
   hourlyRate: Money.nullable(),
-  deadline: z.iso.datetime().nullable(),
+  deadline: DateTime.nullable(),
   /** Name of a directly agreed client who has no account on the platform. */
   externalClientName: z.string().nullable(),
   clientId: Id.nullable(),
   specialistId: Id.nullable(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
+  createdAt: DateTime,
+  updatedAt: DateTime,
 });
 export type Project = z.infer<typeof Project>;
 
@@ -107,7 +107,7 @@ export const CreateProjectInput = z
     budgetMin: Money.nullish(),
     budgetMax: Money.nullish(),
     hourlyRate: Money.nullish(),
-    deadline: z.iso.datetime().nullish(),
+    deadline: DateTime.nullish(),
     externalClientName: z.string().min(2).max(150).nullish(),
   })
   .refine(
@@ -127,7 +127,7 @@ export const UpdateProjectInput = z.object({
   budgetMin: Money.nullish(),
   budgetMax: Money.nullish(),
   hourlyRate: Money.nullish(),
-  deadline: z.iso.datetime().nullish(),
+  deadline: DateTime.nullish(),
 });
 export type UpdateProjectInput = z.infer<typeof UpdateProjectInput>;
 
@@ -152,9 +152,9 @@ export const Task = z.object({
   /** Overrides the project rate; null means it is inherited from the project. */
   hourlyRate: Money.nullable(),
   estimatedHours: z.number().nonnegative().nullable(),
-  approvedAt: z.iso.datetime().nullable(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
+  approvedAt: DateTime.nullable(),
+  createdAt: DateTime,
+  updatedAt: DateTime,
 });
 export type Task = z.infer<typeof Task>;
 
@@ -188,14 +188,14 @@ export const WorkSession = z.object({
   id: Id,
   taskId: Id,
   specialistId: Id,
-  startedAt: z.iso.datetime(),
+  startedAt: DateTime,
   /** null means the session is still running (only one is allowed at a time). */
-  endedAt: z.iso.datetime().nullable(),
+  endedAt: DateTime.nullable(),
   durationMinutes: z.number().int().nonnegative().nullable(),
   comment: z.string().nullable(),
   /** The rate in force during the session (task rate or project rate). */
   appliedRate: Money.nullable(),
-  createdAt: z.iso.datetime(),
+  createdAt: DateTime,
 });
 export type WorkSession = z.infer<typeof WorkSession>;
 
@@ -203,8 +203,8 @@ export type WorkSession = z.infer<typeof WorkSession>;
 export const CreateWorkSessionInput = z
   .object({
     taskId: Id,
-    startedAt: z.iso.datetime(),
-    endedAt: z.iso.datetime().nullish(),
+    startedAt: DateTime,
+    endedAt: DateTime.nullish(),
     comment: z.string().max(2000).nullish(),
   })
   .refine((v) => v.endedAt == null || new Date(v.endedAt) > new Date(v.startedAt), {
@@ -214,8 +214,8 @@ export const CreateWorkSessionInput = z
 export type CreateWorkSessionInput = z.infer<typeof CreateWorkSessionInput>;
 
 export const UpdateWorkSessionInput = z.object({
-  startedAt: z.iso.datetime().optional(),
-  endedAt: z.iso.datetime().nullish(),
+  startedAt: DateTime.optional(),
+  endedAt: DateTime.nullish(),
   comment: z.string().max(2000).nullish(),
 });
 export type UpdateWorkSessionInput = z.infer<typeof UpdateWorkSessionInput>;
@@ -233,7 +233,7 @@ export const Proposal = z.object({
   estimatedDays: z.number().int().positive().nullable(),
   message: z.string().nullable(),
   status: ProposalStatus,
-  createdAt: z.iso.datetime(),
+  createdAt: DateTime,
 });
 export type Proposal = z.infer<typeof Proposal>;
 
@@ -262,10 +262,10 @@ export type UpdateProposalInput = z.infer<typeof UpdateProposalInput>;
 export const ShareLink = z.object({
   id: Id,
   projectId: Id,
-  expiresAt: z.iso.datetime(),
-  revokedAt: z.iso.datetime().nullable(),
-  lastViewedAt: z.iso.datetime().nullable(),
-  createdAt: z.iso.datetime(),
+  expiresAt: DateTime,
+  revokedAt: DateTime.nullable(),
+  lastViewedAt: DateTime.nullable(),
+  createdAt: DateTime,
 });
 export type ShareLink = z.infer<typeof ShareLink>;
 
@@ -297,7 +297,7 @@ export type ReportTaskLine = z.infer<typeof ReportTaskLine>;
 
 export const ProjectReport = z.object({
   project: Project.pick({ id: true, title: true, status: true, hourlyRate: true }),
-  generatedAt: z.iso.datetime(),
+  generatedAt: DateTime,
   lines: z.array(ReportTaskLine),
   totalMinutes: z.number().int().nonnegative(),
   totalAmount: Money,
@@ -316,6 +316,6 @@ export const PublicProjectView = z.object({
   tasks: z.array(ReportTaskLine),
   totalMinutes: z.number().int().nonnegative(),
   totalAmount: Money,
-  expiresAt: z.iso.datetime(),
+  expiresAt: DateTime,
 });
 export type PublicProjectView = z.infer<typeof PublicProjectView>;

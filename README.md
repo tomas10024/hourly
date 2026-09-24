@@ -1,4 +1,4 @@
-# Valandinė
+# Hourly
 
 **T120B165 Saityno taikomųjų programų projektavimas** — projekto ataskaita
 
@@ -250,9 +250,9 @@ Sistemos sudedamosios dalys:
 
 Naudotojas su sistema sąveikauja per interneto naršyklę. Internetinė aplikacija yra talpinama Azure Static Web Apps paslaugoje ir pasiekiama saugiu HTTPS protokolu.
 
-Šios sistemos veikimui (pvz., duomenų manipuliavimui su duomenų baze) yra reikalingas „Valandinė“ API, kuris diegiamas atskiroje Azure App Service paslaugoje. Naršyklė į API tiesiogiai nesikreipia – užklausas persiunčia internetinė aplikacija, kuri veikia kaip tarpinis sluoksnis tarp naudotojo ir sąsajos. Toks sprendimas pasirinktas dėl saugumo: atnaujinimo žetonas saugomas `httpOnly` slapuke toje pačioje kilmėje (angl. origin), todėl jis nepasiekiamas kliento pusės scenarijams. Duomenų mainai tarp internetinės aplikacijos ir API vyksta JSON formatu, laikantis REST principų.
+Šios sistemos veikimui (pvz., duomenų manipuliavimui su duomenų baze) yra reikalingas „Hourly“ API, kuris diegiamas atskiroje Azure App Service paslaugoje. Naršyklė į API tiesiogiai nesikreipia – užklausas persiunčia internetinė aplikacija, kuri veikia kaip tarpinis sluoksnis tarp naudotojo ir sąsajos. Toks sprendimas pasirinktas dėl saugumo: atnaujinimo žetonas saugomas `httpOnly` slapuke toje pačioje kilmėje (angl. origin), todėl jis nepasiekiamas kliento pusės scenarijams. Duomenų mainai tarp internetinės aplikacijos ir API vyksta JSON formatu, laikantis REST principų.
 
-Pats „Valandinė“ API vykdo duomenų mainus su duomenų baze – tam naudojama ORM sąsaja (Prisma). Duomenų bazė diegiama Azure Database for PostgreSQL Flexible Server paslaugoje, prieiga prie jos vykdoma šifruotu TLS kanalu ir apribota užkardos taisyklėmis, leidžiančiomis prisijungti tik iš API paslaugos.
+Pats „Hourly“ API vykdo duomenų mainus su duomenų baze – tam naudojama ORM sąsaja (Prisma). Duomenų bazė diegiama Azure Database for PostgreSQL Flexible Server paslaugoje, prieiga prie jos vykdoma šifruotu TLS kanalu ir apribota užkardos taisyklėmis, leidžiančiomis prisijungti tik iš API paslaugos.
 
 ---
 
@@ -346,11 +346,11 @@ Po `npm run db:seed` sukuriamos aštuonios paskyros, visos su slaptažodžiu
 
 | Paskyra | Rolė | Pastaba |
 |---|---|---|
-| `admin@valandine.lt` | Administratorius | |
-| `uzsakovas@valandine.lt` | Užsakovas | Turi vykdomą ir užbaigtą projektą |
+| `admin@hourly.lt` | Administratorius | |
+| `uzsakovas@hourly.lt` | Užsakovas | Turi vykdomą ir užbaigtą projektą |
 | `rasa@zalialanka.lt` | Užsakovas | Turi paskelbtą projektą su pasiūlymais |
 | `mindaugas@kavinepupa.lt` | Užsakovas | Turi juodraštinį projektą |
-| `specialistas@valandine.lt` | Specialistas | Pagrindinė demonstracijos paskyra |
+| `specialistas@hourly.lt` | Specialistas | Pagrindinė demonstracijos paskyra |
 | `gabija@dizainas.lt` | Specialistas | Užbaigė projektą su ataskaita |
 | `tomas@frontend.lt` | Specialistas | Turi atmestą ir atsiimtą pasiūlymą |
 | `ieva@duomenys.lt` | Specialistas | **Turi vykdomą darbo sesiją** |
@@ -449,8 +449,8 @@ npm run demo      # kitame
 ```
 
 Kolekciją taip pat galima importuoti į Postman
-([kolekcija](docs/postman/valandine.postman_collection.json),
-[aplinka](docs/postman/valandine.local.postman_environment.json)) ir paleisti
+([kolekcija](docs/postman/hourly.postman_collection.json),
+[aplinka](docs/postman/hourly.local.postman_environment.json)) ir paleisti
 mygtuku „Run collection“.
 
 Kolekciją sudaro trys dalys:

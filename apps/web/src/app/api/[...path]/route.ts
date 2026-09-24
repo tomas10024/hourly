@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 
 /**
- * Proxy between the browser and the Valandinė API.
+ * Proxy between the browser and the Hourly API.
  *
  * The browser never calls the API directly: requests travel through this
  * route, which lets the refresh token stay in a same-origin `httpOnly`
