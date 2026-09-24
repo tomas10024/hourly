@@ -67,6 +67,31 @@ export const UpdateMeInput = z
   );
 export type UpdateMeInput = z.infer<typeof UpdateMeInput>;
 
+/**
+ * The administrator's user list (`GET /users`).
+ *
+ * `isBlocked` arrives as text in the query string; only the literal words are
+ * accepted, so `?isBlocked=0` is a 400 rather than a silent `true`.
+ */
+export const UserListQuery = PageQuery.extend({
+  q: z.string().max(150).optional(),
+  role: Role.optional(),
+  isBlocked: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .optional(),
+});
+export type UserListQuery = z.infer<typeof UserListQuery>;
+
+/**
+ * What the administrator may change about someone else's account. Profile
+ * fields stay the owner's; the role is not editable by anyone.
+ */
+export const AdminUpdateUserInput = z.object({
+  isBlocked: z.boolean(),
+});
+export type AdminUpdateUserInput = z.infer<typeof AdminUpdateUserInput>;
+
 /** The refresh token travels in an `httpOnly` cookie, so it is not here. */
 export const AuthResponse = z.object({
   accessToken: z.string(),

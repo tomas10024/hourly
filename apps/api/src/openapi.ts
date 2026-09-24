@@ -1,6 +1,7 @@
 import { createDocument } from 'zod-openapi';
 import { z } from 'zod';
 import {
+  AdminUpdateUserInput,
   ApiError,
   AuthResponse,
   CreateProjectInput,
@@ -16,6 +17,7 @@ import {
   Proposal,
   ProposalStatus,
   PublicProjectView,
+  PublicUser,
   RegisterInput,
   ShareLink,
   ShareLinkCreated,
@@ -25,6 +27,7 @@ import {
   UpdateProposalInput,
   UpdateTaskInput,
   UpdateWorkSessionInput,
+  UserListQuery,
   WorkSession,
   paginated,
 } from '@hourly/shared';
@@ -82,6 +85,7 @@ export const openApiDocument = createDocument({
     { name: 'Work sessions' },
     { name: 'Proposals' },
     { name: 'Share links' },
+    { name: 'Users' },
     { name: 'Operations' },
   ],
   components: {
@@ -557,6 +561,78 @@ export const openApiDocument = createDocument({
           '200': json(PublicProjectView, 'Project progress'),
           '400': json(ApiError, 'Malformed token in the address'),
           '404': json(ApiError, 'Link is invalid, revoked or not found'),
+        },
+      },
+    },
+
+    /* ----------------------------------- Users ----------------------------------- */
+    '/users': {
+      get: {
+        tags: ['Users'],
+        summary: 'All accounts (administrator)',
+        description:
+          'Includes the e-mail and the blocked flag. `q` searches the name and the e-mail; ' +
+          '`role` and `isBlocked` narrow the list.',
+        requestParams: { query: UserListQuery },
+        security: bearer,
+        responses: {
+          '200': json(paginated(CurrentUser), 'User list'),
+          '400': errors['400'],
+          '401': errors['401'],
+          '403': json(ApiError, 'Not an administrator'),
+        },
+      },
+    },
+    '/users/{id}': {
+      get: {
+        tags: ['Users'],
+        summary: "Another user's public profile",
+        description: 'Name, role, bio and registration date - no e-mail.',
+        requestParams: { path: pathId },
+        security: bearer,
+        responses: {
+          '200': json(PublicUser, 'Public profile'),
+          '400': errors['400'],
+          '401': errors['401'],
+          '404': errors['404'],
+        },
+      },
+      patch: {
+        tags: ['Users'],
+        summary: 'Block or unblock an account (administrator)',
+        description:
+          'Blocking revokes every refresh token of the account and rejects its access ' +
+          'tokens from the next request on (ACCOUNT_BLOCKED). An administrator cannot ' +
+          'block their own account.',
+        requestParams: { path: pathId },
+        security: bearer,
+        requestBody: { content: { 'application/json': { schema: AdminUpdateUserInput } } },
+        responses: {
+          '200': json(CurrentUser, 'Updated account'),
+          '400': errors['400'],
+          '401': errors['401'],
+          '403': json(ApiError, 'Not an administrator'),
+          '404': errors['404'],
+          '422': json(ApiError, 'Invalid content, or the own account (CANNOT_MODIFY_SELF)'),
+        },
+      },
+      delete: {
+        tags: ['Users'],
+        summary: 'Delete an account without work history (administrator)',
+        description:
+          'An account that takes part in projects or has logged work answers 409 ' +
+          '(USER_HAS_WORK_HISTORY) - deleting it would erase records of the other party, ' +
+          'so it should be blocked instead.',
+        requestParams: { path: pathId },
+        security: bearer,
+        responses: {
+          '204': { description: 'Deleted' },
+          '400': errors['400'],
+          '401': errors['401'],
+          '403': json(ApiError, 'Not an administrator'),
+          '404': errors['404'],
+          '409': json(ApiError, 'The account has work history (USER_HAS_WORK_HISTORY)'),
+          '422': json(ApiError, 'The own account (CANNOT_MODIFY_SELF)'),
         },
       },
     },

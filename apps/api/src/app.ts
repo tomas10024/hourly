@@ -14,6 +14,7 @@ import { proposalsRouter } from './routes/proposals.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { sharesRouter } from './routes/shares.js';
 import { tasksRouter } from './routes/tasks.js';
+import { usersRouter } from './routes/users.js';
 
 export function buildApp(): Express {
   const app = express();
@@ -47,6 +48,7 @@ export function buildApp(): Express {
   app.use('/api', tasksRouter);
   app.use('/api', sessionsRouter);
   app.use('/api', sharesRouter);
+  app.use('/api', usersRouter);
 
   // The document is generated from the same Zod schemas used for request
   // validation, so the documentation cannot drift from the implementation.
