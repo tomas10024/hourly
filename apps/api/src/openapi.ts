@@ -26,7 +26,7 @@ import {
   UpdateWorkSessionInput,
   WorkSession,
   paginated,
-} from '@valandine/shared';
+} from '@hourly/shared';
 import { env } from './env.js';
 
 const bearer = [{ bearerAuth: [] }];
@@ -68,12 +68,12 @@ const optionalActorHeader = z.object({
  * incoming requests, so the documentation cannot drift from the implementation.
  *
  * When adding an endpoint, describe it here; its schemas belong in
- * `@valandine/shared`.
+ * `@hourly/shared`.
  */
 export const openApiDocument = createDocument({
   openapi: '3.1.0',
   info: {
-    title: 'Valandinė API',
+    title: 'Hourly API',
     version: '0.1.0',
     description:
       'A marketplace for freelance work with transparent time tracking. ' +

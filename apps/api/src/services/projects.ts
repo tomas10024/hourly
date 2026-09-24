@@ -1,4 +1,4 @@
-import type { ProjectStatus } from '@valandine/shared';
+import type { ProjectStatus } from '@hourly/shared';
 import { HttpError } from '../middleware/error.js';
 
 /**

@@ -158,14 +158,14 @@ async function main() {
     data: [
       {
         id: user.admin,
-        email: 'admin@valandine.lt',
+        email: 'admin@hourly.lt',
         passwordHash,
         displayName: 'Administratorius',
         role: 'ADMIN',
       },
       {
         id: user.client,
-        email: 'uzsakovas@valandine.lt',
+        email: 'uzsakovas@hourly.lt',
         passwordHash,
         displayName: 'UAB „Pavyzdys“',
         role: 'CLIENT',
@@ -173,7 +173,7 @@ async function main() {
       },
       {
         id: user.specialist,
-        email: 'specialistas@valandine.lt',
+        email: 'specialistas@hourly.lt',
         passwordHash,
         displayName: 'Laisvai samdomas programuotojas',
         role: 'SPECIALIST',
@@ -601,9 +601,9 @@ async function main() {
     generatedAt: new Date().toISOString(),
     password: DEMO_PASSWORD,
     users: {
-      admin: { id: user.admin, email: 'admin@valandine.lt' },
-      client: { id: user.client, email: 'uzsakovas@valandine.lt' },
-      specialist: { id: user.specialist, email: 'specialistas@valandine.lt' },
+      admin: { id: user.admin, email: 'admin@hourly.lt' },
+      client: { id: user.client, email: 'uzsakovas@hourly.lt' },
+      specialist: { id: user.specialist, email: 'specialistas@hourly.lt' },
       otherClient: { id: user.clientGreen, email: 'rasa@zalialanka.lt' },
       otherSpecialist: { id: user.frontend, email: 'tomas@frontend.lt' },
       busySpecialist: { id: user.dataEngineer, email: 'ieva@duomenys.lt' },

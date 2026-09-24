@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DATABASE_URL: postgresql://valandine:valandine@localhost:5432/valandine_test
+  DATABASE_URL: postgresql://hourly:hourly@localhost:5432/hourly_test
   JWT_ACCESS_SECRET: ci-access-secret-0123456789
   JWT_REFRESH_SECRET: ci-refresh-secret-0123456789
   WEB_ORIGIN: http://localhost:3000
@@ -23,13 +23,13 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: valandine
-          POSTGRES_PASSWORD: valandine
-          POSTGRES_DB: valandine_test
+          POSTGRES_USER: hourly
+          POSTGRES_PASSWORD: hourly
+          POSTGRES_DB: hourly_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U valandine -d valandine_test"
+          --health-cmd "pg_isready -U hourly -d hourly_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10

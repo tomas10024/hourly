@@ -23,7 +23,7 @@ export default function Home() {
           T120B165 · Saityno taikomųjų programų projektavimas
         </p>
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          Valandinė
+          Hourly
         </h1>
         <p className="max-w-2xl text-lg opacity-80">
           Darbų užsakovai ir laisvai samdomi specialistai vienoje aplinkoje –

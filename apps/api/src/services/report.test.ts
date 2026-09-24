@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ProjectReport, PublicProjectView } from '@valandine/shared';
+import { ProjectReport, PublicProjectView } from '@hourly/shared';
 import { toCsv } from '../lib/csv.js';
 import { reportToCsvRows, summarizeTasks } from './report.js';
 

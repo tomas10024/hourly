@@ -199,7 +199,7 @@ Seed turi būti **idempotentiškas** (išvalymas pradžioje `prisma.$transaction
 
 ## 5. Etapas E – demonstracija (Postman + Newman)
 
-`docs/postman/valandine.postman_collection.json` + `valandine.local.postman_environment.json`.
+`docs/postman/hourly.postman_collection.json` + `hourly.local.postman_environment.json`.
 
 Kolekcijos struktūra – vienas nuoseklus scenarijus, kintamieji perduodami tarp užklausų (`pm.collectionVariables.set`):
 
@@ -238,7 +238,7 @@ Kolekcijos struktūra – vienas nuoseklus scenarijus, kintamieji perduodami tar
 Kiekviena užklausa turi `pm.test` bent: statuso kodą, `Content-Type`, esminį lauką. Pasiūlymų srautas (`POST /projects/{id}/proposals`, `PATCH`, `DELETE`, `GET`) – atskirame aplanke, kad pagrindinis scenarijus liktų trumpas.
 
 ```
-npm run demo   -> newman run docs/postman/valandine.postman_collection.json -e ...
+npm run demo   -> newman run docs/postman/hourly.postman_collection.json -e ...
 ```
 
 `newman` – `devDependency` šakninėje `package.json`. Paleidimas turi trukti iki ~15 s. Tą pačią komandą pridėti į CI po migracijų ir seed (tuomet kolekcija tampa ir integraciniu testu).

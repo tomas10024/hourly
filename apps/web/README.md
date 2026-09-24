@@ -1,4 +1,4 @@
-# Valandinė – internetinė aplikacija
+# Hourly – internetinė aplikacija
 
 Next.js dalis. Paleidimo instrukcijos ir projekto aprašymas – saugyklos šaknyje esančiame [README.md](../../README.md).
 

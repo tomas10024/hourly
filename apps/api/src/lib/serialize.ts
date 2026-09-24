@@ -14,13 +14,13 @@ import type {
   ShareLink,
   Task,
   WorkSession,
-} from '@valandine/shared';
+} from '@hourly/shared';
 
 /**
  * Translation of database rows into response payloads.
  *
  * Prisma returns `Decimal` objects for money and `Date` objects for time,
- * while the `@valandine/shared` schemas - the same ones the OpenAPI document
+ * while the `@hourly/shared` schemas - the same ones the OpenAPI document
  * is generated from - expect `number` and an ISO 8601 string. Without this
  * layer the responses would not match their own documentation.
  *

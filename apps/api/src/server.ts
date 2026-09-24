@@ -4,7 +4,7 @@ import { prisma } from './lib/prisma.js';
 
 const app = buildApp();
 const server = app.listen(env.PORT, () => {
-  console.log(`Valandinė API listening on http://localhost:${env.PORT}/api`);
+  console.log(`Hourly API listening on http://localhost:${env.PORT}/api`);
   console.log(`API documentation: http://localhost:${env.PORT}/api/docs`);
 });
 

@@ -1,5 +1,5 @@
 {
-  "name": "@valandine/api",
+  "name": "@hourly/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -25,7 +25,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
-    "@valandine/shared": "*",
+    "@hourly/shared": "*",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

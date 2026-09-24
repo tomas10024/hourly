@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Valandinė",
+  title: "Hourly",
   description:
     "Darbų aikštelė ir skaidri atliktų darbų laiko apskaita užsakovams bei specialistams.",
 };

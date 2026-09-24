@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Project, ShareLink, Task, WorkSession, CurrentUser } from '@valandine/shared';
+import { Project, ShareLink, Task, WorkSession, CurrentUser } from '@hourly/shared';
 import { Prisma } from '../generated/prisma/client.js';
 import type {
   Project as ProjectRow,
@@ -128,7 +128,7 @@ describe('secrets never reach the response', () => {
   it('serializes a user without the password hash', () => {
     const row: UserRow = {
       id: '55555555-5555-4555-8555-555555555555',
-      email: 'specialistas@valandine.lt',
+      email: 'specialistas@hourly.lt',
       passwordHash: 'bcrypt-secret-value',
       displayName: 'Specialistas',
       role: 'SPECIALIST',

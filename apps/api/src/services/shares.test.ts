@@ -71,6 +71,6 @@ describe('shareUrl', () => {
   });
 
   it('does not double the slash when the origin ends with one', () => {
-    expect(shareUrl('https://valandine.lt/', 'abc')).toBe('https://valandine.lt/p/abc');
+    expect(shareUrl('https://hourly.lt/', 'abc')).toBe('https://hourly.lt/p/abc');
   });
 });

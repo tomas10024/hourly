@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CreateShareLinkInput } from '@valandine/shared';
+import { CreateShareLinkInput } from '@hourly/shared';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
