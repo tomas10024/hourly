@@ -28,7 +28,7 @@ kolekcija ir dokumentacija.
 | E | Postman kolekcija, `npm run demo`, CI integracija | atlikta |
 | F | README: metodų lentelė, klaidų politika, demonstracija, `docs/openapi.json` | atlikta |
 
-Toliau – 2 laboratorinis darbas (žr. 9 skyrių) ir 3 laboratorinis (10 skyrius).
+Toliau – 2 laboratorinis darbas (atliktas, žr. [planas-2.md](planas-2.md)) ir 3 laboratorinis (10 skyrius).
 
 Žemiau paliekamas pradinis planas – jis rodo, kaip darbas buvo suskaidytas ir
 kodėl priimti vienokie ar kitokie sprendimai.

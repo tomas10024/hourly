@@ -28,7 +28,49 @@ Sprendimai, priimti prieš pradedant:
 > reikalavimais: žetonais grįsta autentifikacija (JWT/OAuth2), bent 3 rolės,
 > rolė žetone, atnaujinimo žetonų strategija, metodų apsauga pagal roles ir
 > savininkystę, 401/403 atsakymai, demonstracija. Jei oficialus sąrašas kitoks –
-> pataisome 10 skyriaus lentelę prieš pradedant.
+> pataisome 13 skyriaus lentelę prieš pradedant.
+
+---
+
+## Būklė
+
+**2 laboratorinio darbo dalis baigta.** Realizuota JWT autentifikacija su
+atnaujinimo žetonų rotacija, rolių ir savininkystės patikros visuose metoduose,
+administratoriaus funkcijos. Ataskaita – README 5 ir 8.2 skyriai.
+
+| Etapas | Turinys | Būklė |
+|---|---|---|
+| A | Žetonai, slaptažodžiai, `env.ts`, 401 su `WWW-Authenticate` | atlikta |
+| B | `/auth` metodai, rotacija, pakartotinio panaudojimo aptikimas | atlikta |
+| C + H | `authenticate`, `actor.ts` pakeitimas, kolekcija su žetonais | atlikta |
+| D | `services/access.ts`, spragos 1–3, `scope=all`, kolekcijos rolių aplankas | atlikta |
+| E | `/users` metodai, administratoriaus aplankas | atlikta |
+| F | OpenAPI – daryta kartu su B–E | atlikta |
+| G + J | Užblokuota demonstracinė paskyra, README, cheatsheet | atlikta |
+
+Rezultatai: 37 sąsajos metodai, 233 vienetiniai testai, demonstracija –
+91 užklausa, 207 patikros per ~11 s.
+
+**Nukrypimai nuo žemiau aprašyto plano** (pradinis planas paliekamas, kad
+matytųsi, kaip darbas buvo suskaidytas):
+
+- `lib/secure-token.ts` – atsitiktiniai žetonai ir jų maišos iškelti į atskirą
+  failą, bendrą peržiūros nuorodoms ir atnaujinimo žetonams, kad
+  `services/shares.ts` liktų be priklausomybės nuo `env`.
+- Slapukas pavadintas `hourly_refresh` (ne `vl_refresh`) – po projekto
+  pervadinimo.
+- Atnaujinant žetoną užblokuotas naudotojas gauna 403 `ACCOUNT_BLOCKED`, o ne
+  `REFRESH_TOKEN_REUSED`, nors jo žetonai ir panaikinti.
+- Taisyklė „nematomas → 404“ taikoma ne tik skaitymui, bet ir keitimui: pašalinis,
+  bandantis redaguoti svetimą vykdomą projektą, gauna 404. Teisės tikrinamos prieš
+  būsenos taisykles, kad 422 neišduotų uždaryto projekto egzistavimo.
+- Pasiūlymų keitimui ir šalinimui matomumo patikra netaikoma – atmestas
+  specialistas turi galėti ištrinti savo pasiūlymą, net kai projektas jam
+  nebematomas.
+- Naudotojo šalinimas draudžiamas, jei jis yra **bet kurio** projekto šalis arba
+  turi darbo sesijų (ne tik vykdomo projekto) – kitaip liktų projektai be
+  savininko.
+- Užklausų dažnio ribojimas (`express-rate-limit`) nerealizuotas.
 
 ---
 
@@ -448,5 +490,6 @@ Commit'us darai tu – aš tik paruošiu pakeitimus ir pasiūlysiu pranešimą.
 ## 14. Ką palikti 3 laboratoriniam
 
 - Next.js klientas: prieigos žetonas **tik atmintyje** (ne `localStorage`), gavus 401 `TOKEN_EXPIRED` – vienas `/auth/refresh` ir užklausos pakartojimas; puslapio perkrovimo metu sesija atkuriama per `/auth/refresh`;
-- Azure diegime API ir klientas skirtinguose domenuose → `REFRESH_COOKIE_SAMESITE=none`, `COOKIE_SECURE=true` (dėl to šie nustatymai jau dabar keliami į `env.ts`);
+- naršyklė į API kreipiasi per Next.js tarpinį maršrutą `/api/[...path]` toje pačioje kilmėje, todėl Azure diegime pakanka `COOKIE_SECURE=true`, o `SameSite=none` **nereikia**. Jei kada nors API būtų kviečiamas tiesiogiai iš kito domeno – `REFRESH_COOKIE_SAMESITE=none` (nustatymas jau yra `env.ts`);
+- tarpinis maršrutas dabar persiunčia tik `content-type`, `set-cookie` ir `x-robots-tag`. Reikia pridėti `www-authenticate`, `location` ir `content-disposition` (be pastarosios CSV ataskaita nepasisiūlys parsisiųsti);
 - administratoriaus sritis naudos `GET /users`, `PATCH /users/{id}`, `scope=all`.

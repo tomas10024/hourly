@@ -1,7 +1,8 @@
-# Kaip veikia „Valandinė“ — kodo gidas
+# Kaip veikia „Hourly“ — kodo gidas
 
 Trumpas žinynas: kuris failas ką daro ir kodėl. Skirtas skaityti atsidarius kodą
-šalia. Ataskaita yra [README.md](../README.md), darbų planas — [planas.md](planas.md).
+šalia. Ataskaita yra [README.md](../README.md), darbų planai — [planas.md](planas.md)
+(1 lab.) ir [planas-2.md](planas-2.md) (2 lab.).
 
 ---
 
@@ -29,7 +30,7 @@ Sekime tikrą pavyzdį — specialistas paleidžia laikmatį:
 
 ```
 POST /api/sessions
-X-Actor-Id: a0000000-0000-4000-8000-000000000003
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...   (specialisto prieigos žetonas)
 { "taskId": "c0000000-...-000000000002", "startedAt": "2026-09-20T09:00:00.000Z" }
 ```
 
@@ -37,12 +38,13 @@ X-Actor-Id: a0000000-0000-4000-8000-000000000003
 |---|---|---|
 | 1 | [server.ts](../apps/api/src/server.ts) | Programa klauso 4000 prievado |
 | 2 | [app.ts](../apps/api/src/app.ts) | Bendri sluoksniai: `helmet` (saugumo antraštės), `cors`, `express.json()` (tekstas → objektas), `cookieParser` |
-| 3 | [app.ts](../apps/api/src/app.ts) | Pagal adresą parenkamas maršrutizatorius — `/sessions` priklauso `sessionsRouter` |
-| 4 | [routes/sessions.ts](../apps/api/src/routes/sessions.ts) | Maršrutas surenka duomenis ir kviečia taisykles |
-| 5 | [services/sessions.ts](../apps/api/src/services/sessions.ts) | Tikrinamos dalykinės taisyklės |
-| 6 | [lib/prisma.ts](../apps/api/src/lib/prisma.ts) | Įrašymas į PostgreSQL |
-| 7 | [lib/serialize.ts](../apps/api/src/lib/serialize.ts) | DB eilutė → atsakymo objektas |
-| 8 | [lib/http.ts](../apps/api/src/lib/http.ts) | `201` + `Location` antraštė |
+| 3 | [middleware/auth.ts](../apps/api/src/middleware/auth.ts) | `authenticate` patikrina žetono parašą ir galiojimą, patikrina, ar paskyra neužblokuota, ir įrašo `req.auth = { userId, role }` |
+| 4 | [app.ts](../apps/api/src/app.ts) | Pagal adresą parenkamas maršrutizatorius — `/sessions` priklauso `sessionsRouter` |
+| 5 | [routes/sessions.ts](../apps/api/src/routes/sessions.ts) | Maršrutas surenka duomenis ir kviečia taisykles |
+| 6 | [services/sessions.ts](../apps/api/src/services/sessions.ts) | Tikrinamos dalykinės taisyklės ir teisės |
+| 7 | [lib/prisma.ts](../apps/api/src/lib/prisma.ts) | Įrašymas į PostgreSQL |
+| 8 | [lib/serialize.ts](../apps/api/src/lib/serialize.ts) | DB eilutė → atsakymo objektas |
+| 9 | [lib/http.ts](../apps/api/src/lib/http.ts) | `201` + `Location` antraštė |
 
 Jei kuriame nors žingsnyje kas nors negerai — metama klaida, ir ji **visada**
 nukeliauja į vieną vietą: [middleware/error.ts](../apps/api/src/middleware/error.ts),
@@ -52,7 +54,7 @@ Pats maršruto kodas atrodo taip (tikras `POST /sessions` turinys):
 
 ```ts
 sessionsRouter.post('/sessions', async (req, res) => {
-  const actor = requireActor(req);                     // kas veikia -> 400, jei nenurodyta
+  const actor = requireActor(req);                     // kas veikia -> 401, jei neprisijungęs
   const input = parseBody(CreateWorkSessionInput, req); // ką atsiuntė -> 422, jei netinka
 
   const task = await findReferencedTaskOr422(input.taskId);  // ar yra užduotis -> 422
@@ -70,6 +72,11 @@ Atkreipkite dėmesį: **nėra nė vieno `try/catch`** ir nė vieno
 `res.status(400).json(...)`. Taisyklės tiesiog meta klaidas, o Express 5 pats
 perduoda jas klaidų apdorojimui.
 
+Maršrutas žetono pats neliečia — jis tik klausia `requireActor(req)`, kas
+veikia. 1 lab. ta pati funkcija skaitė `X-Actor-Id` antraštę; 2 lab. pakeistas
+tik [lib/actor.ts](../apps/api/src/lib/actor.ts) vidus, o 27 maršrutų vietos
+liko tokios pačios.
+
 ---
 
 ## 3. Katalogų žemėlapis
@@ -82,9 +89,10 @@ perduoda jas klaidų apdorojimui.
 | `app.ts` | Surenka programą: sluoksniai, maršrutizatoriai, Swagger UI | `app.use('/api', tasksRouter)` |
 | `env.ts` | Aplinkos kintamųjų tikrinimas paleidžiant | Nėra `DATABASE_URL` → programa nepasileidžia ir pasako, ko trūksta |
 | `openapi.ts` | Sąsajos specifikacija visiems metodams | Iš jos gimsta `/api/docs` ir `docs/openapi.json` |
-| `routes/` | **HTTP sluoksnis**: ką paimti iš užklausos, ką grąžinti | `projects.ts`, `tasks.ts`, `sessions.ts`, `proposals.ts`, `shares.ts` |
-| `services/` | **Dalykinės taisyklės**: kas leidžiama, kas ne | `sessions.ts` — trukmė, įkainis; `projects.ts` — būsenų perėjimai |
-| `lib/` | **Įrankiai**, kuriuos naudoja visi maršrutai | `validate`, `serialize`, `http`, `actor`, `prisma`, `csv` |
+| `routes/` | **HTTP sluoksnis**: ką paimti iš užklausos, ką grąžinti | `auth.ts`, `users.ts`, `projects.ts`, `tasks.ts`, `sessions.ts`, `proposals.ts`, `shares.ts` |
+| `services/` | **Dalykinės taisyklės**: kas leidžiama, kas ne | `access.ts` — kas ką mato ir gali; `sessions.ts` — trukmė, įkainis; `projects.ts` — būsenų perėjimai |
+| `lib/` | **Įrankiai**, kuriuos naudoja visi maršrutai | `validate`, `serialize`, `http`, `actor`, `tokens`, `passwords`, `prisma`, `csv` |
+| `middleware/auth.ts` | Kas siunčia užklausą: žetono tikrinimas, `requireRole` | Blogas žetonas → 401, užblokuota paskyra → 403 |
 | `middleware/error.ts` | Vienintelė vieta, kur klaida virsta atsakymu | `P2025` → 404, sugadintas JSON → 400 |
 | `tools/export-openapi.ts` | Įrašo specifikaciją į `docs/openapi.json` | `npm run openapi:export` |
 
@@ -127,7 +135,7 @@ apie tai, kas kam leidžiama — tas `if` turi keliauti į `services/`.
 
 Grynos funkcijos: gauna duomenis, arba praleidžia, arba meta klaidą. Jų
 nedomina nei `req`, nei `res`, todėl jas galima ištestuoti be serverio ir be
-duomenų bazės — visi 105 testai bėga per sekundę.
+duomenų bazės — visi 233 testai bėga per kelias sekundes.
 
 ```ts
 // services/projects.ts — projektas negali šokinėti tarp bet kokių būsenų
@@ -148,6 +156,9 @@ export const ALLOWED_STATUS_TRANSITIONS = {
 | `services/proposals.ts` | Pasiūlymų gyvavimo ciklas: kas priima, kas atsiima |
 | `services/shares.ts` | Žetonų generavimas ir galiojimas |
 | `services/report.ts` | Valandų ir sumų skaičiavimas |
+| `services/access.ts` | Kas mato projektą (kitaip 404) ir kas gali jį keisti, šalinti, kurti (kitaip 403) |
+| `services/auth.ts` | Atnaujinimo žetono įvertinimas: galioja, nežinomas, pasibaigęs ar pakartotas |
+| `services/users.ts` | Administratorius neblokuoja savęs; naudotojo su darbo istorija šalinti negalima |
 
 ### `lib/` — įrankiai
 
@@ -156,7 +167,11 @@ export const ALLOWED_STATUS_TRANSITIONS = {
 | `validate.ts` | Ar atsiųsti duomenys tinkami? | `parseParams`/`parseQuery` → **400**, `parseBody` → **422** |
 | `serialize.ts` | Kaip DB eilutė virsta atsakymu? | — (kartu apsaugo, kad neišeitų slapti laukai) |
 | `http.ts` | Kaip atrodo sėkmė? | `created()` → 201 + `Location`, `noContent()` → 204 |
-| `actor.ts` | Kas atlieka veiksmą? | **400**, jei nenurodyta |
+| `actor.ts` | Kas atlieka veiksmą? | **401**, jei neprisijungęs; **403**, jei netinka rolė |
+| `tokens.ts` | Kaip pasirašyti ir patikrinti JWT? | **401** `INVALID_TOKEN` arba `TOKEN_EXPIRED` |
+| `passwords.ts` | Kaip saugoti slaptažodį? | — (`bcrypt`, kaina 12) |
+| `secure-token.ts` | Kaip sukurti atsitiktinį žetoną ir jo maišą? | — (atnaujinimo žetonai ir peržiūros nuorodos) |
+| `refresh-cookie.ts` | Kaip nustatyti ir išvalyti atnaujinimo slapuką? | — |
 | `prisma.ts` | Kaip pasiekti duomenų bazę? | — |
 | `csv.ts` | Kaip suformuoti CSV failą? | — |
 
@@ -242,11 +257,11 @@ Atsiuntus `{"status":"PUBLISHED"}` biudžetas nedingsta, o atsiuntus
 | Noriu… | Failas |
 |---|---|
 | pridėti naują lauką objektui | `packages/shared/src/schemas.ts` + `prisma/schema.prisma` + nauja migracija + `lib/serialize.ts` |
-| pakeisti, kas kam leidžiama | `services/*.ts` |
+| pakeisti, kas kam leidžiama | `services/access.ts` (projektai ir jų turinys), kiti `services/*.ts` |
 | pridėti naują metodą | naujas maršrutas `routes/*.ts` + aprašas `openapi.ts` |
 | pakeisti klaidos kodą | `middleware/error.ts` arba ta vieta, kur metamas `HttpError` |
 | pakeisti demonstracinius duomenis | `prisma/seed.ts` |
-| papildyti demonstraciją | `docs/postman/valandine.postman_collection.json` |
+| papildyti demonstraciją | `docs/postman/hourly.postman_collection.json` |
 | pridėti aplinkos kintamąjį | `env.ts` + abu `.env.example` |
 
 ---
@@ -260,8 +275,8 @@ Atsiuntus `{"status":"PUBLISHED"}` biudžetas nedingsta, o atsiuntus
 | `npm run db:seed` | Įrašo demonstracinius duomenis (pakartojama) |
 | `npm run dev` | Paleidžia viską: bendrus tipus, API ir internetinę aplikaciją |
 | `npm run dev:api` | Tik API (`localhost:4000`) |
-| `npm run demo` | Postman demonstracija per Newman (~4 s) |
-| `npm run test` | 105 vienetiniai testai |
+| `npm run demo` | Postman demonstracija per Newman (~11 s, reikia `db:seed`) |
+| `npm run test` | 233 vienetiniai testai |
 | `npm run lint` | Statinė analizė |
 | `npm run openapi:export` | Atnaujina `docs/openapi.json` |
 | `npm run db:studio` | Duomenų peržiūra naršyklėje |
@@ -275,5 +290,4 @@ Adresai: `localhost:4000/api/health` (būsena), `localhost:4000/api/docs`
 
 | Darbas | Kas keisis |
 |---|---|
-| 2 lab. — autentifikacija | Naujas `routes/auth.ts`, `middleware/auth.ts`, o **maršrutai liks nepakitę**: pakeičiamas tik `lib/actor.ts` vidus, kad naudotojas ateitų iš JWT, o ne iš antraštės |
-| 3 lab. — naudotojo sąsaja | `apps/web` — puslapiai, komponentai, stiliai. API jau paruoštas |
+| 3 lab. — naudotojo sąsaja | `apps/web` — puslapiai, komponentai, stiliai. API jau paruoštas: prieigos žetonas laikomas atmintyje, o gavus 401 `TOKEN_EXPIRED` kviečiamas `/auth/refresh` |

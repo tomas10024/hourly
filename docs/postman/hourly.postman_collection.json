@@ -394,6 +394,46 @@
           ]
         },
         {
+          "name": "POST /auth/login — užblokuota paskyra (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{blockedEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "description": "Administratoriaus užblokuota paskyra. Blokavimas pranešamas tik patikrinus slaptažodį, kad pašalinis nesužinotų, kuri paskyra užblokuota."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('kodas ACCOUNT_BLOCKED', () => pm.expect(pm.response.json().error.code).to.eql('ACCOUNT_BLOCKED'));",
+                  "pm.test('slapukas nenustatomas', () => pm.expect(pm.response.headers.get('Set-Cookie')).to.be.undefined);"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /auth/login — užsakovas (200)",
           "request": {
             "method": "POST",

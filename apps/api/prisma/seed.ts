@@ -48,6 +48,7 @@ const user = {
   designer: 'a0000000-0000-4000-8000-000000000006',
   frontend: 'a0000000-0000-4000-8000-000000000007',
   dataEngineer: 'a0000000-0000-4000-8000-000000000008',
+  blocked: 'a0000000-0000-4000-8000-000000000009',
 };
 
 const project = {
@@ -218,6 +219,17 @@ async function main() {
         displayName: 'Ieva Kazlauskienė',
         role: 'SPECIALIST',
         bio: 'Duomenų inžinerija, ataskaitų automatizavimas.',
+      },
+      // Blocked by the administrator: signing in answers 403 ACCOUNT_BLOCKED.
+      // Has no projects or sessions, so blocking is its whole story.
+      {
+        id: user.blocked,
+        email: 'blokuotas@hourly.lt',
+        passwordHash,
+        displayName: 'Užblokuotas naudotojas',
+        role: 'SPECIALIST',
+        bio: 'Paskyra užblokuota dėl taisyklių pažeidimo.',
+        isBlocked: true,
       },
     ],
   });
@@ -607,6 +619,7 @@ async function main() {
       otherClient: { id: user.clientGreen, email: 'rasa@zalialanka.lt' },
       otherSpecialist: { id: user.frontend, email: 'tomas@frontend.lt' },
       busySpecialist: { id: user.dataEngineer, email: 'ieva@duomenys.lt' },
+      blocked: { id: user.blocked, email: 'blokuotas@hourly.lt' },
     },
     projects: {
       inProgress: project.shop,

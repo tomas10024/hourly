@@ -20,9 +20,10 @@ Kauno technologijos universitetas, Informatikos fakultetas
 2. [Sistemos architektūra](#2-sistemos-architektūra)
 3. [Pasirinktų technologijų aprašymas](#3-pasirinktų-technologijų-aprašymas)
 4. [Projekto paleidimas](#4-projekto-paleidimas)
-5. [Klaidų apdorojimas](#5-klaidų-apdorojimas)
-6. [Sąsajos demonstracija](#6-sąsajos-demonstracija)
-7. [Reikalavimų atitiktis](#7-reikalavimų-atitiktis)
+5. [Autentifikacija ir autorizacija](#5-autentifikacija-ir-autorizacija)
+6. [Klaidų apdorojimas](#6-klaidų-apdorojimas)
+7. [Sąsajos demonstracija](#7-sąsajos-demonstracija)
+8. [Reikalavimų atitiktis](#8-reikalavimų-atitiktis)
 
 ---
 
@@ -140,50 +141,56 @@ Sąsaja suprojektuota pagal taikomosios srities objektų hierarchiją: kiekviena
 iš trijų pagrindinių objektų turi pilną penkių metodų rinkinį (sąrašas,
 peržiūra, kūrimas, redagavimas, šalinimas).
 
+Lentelėse nurodyti klaidų kodai, būdingi konkrečiam metodui. Be jų, bet kuris
+metodas su netinkamu ar pasibaigusiu prieigos žetonu grąžina **401**, o
+užblokuoto naudotojo žetonu – **403**. Kas kokį metodą gali kviesti, aprašyta
+[5.3 skyriuje](#53-rolės-ir-teisės).
+
 **Projektas**
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /projects` | Projektų sąrašas | 200 | 400 |
+| `GET /projects` | Projektų sąrašas | 200 | 400, 401, 403 |
 | `GET /projects/{id}` | Projekto duomenys | 200 | 400, 404 |
-| `POST /projects` | Sukurti projektą | 201 | 400, 422 |
-| `PATCH /projects/{id}` | Redaguoti, paskelbti arba užbaigti | 200 | 400, 403, 404, 422 |
-| `DELETE /projects/{id}` | Šalinti projektą | 204 | 400, 403, 404 |
+| `POST /projects` | Sukurti projektą | 201 | 400, 401, 403, 422 |
+| `PATCH /projects/{id}` | Redaguoti, paskelbti arba užbaigti | 200 | 400, 401, 403, 404, 422 |
+| `DELETE /projects/{id}` | Šalinti projektą | 204 | 400, 401, 403, 404 |
 
 **Užduotis**
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /tasks` | Naudotojo projektų užduotys | 200 | 400 |
+| `GET /tasks` | Naudotojo projektų užduotys | 200 | 400, 401 |
 | `GET /tasks/{id}` | Užduoties duomenys | 200 | 400, 404 |
-| `POST /tasks` | Sukurti užduotį | 201 | 400, 403, 422 |
-| `PATCH /tasks/{id}` | Redaguoti, perstumti, keisti būseną, patvirtinti | 200 | 400, 403, 404, 422 |
-| `DELETE /tasks/{id}` | Šalinti užduotį | 204 | 400, 403, 404, 422 |
+| `POST /tasks` | Sukurti užduotį | 201 | 400, 401, 403, 422 |
+| `PATCH /tasks/{id}` | Redaguoti, perstumti, keisti būseną, patvirtinti | 200 | 400, 401, 403, 404, 422 |
+| `DELETE /tasks/{id}` | Šalinti užduotį | 204 | 400, 401, 403, 404, 422 |
 
 **Darbo sesija**
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /sessions` | Naudotojo darbo žurnalas | 200 | 400 |
-| `GET /sessions/{id}` | Sesijos duomenys | 200 | 400, 404 |
-| `POST /sessions` | Pradėti sesiją arba įvesti rankiniu būdu | 201 | 400, 403, 409, 422 |
-| `PATCH /sessions/{id}` | Redaguoti arba užbaigti sesiją | 200 | 400, 403, 404, 409, 422 |
-| `DELETE /sessions/{id}` | Šalinti sesiją | 204 | 400, 403, 404, 422 |
+| `GET /sessions` | Naudotojo darbo žurnalas | 200 | 400, 401 |
+| `GET /sessions/{id}` | Sesijos duomenys | 200 | 400, 401, 403, 404 |
+| `POST /sessions` | Pradėti sesiją arba įvesti rankiniu būdu | 201 | 400, 401, 403, 409, 422 |
+| `PATCH /sessions/{id}` | Redaguoti arba užbaigti sesiją | 200 | 400, 401, 403, 404, 409, 422 |
+| `DELETE /sessions/{id}` | Šalinti sesiją | 204 | 400, 401, 403, 404, 422 |
 
 **Hierarchiniai sąsajos metodai:**
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
 | `GET /projects/{id}/tasks` | Konkretaus projekto užduotys | 200 | 400, 404 |
-| `GET /tasks/{id}/sessions` | Konkrečios užduoties darbo sesijos | 200 | 400, 404 |
-| `GET /projects/{id}/proposals` | Konkrečiam projektui pateikti pasiūlymai | 200 | 400, 403, 404 |
+| `GET /tasks/{id}/sessions` | Konkrečios užduoties darbo sesijos | 200 | 400, 401, 403, 404 |
+| `GET /projects/{id}/proposals` | Konkrečiam projektui pateikti pasiūlymai | 200 | 400, 401, 404 |
 
 Nerastas tėvinis resursas grąžina 404, o ne tuščią sąrašą: „projekto nėra“ ir
 „projektas yra, bet be užduočių“ yra du skirtingi atsakymai.
 
 Projektų sąrašo metodas priima `scope` parametrą, nurodantį, kurios projektų
 aibės prašoma: `GET /projects?scope=marketplace` grąžina viešai paskelbtus,
-`scope=owned` – naudotojo sukurtus, `scope=assigned` – jo vykdomus. Toks
+`scope=owned` – naudotojo sukurtus, `scope=assigned` – jo vykdomus, o
+`scope=all` – visus sistemos projektus (tik administratoriui). Toks
 sprendimas pasirinktas vietoj atskirų adresų (pvz., `/my-projects`), nes
 resursas išlieka tas pats, o keičiasi tik jo atrankos kriterijus. Papildomai
 priimami `q` (paieška), `status`, `page` ir `perPage`.
@@ -192,10 +199,10 @@ priimami `q` (paieška), `status`, `page` ir `perPage`.
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /proposals` | Savo pateiktų pasiūlymų sąrašas ir būsenos | 200 | 400 |
-| `POST /projects/{id}/proposals` | Pateikti pasiūlymą | 201 | 400, 403, 404, 409, 422 |
-| `PATCH /proposals/{id}` | Priimti, atmesti arba atšaukti | 200 | 400, 403, 404, 409, 422 |
-| `DELETE /proposals/{id}` | Šalinti savo pasiūlymą | 204 | 400, 403, 404, 422 |
+| `GET /proposals` | Savo pateiktų pasiūlymų sąrašas ir būsenos | 200 | 400, 401 |
+| `POST /projects/{id}/proposals` | Pateikti pasiūlymą | 201 | 400, 401, 403, 404, 409, 422 |
+| `PATCH /proposals/{id}` | Priimti, atmesti arba atšaukti | 200 | 400, 401, 403, 404, 409, 422 |
+| `DELETE /proposals/{id}` | Šalinti savo pasiūlymą | 204 | 400, 401, 403, 404, 422 |
 
 Pasiūlymo priėmimas vykdomas viena duomenų bazės transakcija: pasiūlymas įgyja
 būseną `ACCEPTED`, kiti to projekto pasiūlymai atmetami, o projektas pereina į
@@ -207,11 +214,11 @@ vykdomoje būsenoje be priskirto specialisto.
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /projects/{id}/shares` | Projekto peržiūros nuorodų sąrašas | 200 | 400, 403, 404 |
-| `POST /projects/{id}/shares` | Sugeneruoti peržiūros nuorodą | 201 | 400, 403, 404, 422 |
-| `DELETE /shares/{id}` | Atšaukti peržiūros nuorodą | 204 | 400, 403, 404 |
+| `GET /projects/{id}/shares` | Projekto peržiūros nuorodų sąrašas | 200 | 400, 401, 403, 404 |
+| `POST /projects/{id}/shares` | Sugeneruoti peržiūros nuorodą | 201 | 400, 401, 403, 404, 422 |
+| `DELETE /shares/{id}` | Atšaukti peržiūros nuorodą | 204 | 400, 401, 403, 404 |
 | `GET /public/projects/{token}` | Projekto darbo eiga pagal nuorodą | 200 | 400, 404 |
-| `GET /projects/{id}/report` | Projekto ataskaita (JSON arba CSV) | 200 | 400, 403, 404, 406 |
+| `GET /projects/{id}/report` | Projekto ataskaita (JSON arba CSV) | 200 | 400, 401, 403, 404, 406 |
 
 Ataskaitos metodas taiko turinio derybas (angl. content negotiation): tas pats
 resursas grąžinamas kaip `application/json` arba, nurodžius
@@ -221,16 +228,28 @@ grąžina 406, o ne tyliai JSON.
 **Tarnybiniai metodai:** `GET /health` ir `GET /health/ready` (pastarasis tikrina
 ir jungtį su duomenų baze).
 
-**Papildomi metodai, skirti autentifikacijai** (numatyti 2 laboratoriniam
-darbui): `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`,
-`POST /auth/logout`, `GET /auth/me`.
+**Autentifikacijos metodai:**
 
-> **Pastaba apie 1 laboratorinį darbą.** Autentifikacija dar nerealizuota, todėl
-> veiksmą atliekančio naudotojo tapatybė perduodama `X-Actor-Id` antrašte. Tai
-> nėra saugumo priemonė – ji leidžia realizuoti dalykines taisykles (savininko
-> teisės, `scope=owned`), kol žetonų dar nėra. 2 laboratoriniame darbe keičiamas
-> tik vienas failas (`src/lib/actor.ts`), kuriame antraštė pakeičiama patikrintu
-> JWT turiniu, o patys sąsajos metodai lieka nepakitę.
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `POST /auth/register` | Registracija, pasirenkant užsakovo arba specialisto rolę | 201 | 400, 409, 422 |
+| `POST /auth/login` | Prisijungimas | 200 | 400, 401, 403, 422 |
+| `POST /auth/refresh` | Naujas prieigos žetonas (atnaujinimo žetono rotacija) | 200 | 401, 403 |
+| `POST /auth/logout` | Atsijungimas | 204 | – |
+| `GET /auth/me` | Savo paskyros duomenys | 200 | 401 |
+| `PATCH /auth/me` | Redaguoti savo vardą, aprašymą arba slaptažodį | 200 | 400, 401, 422 |
+
+**Naudotojų valdymo metodai:**
+
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /users` | Visų naudotojų sąrašas (administratorius) | 200 | 400, 401, 403 |
+| `GET /users/{id}` | Kito naudotojo viešas profilis | 200 | 400, 401, 404 |
+| `PATCH /users/{id}` | Užblokuoti arba atblokuoti naudotoją (administratorius) | 200 | 400, 401, 403, 404, 422 |
+| `DELETE /users/{id}` | Šalinti naudotoją be darbo istorijos (administratorius) | 204 | 400, 401, 403, 404, 409, 422 |
+
+Iš viso sąsaja turi 37 metodus: 27 dalykinius (iš jų 15 pagrindinių CRUD),
+6 autentifikacijos ir 4 naudotojų valdymo.
 
 ---
 
@@ -266,7 +285,7 @@ Pats „Hourly“ API vykdo duomenų mainus su duomenų baze – tam naudojama O
 
 **PostgreSQL** – reliacinė duomenų bazių valdymo sistema. Pasirinkta dėl dalinių unikalių indeksų (angl. partial unique index) palaikymo, kuris naudojamas užtikrinti, kad vienam projektui galėtų būti priimtas tik vienas pasiūlymas, o vienas naudotojas tuo pačiu metu galėtų turėti tik vieną neužbaigtą darbo sesiją.
 
-**JWT (JSON Web Token)** – autentifikacijos ir autorizacijos priemonė. Naudojama trumpos galiojimo trukmės prieigos žetonų (15 min.) ir atnaujinimo žetonų pora. Atnaujinimo žetonas saugomas `httpOnly` slapuke, o duomenų bazėje laikoma tik jo maiša. Taikoma žetonų rotacijos strategija: kiekvienas atnaujinimas išduoda naują žetoną ir panaikina ankstesnįjį, o pakartotinai panaudojus jau anuliuotą žetoną panaikinama visa to naudotojo žetonų šeima.
+**JWT (JSON Web Token)** – autentifikacijos ir autorizacijos priemonė. Naudojama trumpos galiojimo trukmės prieigos žetonų (15 min.) ir atnaujinimo žetonų pora. Prieigos žetone yra naudotojo identifikatorius ir rolė, todėl rolė žinoma be papildomos užklausos duomenų bazei. Atnaujinimo žetonas saugomas `httpOnly` slapuke, o duomenų bazėje laikoma tik jo maiša. Taikoma žetonų rotacijos strategija: kiekvienas atnaujinimas išduoda naują žetoną ir panaikina ankstesnįjį, o pakartotinai panaudojus jau anuliuotą žetoną panaikinama visa to prisijungimo žetonų šeima. Plačiau – 5 skyriuje.
 
 **Gebėjimo žetonas** (angl. capability token) – antrasis prieigos mechanizmas, skirtas peržiūros nuorodoms. Skirtingai nei JWT, jis nesieja su naudotojo paskyra, o suteikia teisę skaityti vieną konkretų resursą. Žetonas generuojamas kriptografiškai saugiu atsitiktinių skaičių generatoriumi, duomenų bazėje saugoma tik jo maiša, galiojimo laikas ribotas, o teisės apribotos vien skaitymo metodais. Toks sprendimas leidžia dalytis darbo eiga su paskyros neturinčiu užsakovu, neįvedant papildomos registracijos. Kadangi žetonas perduodamas adreso eilutėje, atsakymuose nustatoma `X-Robots-Tag: noindex` antraštė, o nuoroda bet kada gali būti atšaukta nekeičiant paties projekto.
 
@@ -335,13 +354,13 @@ tarpinis sluoksnis ir leidžia atnaujinimo žetoną laikyti `httpOnly` slapuke.
 | `npm run db:studio` | Prisma Studio duomenų peržiūrai |
 | `npm run lint` | Statinė analizė |
 | `npm run test` | Testai |
-| `npm run demo` | Sąsajos demonstracija (žr. 6 skyrių) |
+| `npm run demo` | Sąsajos demonstracija (žr. 7 skyrių) |
 | `npm run openapi:export` | Atnaujinti `docs/openapi.json` |
 | `npm run build` | Sukompiliuoti visas dalis |
 
 ### Demonstracinės paskyros
 
-Po `npm run db:seed` sukuriamos aštuonios paskyros, visos su slaptažodžiu
+Po `npm run db:seed` sukuriamos devynios paskyros, visos su slaptažodžiu
 `slaptazodis123`:
 
 | Paskyra | Rolė | Pastaba |
@@ -354,6 +373,7 @@ Po `npm run db:seed` sukuriamos aštuonios paskyros, visos su slaptažodžiu
 | `gabija@dizainas.lt` | Specialistas | Užbaigė projektą su ataskaita |
 | `tomas@frontend.lt` | Specialistas | Turi atmestą ir atsiimtą pasiūlymą |
 | `ieva@duomenys.lt` | Specialistas | **Turi vykdomą darbo sesiją** |
+| `blokuotas@hourly.lt` | Specialistas | **Užblokuota** – prisijungus grąžinama 403 `ACCOUNT_BLOCKED` |
 
 Duomenyse yra visos projekto ir pasiūlymo būsenos, 20 užduočių, 24 darbo sesijos
 (iš jų viena vykdoma) ir trys peržiūros nuorodos: galiojanti, pasibaigusi ir
@@ -365,7 +385,196 @@ Sukurti identifikatoriai ir peržiūros nuorodų žetonai įrašomi į
 
 ---
 
-## 5. Klaidų apdorojimas
+## 5. Autentifikacija ir autorizacija
+
+Sąsaja naudoja žetonais grįstą autentifikaciją. Prisijungęs naudotojas gauna
+trumpai galiojantį **prieigos žetoną** (JWT), kurį siunčia su kiekviena
+užklausa, ir ilgai galiojantį **atnaujinimo žetoną**, kuriuo gauna naują
+prieigos žetoną, kai ankstesnysis baigia galioti.
+
+### 5.1. Žetonai
+
+|  | Prieigos žetonas | Atnaujinimo žetonas |
+|---|---|---|
+| Forma | JWT, pasirašytas `HS256` | Atsitiktinė 256 bitų eilutė (ne JWT) |
+| Perdavimas | `Authorization: Bearer <žetonas>` | `httpOnly` slapukas `hourly_refresh`, siunčiamas tik `/api/auth` keliu |
+| Kliento pusėje | Programos atmintyje | Naršyklės slapukuose, scenarijams nepasiekiamas |
+| Serverio pusėje | Nesaugomas – tikrinamas parašas | Duomenų bazėje, tik `sha256` maiša |
+| Galiojimas | 15 min. | 30 d. |
+| Turinys | `sub` (naudotojo id), `role`, `iat`, `exp`, `iss`, `aud` | – |
+| Atšaukimas | Negalimas, baigia galioti savaime | Atsijungiant, keičiant slaptažodį, blokuojant naudotoją |
+
+Prieigos žetono turinio pavyzdys:
+
+```json
+{
+  "sub": "a0000000-0000-4000-8000-000000000003",
+  "role": "SPECIALIST",
+  "iat": 1790276285,
+  "exp": 1790277185,
+  "iss": "hourly-api",
+  "aud": "hourly"
+}
+```
+
+El. pašto ir kitų asmens duomenų žetone nėra: JWT yra tik užkoduotas, o ne
+užšifruotas, todėl jo turinį gali perskaityti kiekvienas.
+
+Atnaujinimo žetonas nėra JWT, nes jo turinio niekam nereikia skaityti – serveris
+jį randa duomenų bazėje pagal maišą. Būtent dėl to jį galima atšaukti. Nutekėjus
+duomenų bazei, žetonų atkurti iš maišų neįmanoma.
+
+Prieigos žetono tikrinimas ([middleware/auth.ts](apps/api/src/middleware/auth.ts)):
+
+- **Algoritmas prisegtas.** Priimamas tik `HS256`, todėl žetonai su `alg: none`
+  ar kitu algoritmu atmetami. Taip pat tikrinami `iss`, `aud` ir turinio forma.
+- **Rolė imama iš žetono**, tačiau kiekviena užklausa viena paieška pagal
+  pirminį raktą patikrina, ar paskyra dar egzistuoja ir nėra užblokuota. Todėl
+  užblokuotas naudotojas praranda prieigą iš karto, o ne po 15 min.
+- **Pasibaigęs žetonas turi atskirą kodą** `TOKEN_EXPIRED`: klientas žino, kad
+  reikia kviesti `/auth/refresh`, o ne rodyti prisijungimo formą.
+- **Netinkamas žetonas nereiškia svečio teisių.** Jei žetonas pateiktas, bet
+  netinka, grąžinama 401 net viešame metode – naudotojas tyliai netampa svečiu.
+- Kiekvienas 401 atsakymas turi `WWW-Authenticate: Bearer` antraštę (RFC 6750).
+
+### 5.2. Žetonų atnaujinimas ir rotacija
+
+```mermaid
+sequenceDiagram
+    participant K as Klientas
+    participant A as API
+    participant DB as Duomenų bazė
+    K->>A: POST /auth/login (el. paštas, slaptažodis)
+    A->>DB: naujas atnaujinimo žetonas R1 (šeima F)
+    A-->>K: 200 accessToken + Set-Cookie R1
+    K->>A: GET /projects?scope=owned (Bearer)
+    A-->>K: 200
+    Note over K,A: praėjus 15 min.
+    K->>A: GET /projects?scope=owned (Bearer)
+    A-->>K: 401 TOKEN_EXPIRED
+    K->>A: POST /auth/refresh (slapukas R1)
+    A->>DB: R1 panaikinamas, išduodamas R2 (šeima F)
+    A-->>K: 200 naujas accessToken + Set-Cookie R2
+    K->>A: užklausa pakartojama su nauju žetonu
+    A-->>K: 200
+```
+
+*5.1 pav. Prieigos žetono atnaujinimas*
+
+Kiekvienas atnaujinimo žetonas veikia **vieną kartą**. Jei jau panaudotas
+žetonas pateikiamas dar kartą, vadinasi, jį turi dvi šalys – savininkas ir tas,
+kuris jį nukopijavo. Serveris negali nustatyti, kuri iš jų sąžininga, todėl
+panaikina visą šeimą, t. y. visus to prisijungimo žetonus:
+
+```mermaid
+sequenceDiagram
+    participant V as Vagis
+    participant K as Naudotojas
+    participant A as API
+    V->>A: POST /auth/refresh (pavogtas R1)
+    A-->>V: 200 + R2
+    K->>A: POST /auth/refresh (R1)
+    Note over A: R1 jau panaikintas – panaikinama visa šeima F
+    A-->>K: 401 REFRESH_TOKEN_REUSED
+    V->>A: POST /auth/refresh (R2)
+    A-->>V: 401 REFRESH_TOKEN_REUSED
+```
+
+*5.2 pav. Pakartotinio panaudojimo aptikimas*
+
+Teisėtas naudotojas prisijungia iš naujo, o vagis prieigą praranda.
+
+| Įvykis | Kas panaikinama |
+|---|---|
+| Atsijungimas (`POST /auth/logout`) | To prisijungimo šeima; slapukas išvalomas |
+| Slaptažodžio keitimas (`PATCH /auth/me`) | Visos kitos naudotojo šeimos – dabartinis prisijungimas lieka |
+| Blokavimas (`PATCH /users/{id}`) | Visos naudotojo šeimos; prieigos žetonai atmetami nuo kitos užklausos |
+| Pakartotinis žetono panaudojimas | Ta šeima |
+
+Atsijungus prieigos žetonas galioja iki savo `exp`, bet ne ilgiau kaip 15 min.
+Tai sąmoningas kompromisas: kitaip kiekviena užklausa turėtų tikrinti atšauktų
+žetonų sąrašą.
+
+Metodai `/auth/register`, `/auth/login`, `/auth/refresh` ir `/auth/logout`
+`Authorization` antraštės nežiūri. Klientai dažnai prideda žetoną prie visų
+užklausų, todėl kitaip pasibaigęs prieigos žetonas užblokuotų būtent tą
+užklausą, kuri turi jį pakeisti.
+
+### 5.3. Rolės ir teisės
+
+Sistemoje yra keturios rolės: **svečias** (be žetono), **užsakovas** (`CLIENT`),
+**specialistas** (`SPECIALIST`) ir **administratorius** (`ADMIN`).
+Registruojantis galima pasirinkti tik užsakovo arba specialisto rolę.
+
+Teisės tikrinamos dviem žingsniais, o jų atsakymai skiriasi:
+
+1. **Ar naudotojas gali matyti resursą?** Jei ne – **404**, lygiai toks pat, kaip
+   neegzistuojančiam resursui. Taip svetimo juodraščio identifikatorius
+   neatskleidžia, kad projektas egzistuoja.
+2. **Ar gali atlikti šį veiksmą?** Jei mato, bet negali – **403**.
+
+Paskelbtą projektą mato visi, kitus – tik jo šalys ir administratorius.
+Administratorius mato viską (moderavimui ir ginčams spręsti), gali šalinti
+projektus ir naudotojus, tačiau svetimų projektų, užduočių ir sesijų nekeičia.
+
+Visos taisyklės surašytos viename faile –
+[services/access.ts](apps/api/src/services/access.ts), – o kiekviena lentelės
+eilutė turi testą ([access.test.ts](apps/api/src/services/access.test.ts)).
+
+Žymėjimai: **S** – svečias, **U** – užsakovas, **Sp** – specialistas,
+**A** – administratorius; „šalis“ – projekto užsakovas arba jį vykdantis
+specialistas.
+
+| Metodai | S | U | Sp | A |
+|---|---|---|---|---|
+| `POST /auth/register`, `/login`, `/refresh`, `/logout` | ✓ | ✓ | ✓ | ✓ |
+| `GET`, `PATCH /auth/me`; `GET /users/{id}` | 401 | ✓ | ✓ | ✓ |
+| `GET /users`; `PATCH`, `DELETE /users/{id}` | 401 | 403 | 403 | ✓, išskyrus save |
+| `GET /projects?scope=marketplace` | ✓ | ✓ | ✓ | ✓ |
+| `GET /projects?scope=owned` arba `assigned` | 401 | ✓ | ✓ | ✓ |
+| `GET /projects?scope=all` | 401 | 403 | 403 | ✓ |
+| `GET /projects/{id}`, `/projects/{id}/tasks`, `/tasks/{id}` | paskelbtas | šalis arba paskelbtas | šalis arba paskelbtas | ✓ |
+| `POST /projects` – aikštelės projektas | 401 | ✓ | 403 | 403 |
+| `POST /projects` – tiesioginis projektas | 401 | 403 | ✓ | 403 |
+| `PATCH /projects/{id}`; užduočių kūrimas, keitimas, šalinimas; peržiūros nuorodos | 401 | šalis | šalis | 403 |
+| `DELETE /projects/{id}` | 401 | savo aikštelės projektas | savo tiesioginis projektas | ✓ |
+| `GET /projects/{id}/report`, `/tasks/{id}/sessions`, `/sessions/{id}` | 401 | šalis | šalis | ✓ |
+| `GET /tasks`, `/sessions`, `/proposals` | 401 | savo | savo | savo |
+| `POST /sessions`; `PATCH`, `DELETE /sessions/{id}` | 401 | 403 | vykdytojas, sesijos autorius | 403 |
+| `GET /projects/{id}/proposals` | 401 | visi savo projekto | tik savo | visi |
+| `POST /projects/{id}/proposals` | 401 | 403 | ✓ | 403 |
+| `PATCH /proposals/{id}` | 401 | priimti, atmesti | atšaukti savo | 403 |
+| `DELETE /proposals/{id}` | 401 | 403 | savo | 403 |
+| `GET /public/projects/{token}`, `GET /health` | ✓ | ✓ | ✓ | ✓ |
+
+Kai naudotojas nėra projekto šalis, atsakymas yra 404, jei projektas jam
+nematomas, ir 403, jei matomas (paskelbtas).
+
+Administratorius negali užblokuoti ar ištrinti savo paskyros (422). Naudotojo,
+kuris dalyvauja projektuose arba turi darbo sesijų, ištrinti negalima (409) –
+kaskadinis šalinimas ištrintų ir kitos šalies įrašus, todėl tokį naudotoją
+reikia blokuoti.
+
+### 5.4. Saugumo priemonės
+
+| Grėsmė | Priemonė |
+|---|---|
+| Slaptažodžių nutekėjimas iš duomenų bazės | `bcrypt`, kaina 12 |
+| Atnaujinimo žetonų nutekėjimas iš duomenų bazės | Saugoma tik `sha256` maiša |
+| XSS pavagia atnaujinimo žetoną | `httpOnly` slapukas |
+| CSRF per slapuką | `SameSite=Lax`, `Path=/api/auth`, CORS tik iš `WEB_ORIGIN` |
+| Pavogtas atnaujinimo žetonas | Rotacija ir visos šeimos panaikinimas pakartotinai jį panaudojus |
+| Pavogtas prieigos žetonas | Galioja tik 15 min. |
+| Suklastotas žetonas, `alg: none` | Parašo patikra, leidžiamas tik `HS256` |
+| Teisių didinimas registruojantis | Registracijoje leidžiamos tik `CLIENT` ir `SPECIALIST` rolės |
+| Naudotojų išvardijimas | Vienodas 401 nežinomam el. paštui ir blogam slaptažodžiui, vienodas atsakymo laikas; svetimi resursai – 404 |
+| Užblokuotas naudotojas su galiojančiu žetonu | Paskyros būsena tikrinama kiekvienoje užklausoje |
+| Prieiga prie svetimų resursų (IDOR) | Matomumo ir teisių patikros kiekviename metode, padengtos testais |
+| Silpna paslaptis gamybinėje aplinkoje | Paleidžiant tikrinama, ar `JWT_ACCESS_SECRET` turi bent 32 simbolius |
+
+---
+
+## 6. Klaidų apdorojimas
 
 Visos klaidos grąžinamos vienodu formatu, nepriklausomai nuo to, kuriame
 sluoksnyje jos kilo – schemos validavime, dalykinėje taisyklėje ar duomenų
@@ -386,13 +595,14 @@ konkretų lauką ar apribojimą. Validavimo klaidų atveju `details` yra laukų
 medis, todėl kliento pusė gali pažymėti būtent tą įvedimo lauką, kuris
 neatitiko reikalavimų.
 
-### 5.1. Statuso kodų politika
+### 6.1. Statuso kodų politika
 
 | Kodas | Kada grąžinamas | Pavyzdys |
 |---|---|---|
 | 400 | Užklausos **sintaksė** netinkama – serveris jos net negali suprasti | netaisyklingas JSON, `id` ne UUID, `scope=nesamas` |
-| 403 | Naudotojas atpažintas, bet neturi teisių į šį resursą | svetimo projekto redagavimas |
-| 404 | Resurso nėra | nesamas projekto identifikatorius |
+| 401 | Naudotojas neatpažintas: žetono nėra, jis netinkamas arba pasibaigęs | užduoties kūrimas be žetono |
+| 403 | Naudotojas atpažintas, bet jo rolė ar ryšys su resursu neleidžia veiksmo | specialistas kuria aikštelės projektą, redaguojamas svetimas paskelbtas projektas |
+| 404 | Resurso nėra arba naudotojas jo negali matyti | nesamas projektas, svetimas juodraštis |
 | 406 | Prašomas turinio tipas neprieinamas | `Accept: application/xml` ataskaitai |
 | 409 | Konfliktas su esama duomenų būsena | antra neužbaigta darbo sesija |
 | 422 | Užklausa suprantama, bet jos **turinys** prieštarauja taisyklėms | per trumpas pavadinimas, neleistinas būsenos perėjimas |
@@ -405,15 +615,22 @@ skirtingai:
 - `GET /projects/{nesamas-id}` → **404**, nes adresas nurodo neegzistuojantį resursą;
 - `POST /tasks` su nesamu `projectId` → **422**, nes adresas teisingas, o klaida yra turinyje.
 
-### 5.2. Mašininiai klaidų kodai
+### 6.2. Mašininiai klaidų kodai
 
 | Kodas | Reikšmė |
 |---|---|
 | `MALFORMED_JSON` | Užklausos kūnas nėra taisyklingas JSON |
 | `INVALID_PATH_PARAM`, `INVALID_QUERY` | Netinkamas adreso arba užklausos parametras |
 | `VALIDATION_ERROR` | Turinys neatitinka duomenų schemos |
-| `ACTOR_REQUIRED`, `INVALID_ACTOR` | Trūksta arba netinkama `X-Actor-Id` antraštė |
-| `FORBIDDEN` | Naudotojas neturi teisių į resursą |
+| `AUTH_REQUIRED` | Metodui reikia prisijungti, o žetono nėra |
+| `INVALID_TOKEN`, `TOKEN_EXPIRED` | Prieigos žetonas netinkamas arba pasibaigęs |
+| `INVALID_CREDENTIALS` | Neteisingas el. paštas arba slaptažodis |
+| `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED` | Atnaujinimo žetono nėra, jis nežinomas, pasibaigęs arba jau panaudotas |
+| `FORBIDDEN` | Rolė arba ryšys su resursu neleidžia veiksmo |
+| `ACCOUNT_BLOCKED` | Naudotojas užblokuotas |
+| `EMAIL_TAKEN` | Paskyra su tokiu el. paštu jau yra |
+| `INVALID_PASSWORD` | Keičiant slaptažodį neteisingai nurodytas dabartinis |
+| `CANNOT_MODIFY_SELF`, `USER_HAS_WORK_HISTORY` | Administratorius bando blokuoti save arba šalinti naudotoją su darbo istorija |
 | `NOT_FOUND` | Resursas nerastas |
 | `INVALID_REFERENCE` | Nurodytas neegzistuojantis susijęs įrašas |
 | `INVALID_STATUS_TRANSITION` | Neleistinas projekto būsenos perėjimas |
@@ -431,7 +648,7 @@ Tik pastarieji apsaugo tuo atveju, kai dvi užklausos ateina vienu metu.
 
 ---
 
-## 6. Sąsajos demonstracija
+## 7. Sąsajos demonstracija
 
 Sąsajos veikimą galima patikrinti trimis būdais.
 
@@ -441,7 +658,9 @@ dokumentacija negali nutolti nuo realizacijos. Ta pati specifikacija saugoma ir
 saugykloje: [docs/openapi.json](docs/openapi.json); nepertraukiamo integravimo
 darbo eiga tikrina, ar įrašytas failas atitinka kodą.
 
-**2. Automatinė demonstracija** – Postman kolekcija, paleidžiama per Newman:
+**2. Automatinė demonstracija** – Postman kolekcija, paleidžiama per Newman.
+Kolekcija prisijungia demonstracinėmis paskyromis, todėl prieš pirmą paleidimą
+reikia `npm run db:seed`:
 
 ```bash
 npm run dev:api   # viename terminale
@@ -453,19 +672,23 @@ Kolekciją taip pat galima importuoti į Postman
 [aplinka](docs/postman/hourly.local.postman_environment.json)) ir paleisti
 mygtuku „Run collection“.
 
-Kolekciją sudaro trys dalys:
+Kolekciją sudaro šešios dalys:
 
 | Dalis | Turinys |
 |---|---|
+| 0. Autentifikacija | Registracija, žetono rotacija, pakartotinio panaudojimo aptikimas, atsijungimas, 409 / 422 / 401 / 403 atvejai, JWT turinio patikra ir prisijungimas keturiomis paskyromis |
 | 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda |
-| 2. Klaidų apdorojimas | Kodai 400, 403, 404, 406 ir 422 su skirtingomis priežastimis |
-| 3. Valymas | Sukurtų duomenų šalinimas ir 204 bei 404 atsakymų patikra |
+| 2. Klaidų apdorojimas | Kodai 400, 401, 404, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas |
+| 3. Rolės ir teisės | 5.3 skyriaus lentelė: kas mato, kas gali kurti, redaguoti ir šalinti; 403 ir 404 skirtumas |
+| 4. Administratorius | Naudotojų sąrašas, viešas profilis, blokavimas (žetonas atmetamas iš karto), atblokavimas, šalinimas, netinkamo projekto pašalinimas |
+| 5. Valymas | Sukurtų duomenų šalinimas ir 204 bei 404 atsakymų patikra |
 
-Scenarijus sukuria viską, ko jam reikia, ir pabaigoje ištrina, todėl
-demonstraciją galima kartoti nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
+Scenarijus sukuria viską, ko jam reikia, ir pabaigoje ištrina – taip pat ir
+demonstracijos metu užregistruotą paskyrą, – todėl demonstraciją galima kartoti
+nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
 
 ```
-requests 44 | assertions 96 | failed 0 | total run duration: ~4s
+requests 91 | assertions 207 | failed 0 | total run duration: ~11s
 ```
 
 Kadangi laikai užklausose fiksuoti, testai tikrina ne „kažkokį skaičių“, o
@@ -473,14 +696,17 @@ konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekt
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 105 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 233 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
-skaičiavimą, klaidų kodų politiką) ir tai, kad atsakymų struktūra atitinka
-OpenAPI specifikaciją.
+skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
+suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių
+ir teisių lentelę ir tai, kad atsakymų struktūra atitinka OpenAPI specifikaciją.
 
 ---
 
-## 7. Reikalavimų atitiktis
+## 8. Reikalavimų atitiktis
+
+### 8.1. 1 laboratorinis darbas – sąsaja
 
 | Reikalavimas | Kaip tenkinamas |
 |---|---|
@@ -488,12 +714,28 @@ OpenAPI specifikaciją.
 | OpenAPI specifikacija kiekvienam metodui | Generuojama iš Zod schemų, pateikiama `/api/docs` ir [docs/openapi.json](docs/openapi.json) |
 | Patogi paleidimo aplinka | `npm install` → `npm run db:up` → `db:migrate` → `db:seed` → `npm run dev` |
 | Duomenų bazės sprendimas | PostgreSQL 17 su Prisma ORM, migracijos saugykloje |
-| Prasmingi duomenys gynimo metu | 8 naudotojai, 7 projektai (visos būsenos), 20 užduočių, 24 darbo sesijos, 7 pasiūlymai, 3 peržiūros nuorodos |
+| Prasmingi duomenys gynimo metu | 9 naudotojai, 7 projektai (visos būsenos), 20 užduočių, 24 darbo sesijos, 7 pasiūlymai, 3 peržiūros nuorodos |
 | Teisingas turinio tipas | `application/json` ir `text/csv` (ataskaitos parsisiuntimas) |
-| 404, kai resursas nerandamas | 5 skyrius; demonstracijos 2 ir 3 dalys |
-| 400 / 422 netinkamam turiniui | 5.1 skyrius; demonstracijoje – trys 400 ir trys 422 atvejai |
+| 404, kai resursas nerandamas | 6 skyrius; demonstracijos 2, 3 ir 5 dalys |
+| 400 / 422 netinkamam turiniui | 6.1 skyrius; demonstracijoje – trys 400 ir trys 422 atvejai |
 | 201 sukūrus resursą | Visi kūrimo metodai, kartu grąžinama `Location` antraštė |
 | 200 / 204 ištrynus resursą | Visi šalinimo metodai grąžina 204 be turinio |
-| Demonstracija iki ~15 s | `npm run demo` – 44 užklausos per ~4 s |
-| Kodas Git saugykloje, dokumentacija | GitHub; ataskaita – šis `README.md`, darbų planas – [docs/planas.md](docs/planas.md) |
+| Kodas Git saugykloje, dokumentacija | GitHub; ataskaita – šis `README.md`, darbų planai – [docs/planas.md](docs/planas.md), [docs/planas-2.md](docs/planas-2.md) |
 
+### 8.2. 2 laboratorinis darbas – autentifikacija ir autorizacija
+
+| Reikalavimas | Kaip tenkinamas |
+|---|---|
+| Žetonais grįsta autentifikacija | JWT prieigos žetonas `Authorization: Bearer` antraštėje (5.1 skyrius) |
+| Bent trys rolės | Svečias, užsakovas, specialistas, administratorius (5.3 skyrius) |
+| Rolė JWT žetone | `role` žetono turinyje; demonstracija tikrina dekoduotą žetoną |
+| Atnaujinimo žetonų strategija | `httpOnly` slapukas, rotacija, šeimos panaikinimas pakartotinai panaudojus (5.2 skyrius) |
+| Atsijungimas | `POST /auth/logout` panaikina prisijungimo žetonų šeimą |
+| Metodų apsauga pagal roles | `requireRole`, `services/access.ts`; demonstracijos 3 ir 4 dalys |
+| Naudotojas keičia tik savo resursus | Šalies, autoriaus ir kūrėjo patikros (5.3 skyrius) |
+| 401 neautentifikuotam naudotojui | Be žetono, su suklastotu ar pasibaigusiu žetonu; `WWW-Authenticate` antraštė |
+| 403 neturinčiam teisių | Netinkama rolė, svetimas matomas resursas, užblokuota paskyra |
+| Administratoriaus funkcijos | `/users` metodai, `scope=all`, bet kurio projekto šalinimas |
+| Saugus slaptažodžių ir žetonų saugojimas | `bcrypt`; atnaujinimo žetonų tik `sha256` maišos (5.4 skyrius) |
+| Saugumas aprašytas specifikacijoje | OpenAPI `bearerAuth` ir `refreshCookie` schemos, **Authorize** mygtukas Swagger UI |
+| Demonstracija iki ~15 s | `npm run demo` – 91 užklausa per ~11 s |
