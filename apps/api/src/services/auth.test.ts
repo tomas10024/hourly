@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UpdateMeInput } from '@valandine/shared';
+import { UpdateMeInput } from '@hourly/shared';
 import { classifyRefresh, normalizeEmail } from './auth.js';
 
 const now = new Date('2026-09-24T12:00:00.000Z');

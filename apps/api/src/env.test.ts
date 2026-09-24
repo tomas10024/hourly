@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PRODUCTION_SECRET_MIN_LENGTH, parseEnv } from './env.js';
 
 const base = {
-  DATABASE_URL: 'postgresql://localhost/valandine',
+  DATABASE_URL: 'postgresql://localhost/hourly',
   JWT_ACCESS_SECRET: 'dev-access-secret-pakeisti',
 };
 

@@ -43,8 +43,8 @@ export type UnauthorizedCode =
 export function unauthorized(code: UnauthorizedCode, message: string): HttpError {
   const rejectedToken = code === 'INVALID_TOKEN' || code === 'TOKEN_EXPIRED';
   const challenge = rejectedToken
-    ? `Bearer realm="valandine", error="invalid_token", error_description="${message}"`
-    : 'Bearer realm="valandine"';
+    ? `Bearer realm="hourly", error="invalid_token", error_description="${message}"`
+    : 'Bearer realm="hourly"';
   return new HttpError(401, code, message, undefined, { 'WWW-Authenticate': challenge });
 }
 

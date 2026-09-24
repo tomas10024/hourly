@@ -3,7 +3,7 @@
   "info": {
     "title": "Hourly API",
     "version": "0.1.0",
-    "description": "A marketplace for freelance work with transparent time tracking. Hierarchy: project -> task -> work session."
+    "description": "A marketplace for freelance work with transparent time tracking. Hierarchy: project -> task -> work session.\n\n**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) and sets the `hourly_refresh` cookie. Send the token as `Authorization: Bearer <token>` (the **Authorize** button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one."
   },
   "servers": [
     {
@@ -75,7 +75,7 @@
           "Authentication"
         ],
         "summary": "Register, choosing the client or specialist role",
-        "description": "The administrator role cannot be chosen. The new user is signed in at once: the response carries the access token and sets the `vl_refresh` cookie.",
+        "description": "The administrator role cannot be chosen. The new user is signed in at once: the response carries the access token and sets the `hourly_refresh` cookie.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -568,7 +568,7 @@
           "Authentication"
         ],
         "summary": "Refresh the access token (token rotation)",
-        "description": "The refresh token is read from the `vl_refresh` cookie only. Every refresh revokes the presented token and sets a new one, so each token works once. Presenting an already used token revokes every token of that login (REFRESH_TOKEN_REUSED).",
+        "description": "The refresh token is read from the `hourly_refresh` cookie only. Every refresh revokes the presented token and sets a new one, so each token works once. Presenting an already used token revokes every token of that login (REFRESH_TOKEN_REUSED).",
         "security": [
           {
             "refreshCookie": []
@@ -790,12 +790,14 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time",
-                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                      "example": "2026-09-24T09:00:00.000Z"
                     },
                     "email": {
                       "type": "string",
                       "format": "email",
-                      "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                      "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                      "example": "specialistas@hourly.lt"
                     },
                     "isBlocked": {
                       "type": "boolean"
@@ -1066,6 +1068,12 @@
         ],
         "summary": "List projects",
         "description": "`scope=marketplace` - publicly published, `scope=owned` - created by the user, `scope=assigned` - carried out by the user.",
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "query",
@@ -1121,17 +1129,6 @@
                 "CANCELLED"
               ]
             }
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "description": "Acting user. Required only for scope=owned and scope=assigned.",
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "description": "Acting user. Required only for scope=owned and scope=assigned."
           }
         ],
         "responses": {
@@ -1494,18 +1491,9 @@
         ],
         "summary": "Create a project",
         "description": "MARKETPLACE: the actor becomes the client and the project starts as DRAFT. DIRECT: the actor becomes the specialist, `externalClientName` is required and the project starts as IN_PROGRESS.",
-        "parameters": [
+        "security": [
           {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -2283,6 +2271,11 @@
         ],
         "summary": "Update a project",
         "description": "Only the fields present in the body are written. Status changes follow the project lifecycle; PUBLISHED -> IN_PROGRESS happens by accepting a proposal.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2293,18 +2286,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "requestBody": {
@@ -2717,6 +2698,11 @@
         ],
         "summary": "Delete a project",
         "description": "Tasks, work sessions, proposals and share links are removed with it.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2727,18 +2713,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -3218,6 +3192,11 @@
         ],
         "summary": "Project report by task and accumulated hours",
         "description": "One resource in two representations, selected with the `Accept` header: `application/json` (the default) or `text/csv`, which is returned as a download. Anything else answers 406. Only finished work sessions are counted - a running session has no duration yet.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -3228,18 +3207,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -3590,6 +3557,11 @@
         ],
         "summary": "List tasks",
         "description": "Tasks of the projects the actor takes part in; `projectId` narrows it to one.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "query",
@@ -3599,18 +3571,6 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -3897,18 +3857,9 @@
         ],
         "summary": "Create a task",
         "description": "Written by whoever the project named in `taskAuthoring`. Omitting `position` appends the task to the end of the list. An unknown `projectId` answers 422.",
-        "parameters": [
+        "security": [
           {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -4551,6 +4502,11 @@
         ],
         "summary": "Update a task, move it, change its status or approve it",
         "description": "Both parties of the project may edit and reorder tasks. `approved` is the decision of the client and applies only when the specialist authored the list.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -4561,18 +4517,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "requestBody": {
@@ -4924,6 +4868,11 @@
         ],
         "summary": "Delete a task",
         "description": "Work sessions of the task are removed with it.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -4934,18 +4883,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -5412,6 +5349,11 @@
         ],
         "summary": "List work sessions",
         "description": "The work log of the actor; `taskId` narrows it to one task.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "query",
@@ -5421,18 +5363,6 @@
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -5706,18 +5636,9 @@
         ],
         "summary": "Start a work session or enter one manually",
         "description": "Without `endedAt` the session is treated as running. A user may have only one unfinished session at a time, so a second one answers 409. `durationMinutes` and `appliedRate` are computed by the server and cannot be sent in.",
-        "parameters": [
+        "security": [
           {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -6352,6 +6273,11 @@
         ],
         "summary": "Update or finish a work session",
         "description": "Sending `endedAt` stops the timer: the server then measures the duration and locks in the rate that was in force. Only the author may change a session.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -6362,18 +6288,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "requestBody": {
@@ -6717,6 +6631,11 @@
           "Work sessions"
         ],
         "summary": "Delete a work session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -6727,18 +6646,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -6919,6 +6826,11 @@
           "Proposals"
         ],
         "summary": "Offers submitted by the actor, with their statuses",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "query",
@@ -6932,18 +6844,6 @@
                 "WITHDRAWN"
               ]
             }
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -7221,6 +7121,11 @@
         ],
         "summary": "Proposals submitted for a project",
         "description": "Competing bids reveal prices, so the client sees every offer while a specialist sees only their own.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -7231,18 +7136,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -7518,6 +7411,11 @@
         ],
         "summary": "Submit a proposal for a project",
         "description": "Only while the project is a PUBLISHED marketplace project. One offer per specialist per project, so a repeated attempt answers 409.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -7528,18 +7426,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "requestBody": {
@@ -7905,6 +7791,11 @@
         ],
         "summary": "Accept, reject or withdraw a proposal",
         "description": "ACCEPTED and REJECTED are decisions of the client, WITHDRAWN belongs to the specialist, and only a PENDING proposal can be changed. Accepting runs in one transaction: the offer wins, the competing offers are rejected, and the project moves to IN_PROGRESS with the specialist assigned. Only one proposal per project may be accepted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -7915,18 +7806,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "requestBody": {
@@ -8254,6 +8133,11 @@
         ],
         "summary": "Delete your own proposal",
         "description": "An accepted proposal is kept as the record of how the work was awarded.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -8264,18 +8148,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -8457,6 +8329,11 @@
         ],
         "summary": "Share links of a project",
         "description": "Answers what exists and until when - never how to get in.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -8467,18 +8344,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -8727,6 +8592,11 @@
         ],
         "summary": "Generate a share link",
         "description": "The token is readable only in this response: the database keeps nothing but its SHA-256 hash, so a lost link cannot be recovered, only replaced.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -8737,18 +8607,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "requestBody": {
@@ -9022,6 +8880,11 @@
         ],
         "summary": "Revoke a share link",
         "description": "The record is kept and stamped with `revokedAt`, because the fact that a project was shared is part of its history. Revoking twice answers 204 again.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
@@ -9032,18 +8895,6 @@
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "required": true
-          },
-          {
-            "in": "header",
-            "name": "X-Actor-Id",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "description": "Acting user. Replaced by a JWT in lab 2."
-            },
-            "required": true,
-            "description": "Acting user. Replaced by a JWT in lab 2."
           }
         ],
         "responses": {
@@ -9450,7 +9301,7 @@
       "refreshCookie": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "vl_refresh"
+        "name": "hourly_refresh"
       }
     }
   }

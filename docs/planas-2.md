@@ -83,7 +83,7 @@ hashToken(token)               -> string             // bendras su services/shar
 `verifyAccessToken`:
 
 - `algorithms: ['HS256']` – aiškiai prisegtas algoritmas (apsauga nuo `alg: none` ir algoritmo keitimo atakų);
-- tikrinami `iss = 'valandine-api'`, `aud = 'valandine'`;
+- tikrinami `iss = 'hourly-api'`, `aud = 'hourly'`;
 - `TokenExpiredError` → 401 `TOKEN_EXPIRED`, bet kas kita → 401 `INVALID_TOKEN`;
 - payload tikrinamas Zod schema (`sub: uuid`, `role: Role`) – pasirašytas, bet netikėto formato žetonas vis tiek atmetamas.
 
@@ -127,7 +127,7 @@ neprivalomu `headers` lauku.
 **Slapukas:**
 
 ```
-name:     vl_refresh
+name:     hourly_refresh
 httpOnly: true           // JavaScript jo neperskaito -> XSS jo nepavogs
 secure:   COOKIE_SECURE  // dev per http: false
 sameSite: REFRESH_COOKIE_SAMESITE
@@ -280,7 +280,7 @@ tik per šias funkcijas.
 
 - pašalinti `actorHeader`, `optionalActorHeader`;
 - kiekvienam apsaugotam metodui `security: bearer`; `marketplace` sąrašui ir `GET /projects/{id}` – `security: [{}, { bearerAuth: [] }]` (neprivalomas);
-- naujas `securitySchemes.refreshCookie` (`apiKey`, `in: cookie`, `name: vl_refresh`) – `/auth/refresh` ir `/auth/logout`;
+- naujas `securitySchemes.refreshCookie` (`apiKey`, `in: cookie`, `name: hourly_refresh`) – `/auth/refresh` ir `/auth/logout`;
 - kiekvieno metodo atsakymuose – tik realiai galimi 401 / 403 (pagal D1 matricą);
 - `/auth/*` aprašai pataisomi pagal B (logout be bearer, 204; register 201 + `Location`);
 - nauji `/users*` aprašai;
@@ -291,7 +291,7 @@ tik per šias funkcijas.
 
 ## 7. Etapas G – demonstraciniai duomenys
 
-- papildyti seed devintu naudotoju `blokuotas@valandine.lt` (`isBlocked: true`) – 403 `ACCOUNT_BLOCKED` demonstracijai;
+- papildyti seed devintu naudotoju `blokuotas@hourly.lt` (`isBlocked: true`) – 403 `ACCOUNT_BLOCKED` demonstracijai;
 - seed išvalo `refresh_tokens` (idempotentiškumas);
 - į `docs/postman/demo-data.json` įrašyti demonstracinių paskyrų el. paštus ir slaptažodį, kad kolekcija prisijungtų pati;
 - README „Demonstracinės paskyros“ lentelę papildyti blokuotu naudotoju.
@@ -344,7 +344,7 @@ Pasibaigusio žetono (`TOKEN_EXPIRED`) Newman'e nedemonstruojame (reikėtų lauk
 parodyti su `ACCESS_TOKEN_TTL=10s`.
 
 **Rizika:** A09 reikia siųsti **seną** slapuką. Planas – A08 testo skripte
-išsaugoti seną reikšmę (`pm.cookies.get('vl_refresh')`) ir A09 siųsti ją
+išsaugoti seną reikšmę (`pm.cookies.get('hourly_refresh')`) ir A09 siųsti ją
 rankine `Cookie` antrašte. Patikrinti, kad Newman slapukų saugykla nesiunčia
 `secure` slapuko per `http` (todėl dev/CI `COOKIE_SECURE=false`).
 

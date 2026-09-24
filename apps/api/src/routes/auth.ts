@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Router, type Response } from 'express';
-import { LoginInput, RegisterInput, UpdateMeInput, type AuthResponse } from '@valandine/shared';
+import { LoginInput, RegisterInput, UpdateMeInput, type AuthResponse } from '@hourly/shared';
 import type { User as UserRow } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';

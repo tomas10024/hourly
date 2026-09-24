@@ -49,21 +49,10 @@ const errors = {
 const pathId = z.object({ id: z.uuid() });
 
 /**
- * Lab 1 has no authentication yet, so the acting user is passed in a header.
- * Endpoints already implemented document this header; the ones still waiting
- * for lab 2 keep `security: bearerAuth`. See `src/lib/actor.ts`.
+ * Endpoints that also answer anonymous callers: a token is optional and, when
+ * present, changes what the caller sees (e.g. `scope=owned`).
  */
-const actorHeader = z.object({
-  'X-Actor-Id': z.uuid().meta({
-    description: 'Acting user. Replaced by a JWT in lab 2.',
-  }),
-});
-
-const optionalActorHeader = z.object({
-  'X-Actor-Id': z.uuid().optional().meta({
-    description: 'Acting user. Required only for scope=owned and scope=assigned.',
-  }),
-});
+const optionalBearer: Record<string, string[]>[] = [{}, { bearerAuth: [] }];
 
 /**
  * The API specification is generated from the very Zod schemas that validate
@@ -79,7 +68,11 @@ export const openApiDocument = createDocument({
     version: '0.1.0',
     description:
       'A marketplace for freelance work with transparent time tracking. ' +
-      'Hierarchy: project -> task -> work session.',
+      'Hierarchy: project -> task -> work session.\n\n' +
+      '**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) ' +
+      `and sets the \`${REFRESH_COOKIE}\` cookie. ` +
+      'Send the token as `Authorization: Bearer <token>` (the **Authorize** ' +
+      'button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one.',
   },
   servers: [{ url: `http://localhost:${env.PORT}/api`, description: 'Local environment' }],
   tags: [
@@ -223,7 +216,8 @@ export const openApiDocument = createDocument({
         description:
           '`scope=marketplace` - publicly published, `scope=owned` - created by the user, ' +
           '`scope=assigned` - carried out by the user.',
-        requestParams: { query: ProjectListQuery, header: optionalActorHeader },
+        requestParams: { query: ProjectListQuery },
+        security: optionalBearer,
         responses: { '200': json(paginated(Project), 'Project list'), ...errors },
       },
       post: {
@@ -233,7 +227,7 @@ export const openApiDocument = createDocument({
           'MARKETPLACE: the actor becomes the client and the project starts as DRAFT. ' +
           'DIRECT: the actor becomes the specialist, `externalClientName` is required ' +
           'and the project starts as IN_PROGRESS.',
-        requestParams: { header: actorHeader },
+        security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProjectInput } } },
         responses: { '201': json(Project, 'Project created'), ...errors },
       },
@@ -251,7 +245,8 @@ export const openApiDocument = createDocument({
         description:
           'Only the fields present in the body are written. Status changes follow the ' +
           'project lifecycle; PUBLISHED -> IN_PROGRESS happens by accepting a proposal.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         requestBody: { content: { 'application/json': { schema: UpdateProjectInput } } },
         responses: { '200': json(Project, 'Project updated'), ...errors },
       },
@@ -259,7 +254,8 @@ export const openApiDocument = createDocument({
         tags: ['Projects'],
         summary: 'Delete a project',
         description: 'Tasks, work sessions, proposals and share links are removed with it.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
@@ -281,7 +277,8 @@ export const openApiDocument = createDocument({
           '`application/json` (the default) or `text/csv`, which is returned as a ' +
           'download. Anything else answers 406. Only finished work sessions are ' +
           'counted - a running session has no duration yet.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: {
           '200': {
             description: 'Report',
@@ -305,8 +302,8 @@ export const openApiDocument = createDocument({
           'Tasks of the projects the actor takes part in; `projectId` narrows it to one.',
         requestParams: {
           query: z.object({ projectId: z.uuid().optional() }),
-          header: actorHeader,
         },
+        security: bearer,
         responses: { '200': json(z.array(Task), 'Task list'), ...errors },
       },
       post: {
@@ -315,7 +312,7 @@ export const openApiDocument = createDocument({
         description:
           'Written by whoever the project named in `taskAuthoring`. Omitting `position` ' +
           'appends the task to the end of the list. An unknown `projectId` answers 422.',
-        requestParams: { header: actorHeader },
+        security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateTaskInput } } },
         responses: { '201': json(Task, 'Task created'), ...errors },
       },
@@ -333,7 +330,8 @@ export const openApiDocument = createDocument({
         description:
           'Both parties of the project may edit and reorder tasks. `approved` is the ' +
           'decision of the client and applies only when the specialist authored the list.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         requestBody: { content: { 'application/json': { schema: UpdateTaskInput } } },
         responses: { '200': json(Task, 'Task updated'), ...errors },
       },
@@ -341,7 +339,8 @@ export const openApiDocument = createDocument({
         tags: ['Tasks'],
         summary: 'Delete a task',
         description: 'Work sessions of the task are removed with it.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
@@ -363,8 +362,8 @@ export const openApiDocument = createDocument({
         description: 'The work log of the actor; `taskId` narrows it to one task.',
         requestParams: {
           query: z.object({ taskId: z.uuid().optional() }),
-          header: actorHeader,
         },
+        security: bearer,
         responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
       },
       post: {
@@ -374,7 +373,7 @@ export const openApiDocument = createDocument({
           'Without `endedAt` the session is treated as running. A user may have only one ' +
           'unfinished session at a time, so a second one answers 409. `durationMinutes` ' +
           'and `appliedRate` are computed by the server and cannot be sent in.',
-        requestParams: { header: actorHeader },
+        security: bearer,
         requestBody: {
           content: { 'application/json': { schema: CreateWorkSessionInput } },
         },
@@ -398,7 +397,8 @@ export const openApiDocument = createDocument({
         description:
           'Sending `endedAt` stops the timer: the server then measures the duration and ' +
           'locks in the rate that was in force. Only the author may change a session.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         requestBody: {
           content: { 'application/json': { schema: UpdateWorkSessionInput } },
         },
@@ -411,7 +411,8 @@ export const openApiDocument = createDocument({
       delete: {
         tags: ['Work sessions'],
         summary: 'Delete a work session',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
@@ -423,8 +424,8 @@ export const openApiDocument = createDocument({
         summary: 'Offers submitted by the actor, with their statuses',
         requestParams: {
           query: z.object({ status: ProposalStatus.optional() }),
-          header: actorHeader,
         },
+        security: bearer,
         responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
       },
     },
@@ -435,7 +436,8 @@ export const openApiDocument = createDocument({
         description:
           'Competing bids reveal prices, so the client sees every offer while a ' +
           'specialist sees only their own.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
       },
       post: {
@@ -444,7 +446,8 @@ export const openApiDocument = createDocument({
         description:
           'Only while the project is a PUBLISHED marketplace project. One offer per ' +
           'specialist per project, so a repeated attempt answers 409.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProposalInput } } },
         responses: {
           '201': json(Proposal, 'Proposal submitted'),
@@ -463,7 +466,8 @@ export const openApiDocument = createDocument({
           'transaction: the offer wins, the competing offers are rejected, and the project ' +
           'moves to IN_PROGRESS with the specialist assigned. Only one proposal per project ' +
           'may be accepted.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         requestBody: {
           content: { 'application/json': { schema: UpdateProposalInput } },
         },
@@ -477,7 +481,8 @@ export const openApiDocument = createDocument({
         tags: ['Proposals'],
         summary: 'Delete your own proposal',
         description: 'An accepted proposal is kept as the record of how the work was awarded.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
@@ -488,7 +493,8 @@ export const openApiDocument = createDocument({
         tags: ['Share links'],
         summary: 'Share links of a project',
         description: 'Answers what exists and until when - never how to get in.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '200': json(z.array(ShareLink), 'Share link list'), ...errors },
       },
       post: {
@@ -497,7 +503,8 @@ export const openApiDocument = createDocument({
         description:
           'The token is readable only in this response: the database keeps nothing but ' +
           'its SHA-256 hash, so a lost link cannot be recovered, only replaced.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         requestBody: {
           content: { 'application/json': { schema: CreateShareLinkInput } },
         },
@@ -511,7 +518,8 @@ export const openApiDocument = createDocument({
         description:
           'The record is kept and stamped with `revokedAt`, because the fact that a ' +
           'project was shared is part of its history. Revoking twice answers 204 again.',
-        requestParams: { path: pathId, header: actorHeader },
+        requestParams: { path: pathId },
+        security: bearer,
         responses: { '204': { description: 'Revoked' }, ...errors },
       },
     },

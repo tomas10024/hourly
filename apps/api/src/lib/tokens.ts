@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { Role } from '@valandine/shared';
+import { Role } from '@hourly/shared';
 import { env } from '../env.js';
 import { unauthorized } from '../middleware/error.js';
 import { randomToken } from './secure-token.js';
@@ -18,8 +18,8 @@ import { randomToken } from './secure-token.js';
  * revocable (see `services/auth.ts`).
  */
 
-export const JWT_ISSUER = 'valandine-api';
-export const JWT_AUDIENCE = 'valandine';
+export const JWT_ISSUER = 'hourly-api';
+export const JWT_AUDIENCE = 'hourly';
 
 /**
  * The one algorithm we sign with and the only one `verify` accepts. Pinning it

@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './env.js';
 import { openApiDocument } from './openapi.js';
+import { authenticate } from './middleware/auth.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
@@ -34,6 +35,10 @@ export function buildApp(): Express {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     next();
   });
+
+  // Every request under /api gets `req.auth`: the verified user, or null for
+  // an anonymous one. Whether anonymity is acceptable is up to each endpoint.
+  app.use('/api', authenticate);
 
   app.use('/api', healthRouter);
   app.use('/api', authRouter);

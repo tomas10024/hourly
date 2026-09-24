@@ -1,61 +1,57 @@
 import type { Request } from 'express';
-import { z } from 'zod';
-import { HttpError } from '../middleware/error.js';
+import type { Role } from '@hourly/shared';
+import { HttpError, unauthorized } from '../middleware/error.js';
 
 /**
  * Identity of the user performing the request.
  *
- * Lab 1 has no authentication yet, so the caller is identified by the
- * `X-Actor-Id` header. This is NOT a security measure - anyone can set that
- * header. Its only purpose is to let us implement the domain rules that need
- * a user (`scope=owned`, project ownership, session author) without having to
- * rewrite the routes in lab 2.
+ * Routes never look at tokens or headers themselves; they only ask this file
+ * who is acting. The identity comes from `req.auth`, which `authenticate`
+ * (`middleware/auth.ts`) fills in from a verified JWT.
  *
- * Lab 2 changes only the body of this file:
- *
- *   export function actorId(req) {
- *     return req.user?.id ?? null;   // from a verified JWT
- *   }
- *
- * Routes stay untouched because they only ever call `actorId` / `requireActor`.
+ * In lab 1 the very same functions read an unverified `X-Actor-Id` header.
+ * Replacing that with a JWT changed only this file - the routes calling
+ * `actorId` / `requireActor` stayed as they were.
  */
-
-/** Header name; also referenced by the OpenAPI document so the two agree. */
-export const ACTOR_HEADER = 'X-Actor-Id';
 
 /**
- * The acting user, when one is supplied.
- *
- * Returns `null` when the header is absent, so endpoints that also work
- * anonymously (the public project list) can adapt their behaviour.
+ * The acting user, or `null` for an anonymous request, so endpoints that
+ * also work anonymously (the public project list) can adapt their behaviour.
  */
 export function actorId(req: Request): string | null {
-  const raw = req.header(ACTOR_HEADER);
-  if (raw === undefined || raw.trim() === '') return null;
+  return req.auth?.userId ?? null;
+}
 
-  const parsed = z.uuid().safeParse(raw.trim());
-  if (!parsed.success) {
-    throw new HttpError(400, 'INVALID_ACTOR', `${ACTOR_HEADER} header must be a UUID`);
-  }
-  return parsed.data;
+/** The role of the acting user, or `null` for an anonymous request. */
+export function actorRole(req: Request): Role | null {
+  return req.auth?.role ?? null;
 }
 
 /**
- * The acting user for endpoints that make no sense without one
- * (creation, `scope=owned`).
+ * The acting user for endpoints that make no sense without one.
  *
- * 400 rather than 401: lab 1 has no authentication, so this is not
- * "unauthenticated" but "a required header is missing from the request".
- * In lab 2 this branch naturally becomes a 401 response.
+ * 401 carries `WWW-Authenticate: Bearer`, telling the client to sign in.
  */
 export function requireActor(req: Request): string {
-  const id = actorId(req);
-  if (id === null) {
-    throw new HttpError(
-      400,
-      'ACTOR_REQUIRED',
-      `This endpoint requires the ${ACTOR_HEADER} header (replaced by a JWT in lab 2)`,
-    );
+  const auth = req.auth;
+  if (!auth) throw unauthorized('AUTH_REQUIRED', 'Sign in to use this endpoint');
+  return auth.userId;
+}
+
+/**
+ * The acting user, provided their role is one of `roles`.
+ *
+ * 401 when nobody is signed in, 403 when the role does not fit: the caller is
+ * known, and signing in again would not change the answer.
+ */
+export function requireRoleOf(req: Request, ...roles: Role[]): string {
+  const id = requireActor(req);
+  const role = req.auth!.role;
+  if (!roles.includes(role)) {
+    throw new HttpError(403, 'FORBIDDEN', `Only ${roles.join(' or ')} may do this`, {
+      requiredRoles: roles,
+      role,
+    });
   }
   return id;
 }

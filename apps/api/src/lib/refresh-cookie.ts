@@ -10,7 +10,7 @@ import { env } from '../env.js';
  *   path     - sent only to `/api/auth`, never with ordinary API calls, so
  *              the long-lived secret travels as rarely as possible.
  */
-export const REFRESH_COOKIE = 'vl_refresh';
+export const REFRESH_COOKIE = 'hourly_refresh';
 
 const baseOptions = (): CookieOptions => ({
   httpOnly: true,

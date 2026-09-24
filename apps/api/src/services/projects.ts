@@ -66,9 +66,9 @@ export function assertBudgetRange(min: number | null, max: number | null): void 
  * Only the two parties of a project may act on it - editing it, managing its
  * tasks, sharing it or reading its report.
  *
- * In lab 1 the actor comes from a header and is therefore not trustworthy;
- * the check exists to express the domain rule. Once lab 2 derives the actor
- * from a JWT, the very same call becomes a real authorization check.
+ * The actor comes from a verified JWT, so this is a real authorization check.
+ * In lab 1 the very same call only expressed the rule, since the actor was
+ * then an unverified header.
  */
 export function assertCanManage(
   project: { clientId: string | null; specialistId: string | null },

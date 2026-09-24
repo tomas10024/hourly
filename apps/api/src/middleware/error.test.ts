@@ -111,7 +111,7 @@ describe('unauthorized', () => {
     const res = await request(appThatThrows(error)).post('/test').send({}).expect(401);
 
     expect(res.body.error.code).toBe('AUTH_REQUIRED');
-    expect(res.headers['www-authenticate']).toBe('Bearer realm="valandine"');
+    expect(res.headers['www-authenticate']).toBe('Bearer realm="hourly"');
   });
 
   it.each(['INVALID_TOKEN', 'TOKEN_EXPIRED'] as const)(
@@ -124,7 +124,7 @@ describe('unauthorized', () => {
 
       expect(res.body.error.code).toBe(code);
       expect(res.headers['www-authenticate']).toBe(
-        'Bearer realm="valandine", error="invalid_token", error_description="Access token has expired"',
+        'Bearer realm="hourly", error="invalid_token", error_description="Access token has expired"',
       );
     },
   );

@@ -27,4 +27,24 @@ describe('API foundation', () => {
     const res = await request(app).get('/api/public/projects/abc');
     expect(res.headers['x-robots-tag']).toContain('noindex');
   });
+
+  it('requires a signed-in user to create a project', async () => {
+    const res = await request(app)
+      .post('/api/projects')
+      .send({ title: 'Projektas', description: 'Aprasymas, kuris pakankamai ilgas' })
+      .expect(401);
+
+    expect(res.body.error.code).toBe('AUTH_REQUIRED');
+    expect(res.headers['www-authenticate']).toBe('Bearer realm="hourly"');
+  });
+
+  it('no longer accepts the lab 1 X-Actor-Id header as an identity', async () => {
+    const res = await request(app)
+      .post('/api/projects')
+      .set('X-Actor-Id', 'a0000000-0000-4000-8000-000000000002')
+      .send({ title: 'Projektas', description: 'Aprasymas, kuris pakankamai ilgas' })
+      .expect(401);
+
+    expect(res.body.error.code).toBe('AUTH_REQUIRED');
+  });
 });
