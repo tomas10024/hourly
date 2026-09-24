@@ -12,7 +12,6 @@ concurrency:
 env:
   DATABASE_URL: postgresql://valandine:valandine@localhost:5432/valandine_test
   JWT_ACCESS_SECRET: ci-access-secret-0123456789
-  JWT_REFRESH_SECRET: ci-refresh-secret-0123456789
   WEB_ORIGIN: http://localhost:3000
 
 jobs:

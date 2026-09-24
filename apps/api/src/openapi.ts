@@ -20,6 +20,7 @@ import {
   ShareLink,
   ShareLinkCreated,
   Task,
+  UpdateMeInput,
   UpdateProjectInput,
   UpdateProposalInput,
   UpdateTaskInput,
@@ -28,6 +29,7 @@ import {
   paginated,
 } from '@valandine/shared';
 import { env } from './env.js';
+import { REFRESH_COOKIE } from './lib/refresh-cookie.js';
 
 const bearer = [{ bearerAuth: [] }];
 
@@ -92,6 +94,7 @@ export const openApiDocument = createDocument({
   components: {
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      refreshCookie: { type: 'apiKey', in: 'cookie', name: REFRESH_COOKIE },
     },
   },
   paths: {
@@ -110,16 +113,44 @@ export const openApiDocument = createDocument({
       post: {
         tags: ['Authentication'],
         summary: 'Register, choosing the client or specialist role',
+        description:
+          'The administrator role cannot be chosen. The new user is signed in at once: ' +
+          `the response carries the access token and sets the \`${REFRESH_COOKIE}\` cookie.`,
         requestBody: { content: { 'application/json': { schema: RegisterInput } } },
-        responses: { '201': json(AuthResponse, 'Account created'), ...errors },
+        responses: {
+          '201': {
+            ...json(AuthResponse, 'Account created and signed in'),
+            headers: z.object({
+              Location: z.string().meta({ description: 'Address of the new user' }),
+              'Set-Cookie': z.string().meta({ description: 'The refresh token (httpOnly)' }),
+            }),
+          },
+          '400': errors['400'],
+          '409': json(ApiError, 'An account with this e-mail already exists (EMAIL_TAKEN)'),
+          '422': errors['422'],
+        },
       },
     },
     '/auth/login': {
       post: {
         tags: ['Authentication'],
         summary: 'Sign in',
+        description:
+          'An unknown e-mail and a wrong password get the same 401. ' +
+          'A blocked account gets 403 only after its password has been verified.',
         requestBody: { content: { 'application/json': { schema: LoginInput } } },
-        responses: { '200': json(AuthResponse, 'Signed in'), ...errors },
+        responses: {
+          '200': {
+            ...json(AuthResponse, 'Signed in'),
+            headers: z.object({
+              'Set-Cookie': z.string().meta({ description: 'The refresh token (httpOnly)' }),
+            }),
+          },
+          '400': errors['400'],
+          '401': json(ApiError, 'Incorrect e-mail or password (INVALID_CREDENTIALS)'),
+          '403': json(ApiError, 'The account is blocked (ACCOUNT_BLOCKED)'),
+          '422': errors['422'],
+        },
       },
     },
     '/auth/refresh': {
@@ -127,17 +158,37 @@ export const openApiDocument = createDocument({
         tags: ['Authentication'],
         summary: 'Refresh the access token (token rotation)',
         description:
-          'The refresh token is read from an `httpOnly` cookie. ' +
-          'Every refresh issues a new token and revokes the previous one.',
-        responses: { '200': json(AuthResponse, 'New token issued'), ...errors },
+          `The refresh token is read from the \`${REFRESH_COOKIE}\` cookie only. ` +
+          'Every refresh revokes the presented token and sets a new one, so each token ' +
+          'works once. Presenting an already used token revokes every token of that ' +
+          'login (REFRESH_TOKEN_REUSED).',
+        security: [{ refreshCookie: [] }],
+        responses: {
+          '200': {
+            ...json(AuthResponse, 'New tokens issued'),
+            headers: z.object({
+              'Set-Cookie': z.string().meta({ description: 'The next refresh token (httpOnly)' }),
+            }),
+          },
+          '401': json(
+            ApiError,
+            'Missing, unknown or expired token (INVALID_REFRESH_TOKEN), or a reused one ' +
+              '(REFRESH_TOKEN_REUSED)',
+          ),
+          '403': json(ApiError, 'The account is blocked (ACCOUNT_BLOCKED)'),
+        },
       },
     },
     '/auth/logout': {
       post: {
         tags: ['Authentication'],
         summary: 'Sign out',
-        security: bearer,
-        responses: { '204': { description: 'Signed out' }, ...errors },
+        description:
+          'Revokes every refresh token of this login and clears the cookie. Works without ' +
+          'an access token and without a cookie (idempotent). Access tokens already issued ' +
+          'stay valid until they expire.',
+        security: [{ refreshCookie: [] }, {}],
+        responses: { '204': { description: 'Signed out' } },
       },
     },
     '/auth/me': {
@@ -145,7 +196,22 @@ export const openApiDocument = createDocument({
         tags: ['Authentication'],
         summary: 'Details of the signed-in user',
         security: bearer,
-        responses: { '200': json(CurrentUser, 'User'), ...errors },
+        responses: { '200': json(CurrentUser, 'User'), '401': errors['401'] },
+      },
+      patch: {
+        tags: ['Authentication'],
+        summary: 'Edit own name, bio or password',
+        description:
+          'A new password requires `currentPassword`. Changing the password signs out ' +
+          'every other login of the account.',
+        security: bearer,
+        requestBody: { content: { 'application/json': { schema: UpdateMeInput } } },
+        responses: {
+          '200': json(CurrentUser, 'Updated user'),
+          '400': errors['400'],
+          '401': errors['401'],
+          '422': json(ApiError, 'Invalid content or wrong current password (INVALID_PASSWORD)'),
+        },
       },
     },
 

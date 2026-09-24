@@ -43,6 +43,30 @@ export const LoginInput = z.object({
 });
 export type LoginInput = z.infer<typeof LoginInput>;
 
+/**
+ * Editing one's own account. The e-mail and the role are not editable: the
+ * first is the login, the second decides what the account may do.
+ *
+ * A new password must be confirmed with the current one, so that a stolen
+ * access token alone is not enough to take the account over.
+ */
+export const UpdateMeInput = z
+  .object({
+    displayName: z.string().min(2).max(80).optional(),
+    bio: z.string().max(2000).nullish(),
+    password: z.string().min(8).max(128).optional(),
+    currentPassword: z.string().min(1).optional(),
+  })
+  .refine((v) => v.password === undefined || v.currentPassword !== undefined, {
+    message: 'Changing the password requires the current password',
+    path: ['currentPassword'],
+  })
+  .refine(
+    (v) => v.displayName !== undefined || v.bio !== undefined || v.password !== undefined,
+    { message: 'Nothing to update' },
+  );
+export type UpdateMeInput = z.infer<typeof UpdateMeInput>;
+
 /** The refresh token travels in an `httpOnly` cookie, so it is not here. */
 export const AuthResponse = z.object({
   accessToken: z.string(),

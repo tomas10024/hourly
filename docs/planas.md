@@ -296,6 +296,8 @@ Kiekvienas punktas – atskiras commit'as, kad CI istorija būtų skaitoma.
 
 ## 9. Ką palikti 2 laboratoriniam
 
+Detalus 2 lab. planas – [planas-2.md](planas-2.md).
+
 Darbai, kurių **dabar nedarome**, bet dėl kurių 1 lab. kodas paruoštas:
 
 - `POST /auth/register`, `/login`, `/refresh`, `/logout` + `GET /auth/me`;

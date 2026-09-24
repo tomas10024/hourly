@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './env.js';
 import { openApiDocument } from './openapi.js';
 import { errorHandler, notFound } from './middleware/error.js';
+import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { projectsRouter } from './routes/projects.js';
 import { proposalsRouter } from './routes/proposals.js';
@@ -35,6 +36,7 @@ export function buildApp(): Express {
   });
 
   app.use('/api', healthRouter);
+  app.use('/api', authRouter);
   app.use('/api', projectsRouter);
   app.use('/api', proposalsRouter);
   app.use('/api', tasksRouter);

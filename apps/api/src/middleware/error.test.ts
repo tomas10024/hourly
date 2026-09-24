@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import { z } from 'zod';
-import { HttpError, errorHandler } from './error.js';
+import { HttpError, errorHandler, unauthorized } from './error.js';
 
 /**
  * Error handling tests.
@@ -95,4 +95,37 @@ describe('errorHandler', () => {
       .expect(500);
     expect(res.body.error.code).toBe('INTERNAL_ERROR');
   });
+
+  it('sends the headers an HttpError carries', async () => {
+    const error = new HttpError(429, 'TOO_MANY_REQUESTS', 'Slow down', undefined, {
+      'Retry-After': '60',
+    });
+    const res = await request(appThatThrows(error)).post('/test').send({}).expect(429);
+    expect(res.headers['retry-after']).toBe('60');
+  });
+});
+
+describe('unauthorized', () => {
+  it('asks for a bearer token without an error when none was sent', async () => {
+    const error = unauthorized('AUTH_REQUIRED', 'Sign in required');
+    const res = await request(appThatThrows(error)).post('/test').send({}).expect(401);
+
+    expect(res.body.error.code).toBe('AUTH_REQUIRED');
+    expect(res.headers['www-authenticate']).toBe('Bearer realm="valandine"');
+  });
+
+  it.each(['INVALID_TOKEN', 'TOKEN_EXPIRED'] as const)(
+    'flags a rejected token (%s) as invalid_token, per RFC 6750',
+    async (code) => {
+      const res = await request(appThatThrows(unauthorized(code, 'Access token has expired')))
+        .post('/test')
+        .send({})
+        .expect(401);
+
+      expect(res.body.error.code).toBe(code);
+      expect(res.headers['www-authenticate']).toBe(
+        'Bearer realm="valandine", error="invalid_token", error_description="Access token has expired"',
+      );
+    },
+  );
 });

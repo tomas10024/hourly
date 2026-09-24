@@ -15,10 +15,37 @@ export class HttpError extends Error {
     readonly code: string,
     message: string,
     readonly details?: unknown,
+    /** Response headers that belong to the error, e.g. `WWW-Authenticate`. */
+    readonly headers?: Record<string, string>,
   ) {
     super(message);
     this.name = 'HttpError';
   }
+}
+
+/** Machine-readable codes of 401 responses. */
+export type UnauthorizedCode =
+  | 'AUTH_REQUIRED'
+  | 'INVALID_TOKEN'
+  | 'TOKEN_EXPIRED'
+  | 'INVALID_CREDENTIALS'
+  | 'INVALID_REFRESH_TOKEN'
+  | 'REFRESH_TOKEN_REUSED';
+
+/**
+ * A 401 response.
+ *
+ * HTTP requires every 401 to carry `WWW-Authenticate` naming the scheme the
+ * client should use (RFC 9110). For bearer tokens, RFC 6750 adds
+ * `error="invalid_token"` when a token was sent but rejected, and no error at
+ * all when none was sent - which lets a client tell "log in" from "refresh".
+ */
+export function unauthorized(code: UnauthorizedCode, message: string): HttpError {
+  const rejectedToken = code === 'INVALID_TOKEN' || code === 'TOKEN_EXPIRED';
+  const challenge = rejectedToken
+    ? `Bearer realm="valandine", error="invalid_token", error_description="${message}"`
+    : 'Bearer realm="valandine"';
+  return new HttpError(401, code, message, undefined, { 'WWW-Authenticate': challenge });
 }
 
 /** Unknown address - the last route before error handling. */
@@ -109,6 +136,8 @@ function fromPrisma(err: PrismaKnownError): HttpError | null {
  *
  * Status code policy:
  *   400 - request syntax (malformed JSON, bad parameters)
+ *   401 - not authenticated: no token, or a rejected one
+ *   403 - authenticated, but the role or ownership does not allow it
  *   404 - resource not found
  *   409 - domain conflict (unique constraint violation)
  *   422 - well-formed request with unacceptable content
@@ -130,6 +159,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 
   // 2. An error we raised deliberately.
   if (err instanceof HttpError) {
+    if (err.headers) res.set(err.headers);
     res.status(err.status).json({
       error: { code: err.code, message: err.message, details: err.details },
     });

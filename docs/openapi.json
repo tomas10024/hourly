@@ -75,6 +75,7 @@
           "Authentication"
         ],
         "summary": "Register, choosing the client or specialist role",
+        "description": "The administrator role cannot be chosen. The new user is signed in at once: the response carries the access token and sets the `vl_refresh` cookie.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -116,7 +117,25 @@
         },
         "responses": {
           "201": {
-            "description": "Account created",
+            "description": "Account created and signed in",
+            "headers": {
+              "Location": {
+                "required": true,
+                "description": "Address of the new user",
+                "schema": {
+                  "type": "string",
+                  "description": "Address of the new user"
+                }
+              },
+              "Set-Cookie": {
+                "required": true,
+                "description": "The refresh token (httpOnly)",
+                "schema": {
+                  "type": "string",
+                  "description": "The refresh token (httpOnly)"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -218,74 +237,8 @@
               }
             }
           },
-          "401": {
-            "description": "Not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
+          "409": {
+            "description": "An account with this e-mail already exists (EMAIL_TAKEN)",
             "content": {
               "application/json": {
                 "schema": {
@@ -359,6 +312,7 @@
           "Authentication"
         ],
         "summary": "Sign in",
+        "description": "An unknown e-mail and a wrong password get the same 401. A blocked account gets 403 only after its password has been verified.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -386,6 +340,16 @@
         "responses": {
           "200": {
             "description": "Signed in",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The refresh token (httpOnly)",
+                "schema": {
+                  "type": "string",
+                  "description": "The refresh token (httpOnly)"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -488,7 +452,7 @@
             }
           },
           "401": {
-            "description": "Not authenticated",
+            "description": "Incorrect e-mail or password (INVALID_CREDENTIALS)",
             "content": {
               "application/json": {
                 "schema": {
@@ -521,40 +485,7 @@
             }
           },
           "403": {
-            "description": "Not allowed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
+            "description": "The account is blocked (ACCOUNT_BLOCKED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -628,10 +559,25 @@
           "Authentication"
         ],
         "summary": "Refresh the access token (token rotation)",
-        "description": "The refresh token is read from an `httpOnly` cookie. Every refresh issues a new token and revokes the previous one.",
+        "description": "The refresh token is read from the `vl_refresh` cookie only. Every refresh revokes the presented token and sets a new one, so each token works once. Presenting an already used token revokes every token of that login (REFRESH_TOKEN_REUSED).",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "New token issued",
+            "description": "New tokens issued",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The next refresh token (httpOnly)",
+                "schema": {
+                  "type": "string",
+                  "description": "The next refresh token (httpOnly)"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -700,41 +646,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
           "401": {
-            "description": "Not authenticated",
+            "description": "Missing, unknown or expired token (INVALID_REFRESH_TOKEN), or a reused one (REFRESH_TOKEN_REUSED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -767,73 +680,7 @@
             }
           },
           "403": {
-            "description": "Not allowed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed",
+            "description": "The account is blocked (ACCOUNT_BLOCKED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -874,42 +721,83 @@
           "Authentication"
         ],
         "summary": "Sign out",
+        "description": "Revokes every refresh token of this login and clears the cookie. Works without an access token and without a cookie (idempotent). Access tokens already issued stay valid until they expire.",
+        "security": [
+          {
+            "refreshCookie": []
+          },
+          {}
+        ],
+        "responses": {
+          "204": {
+            "description": "Signed out"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Details of the signed-in user",
         "security": [
           {
             "bearerAuth": []
           }
         ],
         "responses": {
-          "204": {
-            "description": "Signed out"
-          },
-          "400": {
-            "description": "Bad request",
+          "200": {
+            "description": "User",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "CLIENT",
+                        "SPECIALIST",
+                        "ADMIN"
+                      ]
+                    },
+                    "bio": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    },
+                    "isBlocked": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
-                    "error"
+                    "id",
+                    "displayName",
+                    "role",
+                    "bio",
+                    "createdAt",
+                    "email",
+                    "isBlocked"
                   ],
                   "additionalProperties": false
                 }
@@ -948,123 +836,59 @@
                 }
               }
             }
-          },
-          "403": {
-            "description": "Not allowed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
           }
         }
-      }
-    },
-    "/auth/me": {
-      "get": {
+      },
+      "patch": {
         "tags": [
           "Authentication"
         ],
-        "summary": "Details of the signed-in user",
+        "summary": "Edit own name, bio or password",
+        "description": "A new password requires `currentPassword`. Changing the password signs out every other login of the account.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80
+                  },
+                  "bio": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  },
+                  "currentPassword": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "User",
+            "description": "Updated user",
             "content": {
               "application/json": {
                 "schema": {
@@ -1186,74 +1010,8 @@
               }
             }
           },
-          "403": {
-            "description": "Not allowed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "details": {}
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
           "422": {
-            "description": "Validation failed",
+            "description": "Invalid content or wrong current password (INVALID_PASSWORD)",
             "content": {
               "application/json": {
                 "schema": {
@@ -9613,6 +9371,11 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "refreshCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "vl_refresh"
       }
     }
   }
