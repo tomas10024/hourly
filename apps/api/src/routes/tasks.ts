@@ -3,12 +3,12 @@ import { z } from 'zod';
 import { CreateTaskInput, UpdateTaskInput } from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
-import { requireActor } from '../lib/actor.js';
+import { requireActor, requireAuth, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { toTask } from '../lib/serialize.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
-import { assertCanManage } from '../services/projects.js';
+import { assertCanManageProject, assertCanViewProject } from '../services/access.js';
 import {
   assertCanApproveTasks,
   assertCanAuthorTasks,
@@ -89,23 +89,30 @@ tasksRouter.get('/tasks', async (req, res) => {
  *
  * A missing project gives 404 rather than an empty list: those two answers
  * mean different things, and the client has to be able to tell them apart.
+ * The tasks are as visible as their project - a published project shows its
+ * planned work to prospective bidders.
  */
 tasksRouter.get('/projects/:id/tasks', async (req, res) => {
   const { id } = parseParams(IdParam, req);
 
-  const project = await prisma.project.findUnique({ where: { id }, select: { id: true } });
+  const project = await prisma.project.findUnique({ where: { id } });
   if (!project) {
     throw new HttpError(404, 'NOT_FOUND', `Project ${id} does not exist`);
   }
+  assertCanViewProject(project, viewer(req));
 
   const rows = await prisma.task.findMany({ where: { projectId: id }, orderBy: TASK_ORDER });
   res.json(rows.map(toTask));
 });
 
-/** GET /tasks/{id} - a single task. */
+/** GET /tasks/{id} - a single task, as visible as its project. */
 tasksRouter.get('/tasks/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  res.json(toTask(await findTaskOr404(id)));
+
+  const task = await findTaskOr404(id);
+  assertCanViewProject(task.project, viewer(req));
+
+  res.json(toTask(task));
 });
 
 /**
@@ -145,12 +152,15 @@ tasksRouter.post('/tasks', async (req, res) => {
  */
 tasksRouter.patch('/tasks/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
+  const actor = auth.userId;
   const input = parseBody(UpdateTaskInput, req);
 
+  // Permission before state: a stranger learns nothing about a project they
+  // cannot see, not even that it is closed.
   const task = await findTaskOr404(id);
+  assertCanManageProject(task.project, auth);
   assertProjectAcceptsTasks(task.project);
-  assertCanManage(task.project, actor);
 
   const data: Prisma.TaskUpdateInput = {};
   if (input.title !== undefined) data.title = input.title;
@@ -177,11 +187,11 @@ tasksRouter.patch('/tasks/:id', async (req, res) => {
  */
 tasksRouter.delete('/tasks/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
 
   const task = await findTaskOr404(id);
+  assertCanManageProject(task.project, auth);
   assertProjectAcceptsTasks(task.project);
-  assertCanManage(task.project, actor);
 
   await prisma.task.delete({ where: { id } });
   noContent(res);

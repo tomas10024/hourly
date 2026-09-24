@@ -38,6 +38,9 @@ export const ProposalStatus = z.enum([
 ]);
 export type ProposalStatus = z.infer<typeof ProposalStatus>;
 
-/** Selection criterion for the project list (`GET /projects?scope=...`). */
-export const ProjectScope = z.enum(['marketplace', 'owned', 'assigned']);
+/**
+ * Selection criterion for the project list (`GET /projects?scope=...`).
+ * `all` is the administrator's view of every project on the platform.
+ */
+export const ProjectScope = z.enum(['marketplace', 'owned', 'assigned', 'all']);
 export type ProjectScope = z.infer<typeof ProjectScope>;

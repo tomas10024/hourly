@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { CreateShareLinkInput } from '@hourly/shared';
 import { prisma } from '../lib/prisma.js';
-import { requireActor } from '../lib/actor.js';
+import { requireAuth } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { iso, money, toShareLink } from '../lib/serialize.js';
 import { IdParam, parseBody, parseParams } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import { env } from '../env.js';
-import { assertCanManage } from '../services/projects.js';
+import { assertCanManageProject } from '../services/access.js';
 import { summarizeTasks } from '../services/report.js';
 import {
   expiresAtFromNow,
@@ -39,10 +39,10 @@ async function findProjectOr404(id: string) {
  */
 sharesRouter.post('/projects/:id/shares', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
   const input = parseBody(CreateShareLinkInput, req);
 
-  assertCanManage(await findProjectOr404(id), actor);
+  assertCanManageProject(await findProjectOr404(id), auth);
 
   const { token, tokenHash } = generateShareToken();
   const row = await prisma.shareLink.create({
@@ -64,9 +64,9 @@ sharesRouter.post('/projects/:id/shares', async (req, res) => {
  */
 sharesRouter.get('/projects/:id/shares', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
 
-  assertCanManage(await findProjectOr404(id), actor);
+  assertCanManageProject(await findProjectOr404(id), auth);
 
   const rows = await prisma.shareLink.findMany({
     where: { projectId: id },
@@ -86,13 +86,13 @@ sharesRouter.get('/projects/:id/shares', async (req, res) => {
  */
 sharesRouter.delete('/shares/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
 
   const link = await prisma.shareLink.findUnique({ where: { id }, include: { project: true } });
   if (!link) {
     throw new HttpError(404, 'NOT_FOUND', `Share link ${id} does not exist`);
   }
-  assertCanManage(link.project, actor);
+  assertCanManageProject(link.project, auth);
 
   if (link.revokedAt === null) {
     await prisma.shareLink.update({ where: { id }, data: { revokedAt: new Date() } });

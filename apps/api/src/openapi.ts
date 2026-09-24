@@ -214,8 +214,9 @@ export const openApiDocument = createDocument({
         tags: ['Projects'],
         summary: 'List projects',
         description:
-          '`scope=marketplace` - publicly published, `scope=owned` - created by the user, ' +
-          '`scope=assigned` - carried out by the user.',
+          '`scope=marketplace` - publicly published (no token needed), `scope=owned` - ' +
+          'created by the user, `scope=assigned` - carried out by the user, `scope=all` - ' +
+          'every project, for the administrator only (403 otherwise).',
         requestParams: { query: ProjectListQuery },
         security: optionalBearer,
         responses: { '200': json(paginated(Project), 'Project list'), ...errors },
@@ -226,7 +227,8 @@ export const openApiDocument = createDocument({
         description:
           'MARKETPLACE: the actor becomes the client and the project starts as DRAFT. ' +
           'DIRECT: the actor becomes the specialist, `externalClientName` is required ' +
-          'and the project starts as IN_PROGRESS.',
+          'and the project starts as IN_PROGRESS. A MARKETPLACE project is created by a ' +
+          'client, a DIRECT one by a specialist; any other role gets 403.',
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProjectInput } } },
         responses: { '201': json(Project, 'Project created'), ...errors },
@@ -236,7 +238,11 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Projects'],
         summary: 'Project details',
+        description:
+          'A PUBLISHED project is public. Any other is visible only to its client, its ' +
+          'specialist and the administrator - for everyone else it answers 404.',
         requestParams: { path: pathId },
+        security: optionalBearer,
         responses: { '200': json(Project, 'Project'), ...errors },
       },
       patch: {
@@ -253,7 +259,10 @@ export const openApiDocument = createDocument({
       delete: {
         tags: ['Projects'],
         summary: 'Delete a project',
-        description: 'Tasks, work sessions, proposals and share links are removed with it.',
+        description:
+          'Tasks, work sessions, proposals and share links are removed with it. Allowed to ' +
+          'the creator of the project (the client of a MARKETPLACE project, the specialist ' +
+          'of a DIRECT one) and to the administrator.',
         requestParams: { path: pathId },
         security: bearer,
         responses: { '204': { description: 'Deleted' }, ...errors },
@@ -263,8 +272,11 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Tasks'],
         summary: 'Tasks of a given project',
-        description: 'A missing project answers 404, which is not the same as an empty list.',
+        description:
+          'A missing project answers 404, which is not the same as an empty list. The ' +
+          'tasks are as visible as their project.',
         requestParams: { path: pathId },
+        security: optionalBearer,
         responses: { '200': json(z.array(Task), 'Task list'), ...errors },
       },
     },
@@ -276,7 +288,8 @@ export const openApiDocument = createDocument({
           'One resource in two representations, selected with the `Accept` header: ' +
           '`application/json` (the default) or `text/csv`, which is returned as a ' +
           'download. Anything else answers 406. Only finished work sessions are ' +
-          'counted - a running session has no duration yet.',
+          'counted - a running session has no duration yet. Readable by the parties of ' +
+          'the project and the administrator.',
         requestParams: { path: pathId },
         security: bearer,
         responses: {
@@ -321,7 +334,9 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Tasks'],
         summary: 'Task details',
+        description: 'As visible as the project the task belongs to.',
         requestParams: { path: pathId },
+        security: optionalBearer,
         responses: { '200': json(Task, 'Task'), ...errors },
       },
       patch: {
@@ -348,8 +363,11 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Work sessions'],
         summary: 'Work sessions of a given task',
-        description: 'A missing task answers 404, which is not the same as an empty list.',
+        description:
+          'A missing task answers 404, which is not the same as an empty list. Logged ' +
+          'hours are readable by the parties of the project and the administrator.',
         requestParams: { path: pathId },
+        security: bearer,
         responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
       },
     },
@@ -388,7 +406,9 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Work sessions'],
         summary: 'Work session details',
+        description: 'Readable by the parties of the project and the administrator.',
         requestParams: { path: pathId },
+        security: bearer,
         responses: { '200': json(WorkSession, 'Session'), ...errors },
       },
       patch: {

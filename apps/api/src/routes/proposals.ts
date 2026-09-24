@@ -7,11 +7,12 @@ import {
 } from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
-import { requireActor } from '../lib/actor.js';
+import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { toProposal } from '../lib/serialize.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
+import { assertCanViewProject } from '../services/access.js';
 import {
   assertCanDecide,
   assertCanSubmitProposal,
@@ -69,17 +70,19 @@ proposalsRouter.get('/proposals', async (req, res) => {
  * GET /projects/{id}/proposals - offers made for one project.
  *
  * Unlike the other listings this one is not public: competing bids reveal
- * prices. The client sees every offer, a specialist sees only their own.
+ * prices. The client (and the administrator) sees every offer, a specialist
+ * sees only their own.
  */
 proposalsRouter.get('/projects/:id/proposals', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
 
   const project = await findProjectOr404(id);
-  const isClient = project.clientId === actor;
+  assertCanViewProject(project, auth);
+  const seesAll = project.clientId === auth.userId || auth.role === 'ADMIN';
 
   const rows = await prisma.proposal.findMany({
-    where: { projectId: id, ...(isClient ? {} : { specialistId: actor }) },
+    where: { projectId: id, ...(seesAll ? {} : { specialistId: auth.userId }) },
     orderBy: PROPOSAL_ORDER,
   });
 
@@ -89,15 +92,17 @@ proposalsRouter.get('/projects/:id/proposals', async (req, res) => {
 /**
  * POST /projects/{id}/proposals - submit an offer.
  *
- * One offer per specialist per project, enforced by the `@@unique` constraint
- * in the schema; a repeated attempt surfaces as 409 through the error handler.
+ * Bidding is what specialists do, so the role is checked first. One offer per
+ * specialist per project, enforced by the `@@unique` constraint in the schema;
+ * a repeated attempt surfaces as 409 through the error handler.
  */
 proposalsRouter.post('/projects/:id/proposals', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const actor = requireRoleOf(req, 'SPECIALIST');
   const input = parseBody(CreateProposalInput, req);
 
   const project = await findProjectOr404(id);
+  assertCanViewProject(project, viewer(req));
   assertProjectAcceptsProposals(project);
   assertCanSubmitProposal(project, actor);
 

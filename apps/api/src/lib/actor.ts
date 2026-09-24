@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import type { Role } from '@hourly/shared';
+import type { AuthContext } from '../middleware/auth.js';
 import { HttpError, unauthorized } from '../middleware/error.js';
 
 /**
@@ -27,6 +28,11 @@ export function actorRole(req: Request): Role | null {
   return req.auth?.role ?? null;
 }
 
+/** The caller as the permission checks in `services/access.ts` expect it. */
+export function viewer(req: Request): AuthContext | null {
+  return req.auth ?? null;
+}
+
 /**
  * The acting user for endpoints that make no sense without one.
  *
@@ -36,6 +42,12 @@ export function requireActor(req: Request): string {
   const auth = req.auth;
   if (!auth) throw unauthorized('AUTH_REQUIRED', 'Sign in to use this endpoint');
   return auth.userId;
+}
+
+/** Like `requireActor`, but with the role, for checks that depend on both. */
+export function requireAuth(req: Request): AuthContext {
+  requireActor(req);
+  return req.auth!;
 }
 
 /**

@@ -7,17 +7,20 @@ import {
 } from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
-import { requireActor } from '../lib/actor.js';
+import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { money, toProject } from '../lib/serialize.js';
 import { UTF8_BOM, toCsv } from '../lib/csv.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import {
-  assertBudgetRange,
-  assertCanManage,
-  assertStatusTransition,
-} from '../services/projects.js';
+  assertCanCreateProject,
+  assertCanDeleteProject,
+  assertCanInspectProject,
+  assertCanManageProject,
+  assertCanViewProject,
+} from '../services/access.js';
+import { assertBudgetRange, assertStatusTransition } from '../services/projects.js';
 import { reportToCsvRows, summarizeTasks } from '../services/report.js';
 
 export const projectsRouter: Router = Router();
@@ -51,8 +54,11 @@ projectsRouter.get('/projects', async (req, res) => {
     filters.push({ origin: 'MARKETPLACE', status: 'PUBLISHED' });
   } else if (scope === 'owned') {
     filters.push({ clientId: requireActor(req) });
-  } else {
+  } else if (scope === 'assigned') {
     filters.push({ specialistId: requireActor(req) });
+  } else {
+    // Every project in every status - moderation needs the full picture.
+    requireRoleOf(req, 'ADMIN');
   }
 
   if (status) filters.push({ status });
@@ -83,10 +89,19 @@ projectsRouter.get('/projects', async (req, res) => {
   res.json({ items: rows.map(toProject), page, perPage, total });
 });
 
-/** GET /projects/{id} - a single project; readable without an actor. */
+/**
+ * GET /projects/{id} - a single project.
+ *
+ * A published project is public, guests included. Any other is visible only to
+ * its parties and the administrator; for everyone else it does not exist (404).
+ */
 projectsRouter.get('/projects/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  res.json(toProject(await findProjectOr404(id)));
+
+  const project = await findProjectOr404(id);
+  assertCanViewProject(project, viewer(req));
+
+  res.json(toProject(project));
 });
 
 /**
@@ -98,10 +113,13 @@ projectsRouter.get('/projects/:id', async (req, res) => {
  *                 has to go through the proposal stage;
  *   DIRECT      - the actor is the specialist, the client is a plain name, and
  *                 there is nothing to bid on, so work starts immediately.
+ *
+ * Which of the two a caller may create follows from their role.
  */
 projectsRouter.post('/projects', async (req, res) => {
-  const actor = requireActor(req);
+  const { userId: actor, role } = requireAuth(req);
   const input = parseBody(CreateProjectInput, req);
+  assertCanCreateProject(input.origin, role);
   const isDirect = input.origin === 'DIRECT';
 
   const row = await prisma.project.create({
@@ -135,11 +153,11 @@ projectsRouter.post('/projects', async (req, res) => {
  */
 projectsRouter.patch('/projects/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
   const input = parseBody(UpdateProjectInput, req);
 
   const existing = await findProjectOr404(id);
-  assertCanManage(existing, actor);
+  assertCanManageProject(existing, auth);
 
   if (input.status) assertStatusTransition(existing.status, input.status);
 
@@ -173,11 +191,12 @@ projectsRouter.patch('/projects/:id', async (req, res) => {
  * for, and an unsupported type is answered with 406 instead of quietly
  * sending JSON.
  *
- * Running sessions are left out - only finished work is reported.
+ * Running sessions are left out - only finished work is reported. Readable by
+ * the parties and, to settle a dispute, by the administrator.
  */
 projectsRouter.get('/projects/:id/report', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
 
   const project = await prisma.project.findUnique({
     where: { id },
@@ -191,7 +210,7 @@ projectsRouter.get('/projects/:id/report', async (req, res) => {
   if (!project) {
     throw new HttpError(404, 'NOT_FOUND', `Project ${id} does not exist`);
   }
-  assertCanManage(project, actor);
+  assertCanInspectProject(project, auth);
 
   // `req.accepts` returns the best match for the client's Accept header, or
   // false when nothing offered here is acceptable. No header at all, or */*,
@@ -248,13 +267,14 @@ projectsRouter.get('/projects/:id/report', async (req, res) => {
  *
  * Tasks, work sessions, proposals and share links go with it through the
  * cascade declared in the migration. 204 because there is nothing left to
- * return.
+ * return. Only the creator of the project, or the administrator removing
+ * content that breaks the rules, may do it.
  */
 projectsRouter.delete('/projects/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+  const auth = requireAuth(req);
 
-  assertCanManage(await findProjectOr404(id), actor);
+  assertCanDeleteProject(await findProjectOr404(id), auth);
   await prisma.project.delete({ where: { id } });
 
   noContent(res);

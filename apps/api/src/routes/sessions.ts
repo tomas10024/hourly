@@ -3,11 +3,12 @@ import { z } from 'zod';
 import { CreateWorkSessionInput, UpdateWorkSessionInput } from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
-import { requireActor } from '../lib/actor.js';
+import { requireActor, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { money, toSession } from '../lib/serialize.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
+import { assertCanInspectProject, assertCanViewProject } from '../services/access.js';
 import {
   assertChronology,
   assertIsAssignedSpecialist,
@@ -95,23 +96,33 @@ sessionsRouter.get('/sessions', async (req, res) => {
   res.json(rows.map(toSession));
 });
 
-/** GET /tasks/{id}/sessions - the hierarchical view: task -> work sessions. */
+/**
+ * GET /tasks/{id}/sessions - the hierarchical view: task -> work sessions.
+ *
+ * Logged hours are for the parties of the project and, to settle a dispute,
+ * the administrator.
+ */
 sessionsRouter.get('/tasks/:id/sessions', async (req, res) => {
   const { id } = parseParams(IdParam, req);
 
-  const task = await prisma.task.findUnique({ where: { id }, select: { id: true } });
+  const task = await prisma.task.findUnique({ where: { id }, include: { project: true } });
   if (!task) {
     throw new HttpError(404, 'NOT_FOUND', `Task ${id} does not exist`);
   }
+  assertCanInspectProject(task.project, viewer(req));
 
   const rows = await prisma.workSession.findMany({ where: { taskId: id }, orderBy: SESSION_ORDER });
   res.json(rows.map(toSession));
 });
 
-/** GET /sessions/{id} - a single work session. */
+/** GET /sessions/{id} - a single work session; same audience as the task's log. */
 sessionsRouter.get('/sessions/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
-  res.json(toSession(await findSessionOr404(id)));
+
+  const session = await findSessionOr404(id);
+  assertCanInspectProject(session.task.project, viewer(req));
+
+  res.json(toSession(session));
 });
 
 /**
@@ -170,6 +181,7 @@ sessionsRouter.patch('/sessions/:id', async (req, res) => {
   const input = parseBody(UpdateWorkSessionInput, req);
 
   const session = await findSessionOr404(id);
+  assertCanViewProject(session.task.project, viewer(req));
   assertIsSessionAuthor(session, actor);
   assertProjectAcceptsWork(session.task.project);
 
@@ -220,6 +232,7 @@ sessionsRouter.delete('/sessions/:id', async (req, res) => {
   const actor = requireActor(req);
 
   const session = await findSessionOr404(id);
+  assertCanViewProject(session.task.project, viewer(req));
   assertIsSessionAuthor(session, actor);
   assertProjectAcceptsWork(session.task.project);
 
