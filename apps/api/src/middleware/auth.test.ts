@@ -14,6 +14,7 @@ const findUnique = vi.hoisted(() => vi.fn());
 vi.mock('../lib/prisma.js', () => ({ prisma: { user: { findUnique } } }));
 
 const specialist = { id: 'a0000000-0000-4000-8000-000000000003', role: 'SPECIALIST' as const };
+const sid = 'f0000000-0000-4000-8000-000000000001';
 const admin = { id: 'a0000000-0000-4000-8000-000000000001', role: 'ADMIN' as const };
 
 function app() {
@@ -36,11 +37,12 @@ function app() {
 }
 
 const bearer = (user: { id: string; role: 'SPECIALIST' | 'ADMIN' }) =>
-  `Bearer ${signAccessToken(user)}`;
+  `Bearer ${signAccessToken(user, sid)}`;
 
 beforeEach(() => {
   findUnique.mockReset();
-  findUnique.mockResolvedValue({ isBlocked: false });
+  // An active account whose sign-in still has a usable refresh token.
+  findUnique.mockResolvedValue({ isBlocked: false, refreshTokens: [{ id: 'r1' }] });
 });
 
 describe('authenticate', () => {
@@ -59,7 +61,7 @@ describe('authenticate', () => {
 
     expect(res.body).toEqual({
       actor: specialist.id,
-      auth: { userId: specialist.id, role: 'SPECIALIST' },
+      auth: { userId: specialist.id, role: 'SPECIALIST', sessionId: sid },
     });
     expect(findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: specialist.id } }),
@@ -67,7 +69,7 @@ describe('authenticate', () => {
   });
 
   it('accepts the scheme name in any case, as RFC 9110 requires', async () => {
-    const token = signAccessToken(specialist);
+    const token = signAccessToken(specialist, sid);
     await request(app()).get('/api/who').set('Authorization', `bearer ${token}`).expect(200);
   });
 
@@ -93,7 +95,7 @@ describe('authenticate', () => {
     const issued = new Date(Date.now() - 60 * 60 * 1000);
     const res = await request(app())
       .get('/api/who')
-      .set('Authorization', `Bearer ${signAccessToken(specialist, issued)}`)
+      .set('Authorization', `Bearer ${signAccessToken(specialist, sid, issued)}`)
       .expect(401);
 
     expect(res.body.error.code).toBe('TOKEN_EXPIRED');
@@ -110,13 +112,33 @@ describe('authenticate', () => {
   });
 
   it('refuses a blocked account at once, while its token is still valid', async () => {
-    findUnique.mockResolvedValue({ isBlocked: true });
+    findUnique.mockResolvedValue({ isBlocked: true, refreshTokens: [] });
     const res = await request(app())
       .get('/api/who')
       .set('Authorization', bearer(specialist))
       .expect(403);
 
     expect(res.body.error.code).toBe('ACCOUNT_BLOCKED');
+  });
+
+  it('refuses a valid token once its sign-in has ended (logout, replay)', async () => {
+    findUnique.mockResolvedValue({ isBlocked: false, refreshTokens: [] });
+    const res = await request(app())
+      .get('/api/who')
+      .set('Authorization', bearer(specialist))
+      .expect(401);
+
+    expect(res.body.error.code).toBe('SESSION_REVOKED');
+    expect(res.headers['www-authenticate']).toContain('error="invalid_token"');
+  });
+
+  it('looks for a usable refresh token of exactly the sign-in named in the token', async () => {
+    await request(app()).get('/api/who').set('Authorization', bearer(specialist)).expect(200);
+
+    const query = findUnique.mock.calls[0]![0] as {
+      select: { refreshTokens: { where: { familyId: string; revokedAt: null } } };
+    };
+    expect(query.select.refreshTokens.where).toMatchObject({ familyId: sid, revokedAt: null });
   });
 
   it('ignores the header on /auth/refresh, so an expired token cannot block its own renewal', async () => {

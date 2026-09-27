@@ -48,10 +48,15 @@ const EnvSchema = z
     // two on different domains need `none` + `true` (lab 3, Azure).
     REFRESH_COOKIE_SAMESITE: z.enum(['strict', 'lax', 'none']).default('lax'),
     COOKIE_SECURE: booleanFlag.optional(),
+
+    // Brute-force limits on login, registration and refresh (`lib/rate-limit.ts`).
+    // On by default; switching them off is meant for load tests only.
+    AUTH_RATE_LIMIT: booleanFlag.optional(),
   })
-  .transform(({ COOKIE_SECURE, ...rest }) => ({
+  .transform(({ COOKIE_SECURE, AUTH_RATE_LIMIT, ...rest }) => ({
     ...rest,
     COOKIE_SECURE: COOKIE_SECURE ?? rest.NODE_ENV === 'production',
+    AUTH_RATE_LIMIT: AUTH_RATE_LIMIT ?? true,
   }))
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && env.JWT_ACCESS_SECRET.length < PRODUCTION_SECRET_MIN_LENGTH) {

@@ -387,6 +387,16 @@ async function main() {
         position: 3,
         estimatedHours: 6,
       },
+      {
+        id: task(21),
+        projectId: project.shop,
+        title: 'Mokėjimų integracija',
+        description: 'Banklink ir kortelių mokėjimai per mokėjimų tarpininką.',
+        status: 'TODO',
+        position: 4,
+        estimatedHours: 14,
+        approvedAt: daysAgo(24, 10),
+      },
 
       // Kirpyklos internetinė svetainė
       {
@@ -460,7 +470,9 @@ async function main() {
       done(task(1), user.specialist, daysAgo(21, 10), 180, 35, 'Rolių tikrinimas maršrutuose.'),
       done(task(1), user.specialist, daysAgo(20, 13), 120, 35, 'Testai ir klaidų apdorojimas.'),
       done(task(2), user.specialist, daysAgo(14, 9, 30), 150, 35, 'Užsakymų sąrašo puslapiavimas.'),
+      done(task(2), user.specialist, daysAgo(12, 10), 90, 35, 'Užsakymų paieška pagal klientą.'),
       done(task(2), user.specialist, daysAgo(10, 11), 90, 35, 'Filtrai pagal būseną.'),
+      done(task(2), user.specialist, daysAgo(6, 9), 120, 35, 'Užsakymo detalių langas.'),
       done(task(2), user.specialist, daysAgo(4, 14), 120, 35, 'Filtras pagal datą ir rikiavimas.'),
       done(task(4), user.specialist, daysAgo(8, 16), 60, 35, 'Pradinė analizė, laukiame atsakymo.'),
 
@@ -567,12 +579,15 @@ async function main() {
   });
 
   /* ---------------------------------------------------------------------- */
-  /* Share links - one of each state, so 404 can be demonstrated             */
+  /* Share links - every state, so 404 can be demonstrated                   */
   /* ---------------------------------------------------------------------- */
 
   const liveToken = randomBytes(32).toString('base64url');
   const expiredToken = randomBytes(32).toString('base64url');
   const revokedToken = randomBytes(32).toString('base64url');
+  const shopToken = randomBytes(32).toString('base64url');
+  const warehouseToken = randomBytes(32).toString('base64url');
+  const oldSalonToken = randomBytes(32).toString('base64url');
   const hash = (token: string) => createHash('sha256').update(token).digest('hex');
 
   await prisma.shareLink.createMany({
@@ -598,7 +613,39 @@ async function main() {
         expiresAt: daysAgo(-10, 12),
         revokedAt: daysAgo(3, 15),
       },
+      // Sent to the client of the shop, not opened yet.
+      {
+        id: share(4),
+        projectId: project.shop,
+        tokenHash: hash(shopToken),
+        expiresAt: daysAgo(-14, 12),
+      },
+      // The warehouse owner got a fresh link after the old one expired.
+      {
+        id: share(5),
+        projectId: project.warehouse,
+        tokenHash: hash(warehouseToken),
+        expiresAt: daysAgo(-28, 12),
+        lastViewedAt: daysAgo(0, 8),
+      },
+      // The first salon link, replaced by share 1 and revoked.
+      {
+        id: share(6),
+        projectId: project.salon,
+        tokenHash: hash(oldSalonToken),
+        expiresAt: daysAgo(-5, 12),
+        lastViewedAt: daysAgo(15, 18),
+        revokedAt: daysAgo(10, 9),
+      },
     ],
+  });
+
+  // A session has no fixed id (the seed does not need one), so the one used
+  // to demonstrate the full hierarchy is looked up.
+  const hierarchySession = await prisma.workSession.findFirstOrThrow({
+    where: { taskId: task(2) },
+    orderBy: { startedAt: 'asc' },
+    select: { id: true },
   });
 
   /* ---------------------------------------------------------------------- */
@@ -635,7 +682,21 @@ async function main() {
       inDirectProject: task(6),
     },
     proposals: { pending: proposal(3), accepted: proposal(1) },
-    shareTokens: { live: liveToken, expired: expiredToken, revoked: revokedToken },
+    // project -> task (5 sessions) -> session: for the three-level addresses.
+    hierarchy: {
+      projectId: project.shop,
+      taskId: task(2),
+      sessionId: hierarchySession.id,
+      url: `/api/projects/${project.shop}/tasks/${task(2)}/sessions/${hierarchySession.id}`,
+    },
+    shareTokens: {
+      live: liveToken,
+      expired: expiredToken,
+      revoked: revokedToken,
+      liveShop: shopToken,
+      liveWarehouse: warehouseToken,
+      revokedSalon: oldSalonToken,
+    },
   };
 
   writeFileSync(outputPath, `${JSON.stringify(demoData, null, 2)}\n`, 'utf8');

@@ -9,6 +9,8 @@ import { HttpError, unauthorized } from './error.js';
 export interface AuthContext {
   userId: string;
   role: Role;
+  /** The sign-in (refresh token family) the access token belongs to. */
+  sessionId: string;
 }
 
 declare module 'express-serve-static-core' {
@@ -41,10 +43,12 @@ const BEARER = /^Bearer ([A-Za-z0-9_\-.]+)$/i;
  *                                 to guest rights
  *   a valid token              -> `req.auth = { userId, role }`
  *
- * Beyond the signature, one primary-key lookup checks that the account still
- * exists and is not blocked. That keeps tokens of deleted users from creating
- * rows that point at nobody, and makes blocking take effect immediately rather
- * than when the token expires. The role is taken from the token itself.
+ * Beyond the signature, one lookup checks that the account still exists, is
+ * not blocked, and that the sign-in the token belongs to (`sid`, its refresh
+ * token family) has not ended. That keeps tokens of deleted users from creating
+ * rows that point at nobody, and makes blocking, logging out, changing the
+ * password and a detected token replay take effect immediately rather than
+ * when the token expires. The role is taken from the token itself.
  */
 export const authenticate: RequestHandler = async (req, _res, next) => {
   req.auth = null;
@@ -64,12 +68,26 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
 
   const user = await prisma.user.findUnique({
     where: { id: claims.sub },
-    select: { isBlocked: true },
+    select: {
+      isBlocked: true,
+      // A sign-in is alive while its family still has a usable refresh token.
+      // Rotation replaces one with the next inside a transaction, so there is
+      // never a moment with none; logout and replay detection revoke them all.
+      refreshTokens: {
+        where: { familyId: claims.sid, revokedAt: null, expiresAt: { gt: new Date() } },
+        select: { id: true },
+        take: 1,
+      },
+    },
   });
   if (!user) throw unauthorized('INVALID_TOKEN', 'The account no longer exists');
+  // Blocking also revokes the tokens; the honest answer is still "blocked".
   if (user.isBlocked) throw new HttpError(403, 'ACCOUNT_BLOCKED', 'This account is blocked');
+  if (user.refreshTokens.length === 0) {
+    throw unauthorized('SESSION_REVOKED', 'This sign-in has ended; sign in again');
+  }
 
-  req.auth = { userId: claims.sub, role: claims.role };
+  req.auth = { userId: claims.sub, role: claims.role, sessionId: claims.sid };
   next();
 };
 

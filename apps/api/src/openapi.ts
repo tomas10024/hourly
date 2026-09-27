@@ -63,6 +63,14 @@ const errors = {
   '422': json(ApiError, 'Validation failed'),
 };
 
+/** Over a brute-force limit (`lib/rate-limit.ts`). */
+const tooMany = {
+  ...json(ApiError, 'Too many attempts (TOO_MANY_REQUESTS); retry after `Retry-After` seconds'),
+  headers: z.object({
+    'Retry-After': z.string().meta({ description: 'Seconds until the limit resets' }),
+  }),
+};
+
 /** A resource below a project that does not exist at the given address. */
 const scopedNotFound = json(
   ApiError,
@@ -117,7 +125,9 @@ export const openApiDocument = createDocument({
       '**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) ' +
       `and sets the \`${REFRESH_COOKIE}\` cookie. ` +
       'Send the token as `Authorization: Bearer <token>` (the **Authorize** ' +
-      'button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one.',
+      'button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one. ' +
+      'After logout, a detected token replay or a password change on another device the ' +
+      'token is refused with 401 `SESSION_REVOKED` - sign in again.',
   },
   servers: [{ url: `http://localhost:${env.PORT}/api`, description: 'Local environment' }],
   tags: [
@@ -182,6 +192,7 @@ export const openApiDocument = createDocument({
           '400': errors['400'],
           '409': json(ApiError, 'An account with this e-mail already exists (EMAIL_TAKEN)'),
           '422': errors['422'],
+          '429': tooMany,
         },
       },
     },
@@ -191,7 +202,9 @@ export const openApiDocument = createDocument({
         summary: 'Sign in',
         description:
           'An unknown e-mail and a wrong password get the same 401. ' +
-          'A blocked account gets 403 only after its password has been verified.',
+          'A blocked account gets 403 only after its password has been verified. ' +
+          'Ten failed attempts for one e-mail from one address within 15 minutes are ' +
+          'answered 429 until the window passes; successful sign-ins are not counted.',
         requestBody: { content: { 'application/json': { schema: LoginInput } } },
         responses: {
           '200': {
@@ -204,6 +217,7 @@ export const openApiDocument = createDocument({
           '401': json(ApiError, 'Incorrect e-mail or password (INVALID_CREDENTIALS)'),
           '403': json(ApiError, 'The account is blocked (ACCOUNT_BLOCKED)'),
           '422': errors['422'],
+          '429': tooMany,
         },
       },
     },
@@ -230,6 +244,7 @@ export const openApiDocument = createDocument({
               '(REFRESH_TOKEN_REUSED)',
           ),
           '403': json(ApiError, 'The account is blocked (ACCOUNT_BLOCKED)'),
+          '429': tooMany,
         },
       },
     },
@@ -238,9 +253,10 @@ export const openApiDocument = createDocument({
         tags: ['Authentication'],
         summary: 'Sign out',
         description:
-          'Revokes every refresh token of this login and clears the cookie. Works without ' +
-          'an access token and without a cookie (idempotent). Access tokens already issued ' +
-          'stay valid until they expire.',
+          'Ends this login: revokes every refresh token of it and clears the cookie. The ' +
+          'access tokens of the login stop working at once too - they name it in their ' +
+          '`sid` claim, so the next request with one answers 401 SESSION_REVOKED. Works ' +
+          'without an access token and without a cookie (idempotent).',
         security: [{ refreshCookie: [] }, {}],
         responses: { '204': { description: 'Signed out' } },
       },

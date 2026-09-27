@@ -38,7 +38,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...   (specialisto prieigos žetonas)
 |---|---|---|
 | 1 | [server.ts](../apps/api/src/server.ts) | Programa klauso 4000 prievado |
 | 2 | [app.ts](../apps/api/src/app.ts) | Bendri sluoksniai: `helmet` (saugumo antraštės), `cors`, `express.json()` (tekstas → objektas), `cookieParser` |
-| 3 | [middleware/auth.ts](../apps/api/src/middleware/auth.ts) | `authenticate` patikrina žetono parašą ir galiojimą, patikrina, ar paskyra neužblokuota, ir įrašo `req.auth = { userId, role }` |
+| 3 | [middleware/auth.ts](../apps/api/src/middleware/auth.ts) | `authenticate` patikrina žetono parašą ir galiojimą, ar paskyra neužblokuota ir ar prisijungimas (`sid`) nebaigtas, ir įrašo `req.auth = { userId, role, sessionId }` |
 | 4 | [app.ts](../apps/api/src/app.ts) | Pagal adresą parenkamas maršrutizatorius — `…/tasks/:taskId/sessions` priklauso `sessionsRouter` |
 | 5 | [routes/sessions.ts](../apps/api/src/routes/sessions.ts) | Maršrutas surenka duomenis ir kviečia taisykles |
 | 5a | [lib/scope.ts](../apps/api/src/lib/scope.ts) | Užduotis ieškoma **projekto viduje**: kito projekto užduotis šiuo adresu → 404 |
@@ -96,7 +96,7 @@ toks pats.
 | `routes/` | **HTTP sluoksnis**: ką paimti iš užklausos, ką grąžinti | `auth.ts`, `users.ts`, `projects.ts`, `tasks.ts`, `sessions.ts`, `proposals.ts`, `shares.ts` |
 | `services/` | **Dalykinės taisyklės**: kas leidžiama, kas ne | `access.ts` — kas ką mato ir gali; `sessions.ts` — trukmė, įkainis; `projects.ts` — būsenų perėjimai |
 | `lib/` | **Įrankiai**, kuriuos naudoja visi maršrutai | `validate`, `serialize`, `http`, `actor`, `tokens`, `passwords`, `prisma`, `csv` |
-| `middleware/auth.ts` | Kas siunčia užklausą: žetono tikrinimas, `requireRole` | Blogas žetonas → 401, užblokuota paskyra → 403 |
+| `middleware/auth.ts` | Kas siunčia užklausą: žetono tikrinimas, `requireRole` | Blogas žetonas → 401, baigtas prisijungimas → 401 `SESSION_REVOKED`, užblokuota paskyra → 403 |
 | `middleware/error.ts` | Vienintelė vieta, kur klaida virsta atsakymu | `P2025` → 404, sugadintas JSON → 400 |
 | `tools/export-openapi.ts` | Įrašo specifikaciją į `docs/openapi.json` | `npm run openapi:export` |
 
@@ -139,7 +139,7 @@ apie tai, kas kam leidžiama — tas `if` turi keliauti į `services/`.
 
 Grynos funkcijos: gauna duomenis, arba praleidžia, arba meta klaidą. Jų
 nedomina nei `req`, nei `res`, todėl jas galima ištestuoti be serverio ir be
-duomenų bazės — visi 276 testai bėga per kelias sekundes.
+duomenų bazės — visi 283 testai bėga per kelias sekundes.
 
 ```ts
 // services/projects.ts — projektas negali šokinėti tarp bet kokių būsenų

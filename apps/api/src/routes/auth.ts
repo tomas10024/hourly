@@ -7,12 +7,13 @@ import {
   type AuthResponse,
   type Links,
 } from '@hourly/shared';
-import type { User as UserRow } from '../generated/prisma/client.js';
+import type { Prisma, User as UserRow } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
-import { requireActor } from '../lib/actor.js';
+import { requireActor, requireAuth } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { linked, paths } from '../lib/links.js';
 import { DUMMY_HASH, hashPassword, verifyPassword } from '../lib/passwords.js';
+import { loginLimit, refreshLimit, registerLimit } from '../lib/rate-limit.js';
 import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from '../lib/refresh-cookie.js';
 import { hashToken } from '../lib/secure-token.js';
 import { toCurrentUser } from '../lib/serialize.js';
@@ -29,15 +30,19 @@ const accountBlocked = () => new HttpError(403, 'ACCOUNT_BLOCKED', 'This account
  * Issues the pair of tokens and puts the refresh token into the cookie.
  *
  * A login starts a new token family; a refresh continues the family of the
- * token it replaces. The family is what gets revoked on logout or on reuse.
+ * token it replaces. The family is the sign-in itself: the access token names
+ * it in `sid`, and revoking it (logout, reuse) ends both kinds of token.
+ * `db` lets a refresh store the new token in the same transaction that
+ * revokes the old one.
  */
 async function issueTokens(
   res: Response,
   user: UserRow,
   familyId: string = randomUUID(),
+  db: Prisma.TransactionClient = prisma,
 ): Promise<AuthResponse> {
   const refresh = newRefreshToken();
-  await prisma.refreshToken.create({
+  await db.refreshToken.create({
     data: {
       userId: user.id,
       tokenHash: refresh.tokenHash,
@@ -47,7 +52,7 @@ async function issueTokens(
   });
   setRefreshCookie(res, refresh.token, refresh.expiresAt);
 
-  return { accessToken: signAccessToken(user), user: toCurrentUser(user) };
+  return { accessToken: signAccessToken(user, familyId), user: toCurrentUser(user) };
 }
 
 function revokeFamily(familyId: string, now: Date = new Date()) {
@@ -63,7 +68,7 @@ function revokeFamily(familyId: string, now: Date = new Date()) {
  * `RegisterInput` only admits CLIENT and SPECIALIST, so an administrator
  * cannot be self-registered. The new user is signed in straight away.
  */
-authRouter.post('/auth/register', async (req, res) => {
+authRouter.post('/auth/register', registerLimit, async (req, res) => {
   const input = parseBody(RegisterInput, req);
   const email = normalizeEmail(input.email);
 
@@ -93,7 +98,7 @@ authRouter.post('/auth/register', async (req, res) => {
  * have accounts. A blocked account is reported only after the password has
  * been verified - someone without the password learns nothing about it.
  */
-authRouter.post('/auth/login', async (req, res) => {
+authRouter.post('/auth/login', loginLimit, async (req, res) => {
   const input = parseBody(LoginInput, req);
 
   const user = await prisma.user.findUnique({ where: { email: normalizeEmail(input.email) } });
@@ -117,7 +122,7 @@ authRouter.post('/auth/login', async (req, res) => {
  * The token is read from the cookie only, never from the body: a value that
  * page scripts can hand over is a value that page scripts can steal.
  */
-authRouter.post('/auth/refresh', async (req, res) => {
+authRouter.post('/auth/refresh', refreshLimit, async (req, res) => {
   // A refused token is useless from then on, so every failure also drops the
   // cookie; the client does not keep sending it.
   const fail = (error: HttpError) => {
@@ -164,19 +169,27 @@ authRouter.post('/auth/refresh', async (req, res) => {
 
   const { user, familyId } = row!;
 
-  // Conditional on `revokedAt: null`, so of two concurrent refreshes with the
-  // same token only one can win. The loser is indistinguishable from a replay
-  // and is treated as one - two valid successors must never exist.
-  const { count } = await prisma.refreshToken.updateMany({
-    where: { id: row!.id, revokedAt: null },
-    data: { revokedAt: now },
+  // The old token is revoked and its successor stored in one transaction, so
+  // the family never has a moment without a usable token - `authenticate`
+  // would otherwise take such a moment for a logout.
+  //
+  // The revocation is conditional on `revokedAt: null`, so of two concurrent
+  // refreshes with the same token only one can win. The loser is
+  // indistinguishable from a replay and is treated as one - two valid
+  // successors must never exist.
+  const issued = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.refreshToken.updateMany({
+      where: { id: row!.id, revokedAt: null },
+      data: { revokedAt: now },
+    });
+    return count === 1 ? issueTokens(res, user, familyId, tx) : null;
   });
-  if (count !== 1) {
+  if (issued === null) {
     await revokeFamily(familyId, now);
     throw reused();
   }
 
-  res.json(await issueTokens(res, user, familyId));
+  res.json(issued);
 });
 
 /**
@@ -184,9 +197,9 @@ authRouter.post('/auth/refresh', async (req, res) => {
  *
  * Driven by the cookie alone, not by the access token, so signing out works
  * even after the access token has expired. The family is revoked, which kills
- * every refresh token of this login; access tokens already handed out stay
- * valid until their `exp` (at most `ACCESS_TOKEN_TTL`) - the price of access
- * tokens that need no database lookup to verify.
+ * every refresh token of this login - and, because the access token names the
+ * family in `sid`, the access token too: the next request with it answers 401
+ * `SESSION_REVOKED` instead of working until its `exp`.
  *
  * Idempotent: without a cookie, or with an unknown one, the caller is already
  * signed out and gets 204 all the same.
@@ -232,11 +245,12 @@ authRouter.get('/auth/me', async (req, res) => {
  * PATCH /auth/me - edit one's own name, bio or password.
  *
  * A password change signs out every other login: whoever might have known the
- * old password loses their refresh tokens with it. The login making the change
- * (identified by its cookie) stays signed in.
+ * old password loses their tokens with it. The login making the change
+ * (the `sid` of its access token) stays signed in.
  */
 authRouter.patch('/auth/me', async (req, res) => {
-  const user = await findMeOr401(requireActor(req));
+  const auth = requireAuth(req);
+  const user = await findMeOr401(auth.userId);
   const input = parseBody(UpdateMeInput, req);
 
   let passwordHash: string | undefined;
@@ -255,20 +269,8 @@ authRouter.patch('/auth/me', async (req, res) => {
   });
 
   if (passwordHash !== undefined) {
-    const cookie = readRefreshCookie(req);
-    const current = cookie
-      ? await prisma.refreshToken.findUnique({
-          where: { tokenHash: hashToken(cookie) },
-          select: { familyId: true, userId: true },
-        })
-      : null;
-
     await prisma.refreshToken.updateMany({
-      where: {
-        userId: user.id,
-        revokedAt: null,
-        ...(current?.userId === user.id ? { familyId: { not: current.familyId } } : {}),
-      },
+      where: { userId: user.id, revokedAt: null, familyId: { not: auth.sessionId } },
       data: { revokedAt: new Date() },
     });
   }

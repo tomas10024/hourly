@@ -28,6 +28,7 @@ export type UnauthorizedCode =
   | 'AUTH_REQUIRED'
   | 'INVALID_TOKEN'
   | 'TOKEN_EXPIRED'
+  | 'SESSION_REVOKED'
   | 'INVALID_CREDENTIALS'
   | 'INVALID_REFRESH_TOKEN'
   | 'REFRESH_TOKEN_REUSED';
@@ -41,7 +42,8 @@ export type UnauthorizedCode =
  * all when none was sent - which lets a client tell "log in" from "refresh".
  */
 export function unauthorized(code: UnauthorizedCode, message: string): HttpError {
-  const rejectedToken = code === 'INVALID_TOKEN' || code === 'TOKEN_EXPIRED';
+  const rejectedToken =
+    code === 'INVALID_TOKEN' || code === 'TOKEN_EXPIRED' || code === 'SESSION_REVOKED';
   const challenge = rejectedToken
     ? `Bearer realm="hourly", error="invalid_token", error_description="${message}"`
     : 'Bearer realm="hourly"';

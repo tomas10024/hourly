@@ -181,6 +181,8 @@ maršruto):
 
 ## 5. Etapas E – duomenys
 
+**Būsena:** atlikta (2026-09-27). `share_links` 3 → 6, parduotuvės projektas – 5 užduotys, `task(2)` – 5 sesijos; `demo-data.json` turi `hierarchy` (projektas / užduotis / sesija ir jos URL).
+
 - **E1.** `share_links` 3 → ≥ 6 (keli galiojantys skirtinguose projektuose + pasibaigusi + atšaukta).
 - **E2.** Patikrinti, kad yra projektas su ≥ 5 užduotimis ir užduotis su ≥ 5 sesijomis – kad 3 lygių `GET` ir puslapiavimas (`perPage=2`) atrodytų prasmingai.
 - **E3.** `docs/postman/demo-data.json` – eksportuoti trejetus `projectId / taskId / sessionId` įdėtiniams URL.
@@ -205,6 +207,8 @@ maršruto):
 ---
 
 ## 7. Etapas G – 2 lab. sustiprinimas
+
+**Būsena:** G1, G2 atlikta (2026-09-27). G1: `sid` JWT; rotacija – vienoje transakcijoje, kad lygiagrečios užklausos negautų klaidingo `SESSION_REVOKED`; slaptažodžio keitimas dabartinį prisijungimą atpažįsta pagal `sid`, ne pagal slapuką. G2: prisijungimui skaičiuojamos tik nesėkmės pagal IP + el. paštą (10 / 15 min.), todėl demo galima kartoti. Postman 401 / 429 užklausos – F etape.
 
 - **G1. Logout iškart panaikina prieigos žetoną.** Į JWT įdėti `sid` = refresh šeimos `familyId`. `authenticate` jau kiekvienai užklausai skaito naudotoją (dėl `isBlocked`) – toje pačioje užklausoje patikrinti, kad šeimoje yra nepanaikintas, nepasibaigęs žetonas; kitaip 401 `SESSION_REVOKED`. Rotacija `sid` nekeičia; pakartojimo aptikimas panaikina šeimą → ir prieigos žetonai nustoja galioti. Testai + README 5.2.
 - **G2. Bandymų ribojimas:** `express-rate-limit` `/auth/login`, `/auth/register`, `/auth/refresh` → 429 su `Retry-After`. Ribos per `env.ts` (CI – aukštos). `trust proxy` jau nustatytas.

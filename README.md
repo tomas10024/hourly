@@ -378,7 +378,7 @@ Pats „Hourly“ API vykdo duomenų mainus su duomenų baze – tam naudojama O
 
 **PostgreSQL** – reliacinė duomenų bazių valdymo sistema. Pasirinkta dėl dalinių unikalių indeksų (angl. partial unique index) palaikymo, kuris naudojamas užtikrinti, kad vienam projektui galėtų būti priimtas tik vienas pasiūlymas, o vienas naudotojas tuo pačiu metu galėtų turėti tik vieną neužbaigtą darbo sesiją.
 
-**JWT (JSON Web Token)** – autentifikacijos ir autorizacijos priemonė. Naudojama trumpos galiojimo trukmės prieigos žetonų (15 min.) ir atnaujinimo žetonų pora. Prieigos žetone yra naudotojo identifikatorius ir rolė, todėl rolė žinoma be papildomos užklausos duomenų bazei. Atnaujinimo žetonas saugomas `httpOnly` slapuke, o duomenų bazėje laikoma tik jo maiša. Taikoma žetonų rotacijos strategija: kiekvienas atnaujinimas išduoda naują žetoną ir panaikina ankstesnįjį, o pakartotinai panaudojus jau anuliuotą žetoną panaikinama visa to prisijungimo žetonų šeima. Plačiau – 5 skyriuje.
+**JWT (JSON Web Token)** – autentifikacijos ir autorizacijos priemonė. Naudojama trumpos galiojimo trukmės prieigos žetonų (15 min.) ir atnaujinimo žetonų pora. Prieigos žetone yra naudotojo identifikatorius, rolė ir prisijungimo identifikatorius (`sid`), todėl rolė žinoma be papildomos užklausos duomenų bazei, o atsijungus žetonas atmetamas iš karto. Atnaujinimo žetonas saugomas `httpOnly` slapuke, o duomenų bazėje laikoma tik jo maiša. Taikoma žetonų rotacijos strategija: kiekvienas atnaujinimas išduoda naują žetoną ir panaikina ankstesnįjį, o pakartotinai panaudojus jau anuliuotą žetoną panaikinama visa to prisijungimo žetonų šeima. Plačiau – 5 skyriuje.
 
 **Gebėjimo žetonas** (angl. capability token) – antrasis prieigos mechanizmas, skirtas peržiūros nuorodoms. Skirtingai nei JWT, jis nesieja su naudotojo paskyra, o suteikia teisę skaityti vieną konkretų resursą. Žetonas generuojamas kriptografiškai saugiu atsitiktinių skaičių generatoriumi, duomenų bazėje saugoma tik jo maiša, galiojimo laikas ribotas, o teisės apribotos vien skaitymo metodais. Toks sprendimas leidžia dalytis darbo eiga su paskyros neturinčiu užsakovu, neįvedant papildomos registracijos. Kadangi žetonas perduodamas adreso eilutėje, atsakymuose nustatoma `X-Robots-Tag: noindex` antraštė, o nuoroda bet kada gali būti atšaukta nekeičiant paties projekto.
 
@@ -468,9 +468,11 @@ Po `npm run db:seed` sukuriamos devynios paskyros, visos su slaptažodžiu
 | `ieva@duomenys.lt` | Specialistas | **Turi vykdomą darbo sesiją** |
 | `blokuotas@hourly.lt` | Specialistas | **Užblokuota** – prisijungus grąžinama 403 `ACCOUNT_BLOCKED` |
 
-Duomenyse yra visos projekto ir pasiūlymo būsenos, 20 užduočių, 24 darbo sesijos
-(iš jų viena vykdoma) ir trys peržiūros nuorodos: galiojanti, pasibaigusi ir
-atšaukta. Seed yra pakartojamas – paleidus iš naujo duomenys atstatomi, o
+Duomenyse yra visos projekto ir pasiūlymo būsenos, 21 užduotis, 26 darbo sesijos
+(iš jų viena vykdoma) ir šešios peržiūros nuorodos: galiojančios, pasibaigusi ir
+atšauktos. Parduotuvės projektas turi penkias užduotis, o jo užduotis „Užsakymų
+sąrašas su filtrais“ – penkias sesijas, todėl visi trys hierarchijos lygiai ir
+puslapiavimas rodomi su prasmingu kiekiu duomenų. Seed yra pakartojamas – paleidus iš naujo duomenys atstatomi, o
 identifikatoriai nesikeičia.
 
 Sukurti identifikatoriai ir peržiūros nuorodų žetonai įrašomi į
@@ -494,8 +496,8 @@ prieigos žetoną, kai ankstesnysis baigia galioti.
 | Kliento pusėje | Programos atmintyje | Naršyklės slapukuose, scenarijams nepasiekiamas |
 | Serverio pusėje | Nesaugomas – tikrinamas parašas | Duomenų bazėje, tik `sha256` maiša |
 | Galiojimas | 15 min. | 30 d. |
-| Turinys | `sub` (naudotojo id), `role`, `iat`, `exp`, `iss`, `aud` | – |
-| Atšaukimas | Negalimas, baigia galioti savaime | Atsijungiant, keičiant slaptažodį, blokuojant naudotoją |
+| Turinys | `sub` (naudotojo id), `role`, `sid` (prisijungimas), `iat`, `exp`, `iss`, `aud` | – |
+| Atšaukimas | Kartu su savo prisijungimu (`sid`) | Atsijungiant, keičiant slaptažodį, blokuojant naudotoją |
 
 Prieigos žetono turinio pavyzdys:
 
@@ -503,6 +505,7 @@ Prieigos žetono turinio pavyzdys:
 {
   "sub": "a0000000-0000-4000-8000-000000000003",
   "role": "SPECIALIST",
+  "sid": "6e894cf1-2c63-43be-a780-18201ac6dc25",
   "iat": 1790276285,
   "exp": 1790277185,
   "iss": "hourly-api",
@@ -521,9 +524,10 @@ Prieigos žetono tikrinimas ([middleware/auth.ts](apps/api/src/middleware/auth.t
 
 - **Algoritmas prisegtas.** Priimamas tik `HS256`, todėl žetonai su `alg: none`
   ar kitu algoritmu atmetami. Taip pat tikrinami `iss`, `aud` ir turinio forma.
-- **Rolė imama iš žetono**, tačiau kiekviena užklausa viena paieška pagal
-  pirminį raktą patikrina, ar paskyra dar egzistuoja ir nėra užblokuota. Todėl
-  užblokuotas naudotojas praranda prieigą iš karto, o ne po 15 min.
+- **Rolė imama iš žetono**, tačiau kiekviena užklausa viena paieška patikrina,
+  ar paskyra dar egzistuoja, nėra užblokuota ir ar žetono prisijungimas (`sid`)
+  dar galioja. Todėl užblokuotas arba atsijungęs naudotojas praranda prieigą iš
+  karto, o ne po 15 min.
 - **Pasibaigęs žetonas turi atskirą kodą** `TOKEN_EXPIRED`: klientas žino, kad
   reikia kviesti `/auth/refresh`, o ne rodyti prisijungimo formą.
 - **Netinkamas žetonas nereiškia svečio teisių.** Jei žetonas pateiktas, bet
@@ -580,13 +584,23 @@ Teisėtas naudotojas prisijungia iš naujo, o vagis prieigą praranda.
 | Įvykis | Kas panaikinama |
 |---|---|
 | Atsijungimas (`POST /auth/logout`) | To prisijungimo šeima; slapukas išvalomas |
-| Slaptažodžio keitimas (`PATCH /auth/me`) | Visos kitos naudotojo šeimos – dabartinis prisijungimas lieka |
+| Slaptažodžio keitimas (`PATCH /auth/me`) | Visos kitos naudotojo šeimos – dabartinis prisijungimas (`sid`) lieka |
 | Blokavimas (`PATCH /users/{id}`) | Visos naudotojo šeimos; prieigos žetonai atmetami nuo kitos užklausos |
 | Pakartotinis žetono panaudojimas | Ta šeima |
 
-Atsijungus prieigos žetonas galioja iki savo `exp`, bet ne ilgiau kaip 15 min.
-Tai sąmoningas kompromisas: kitaip kiekviena užklausa turėtų tikrinti atšauktų
-žetonų sąrašą.
+**Prieigos žetonas miršta kartu su savo prisijungimu.** Šeima – tai vienas
+prisijungimas, o prieigos žetonas ją įvardija `sid` teiginiu. Kiekviena
+užklausa (toje pačioje paieškoje, kuri tikrina blokavimą) patikrina, ar šeimoje
+dar yra galiojantis atnaujinimo žetonas. Panaikinus šeimą – atsijungus,
+pakeitus slaptažodį kitame įrenginyje ar aptikus pakartotinį panaudojimą – tas
+pats prieigos žetonas nuo kitos užklausos gauna **401 `SESSION_REVOKED`**, o ne
+veikia iki savo `exp`. Rotacija seną atnaujinimo žetoną panaikina ir naują
+įrašo vienoje transakcijoje, todėl šeima niekada nelieka be galiojančio žetono
+ir lygiagrečios užklausos atnaujinimo metu neatmetamos.
+
+JWT lieka pasirašytas ir savarankiškas (rolę ir naudotoją serveris sužino be
+duomenų bazės), tačiau „stateless“ čia sąmoningai ne visiškas: kaina – viena
+paieška pagal indeksą kiekvienai užklausai, nauda – tikras atsijungimas.
 
 Metodai `/auth/register`, `/auth/login`, `/auth/refresh` ir `/auth/logout`
 `Authorization` antraštės nežiūri. Klientai dažnai prideda žetoną prie visų
@@ -657,7 +671,8 @@ reikia blokuoti.
 | XSS pavagia atnaujinimo žetoną | `httpOnly` slapukas |
 | CSRF per slapuką | `SameSite=Lax`, `Path=/api/auth`, CORS tik iš `WEB_ORIGIN` |
 | Pavogtas atnaujinimo žetonas | Rotacija ir visos šeimos panaikinimas pakartotinai jį panaudojus |
-| Pavogtas prieigos žetonas | Galioja tik 15 min. |
+| Pavogtas prieigos žetonas | Galioja tik 15 min.; atsijungus nustoja galioti iš karto (`sid`) |
+| Slaptažodžio spėliojimas (brute force) | Po 10 nesėkmingų bandymų tam pačiam el. paštui iš to paties adreso per 15 min. – **429** su `Retry-After`; registracija – 30 per valandą, `/auth/refresh` – 30 nesėkmių per 15 min. ([lib/rate-limit.ts](apps/api/src/lib/rate-limit.ts)) |
 | Suklastotas žetonas, `alg: none` | Parašo patikra, leidžiamas tik `HS256` |
 | Teisių didinimas registruojantis | Registracijoje leidžiamos tik `CLIENT` ir `SPECIALIST` rolės |
 | Naudotojų išvardijimas | Vienodas 401 nežinomam el. paštui ir blogam slaptažodžiui, vienodas atsakymo laikas; svetimi resursai – 404 |
@@ -719,6 +734,8 @@ resursai nurodomi adresu, ne kūne, todėl jų nebuvimas visada yra 404:
 | `VALIDATION_ERROR` | Turinys neatitinka duomenų schemos |
 | `AUTH_REQUIRED` | Metodui reikia prisijungti, o žetono nėra |
 | `INVALID_TOKEN`, `TOKEN_EXPIRED` | Prieigos žetonas netinkamas arba pasibaigęs |
+| `SESSION_REVOKED` | Žetono prisijungimas baigtas (atsijungta, pakeistas slaptažodis, aptiktas pakartotinis panaudojimas) |
+| `TOO_MANY_REQUESTS` | Viršytas bandymų limitas; `Retry-After` nurodo, po kiek sekundžių bandyti vėl |
 | `INVALID_CREDENTIALS` | Neteisingas el. paštas arba slaptažodis |
 | `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED` | Atnaujinimo žetono nėra, jis nežinomas, pasibaigęs arba jau panaudotas |
 | `FORBIDDEN` | Rolė arba ryšys su resursu neleidžia veiksmo |
@@ -794,7 +811,7 @@ konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekt
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 276 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 283 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
 skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
 suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių
@@ -812,7 +829,7 @@ ir teisių lentelę ir tai, kad atsakymų struktūra atitinka OpenAPI specifikac
 | OpenAPI specifikacija kiekvienam metodui | Generuojama iš Zod schemų, pateikiama `/api/docs` ir [docs/openapi.json](docs/openapi.json) |
 | Patogi paleidimo aplinka | `npm install` → `npm run db:up` → `db:migrate` → `db:seed` → `npm run dev` |
 | Duomenų bazės sprendimas | PostgreSQL 17 su Prisma ORM, migracijos saugykloje |
-| Prasmingi duomenys gynimo metu | 9 naudotojai, 7 projektai (visos būsenos), 20 užduočių, 24 darbo sesijos, 7 pasiūlymai, 3 peržiūros nuorodos |
+| Prasmingi duomenys gynimo metu | 9 naudotojai, 7 projektai (visos būsenos), 21 užduotis, 26 darbo sesijos, 7 pasiūlymai, 6 peržiūros nuorodos |
 | Teisingas turinio tipas | `application/json` ir `text/csv` (ataskaitos parsisiuntimas) |
 | 404, kai resursas nerandamas | 6 skyrius; demonstracijos 2, 3 ir 5 dalys |
 | 400 / 422 netinkamam turiniui | 6.1 skyrius; demonstracijoje – trys 400 ir trys 422 atvejai |
@@ -828,7 +845,7 @@ ir teisių lentelę ir tai, kad atsakymų struktūra atitinka OpenAPI specifikac
 | Bent trys rolės | Svečias, užsakovas, specialistas, administratorius (5.3 skyrius) |
 | Rolė JWT žetone | `role` žetono turinyje; demonstracija tikrina dekoduotą žetoną |
 | Atnaujinimo žetonų strategija | `httpOnly` slapukas, rotacija, šeimos panaikinimas pakartotinai panaudojus (5.2 skyrius) |
-| Atsijungimas | `POST /auth/logout` panaikina prisijungimo žetonų šeimą |
+| Atsijungimas | `POST /auth/logout` panaikina prisijungimo žetonų šeimą; to prisijungimo prieigos žetonai atmetami iš karto (`SESSION_REVOKED`) |
 | Metodų apsauga pagal roles | `requireRole`, `services/access.ts`; demonstracijos 3 ir 4 dalys |
 | Naudotojas keičia tik savo resursus | Šalies, autoriaus ir kūrėjo patikros (5.3 skyrius) |
 | 401 neautentifikuotam naudotojui | Be žetono, su suklastotu ar pasibaigusiu žetonu; `WWW-Authenticate` antraštė |

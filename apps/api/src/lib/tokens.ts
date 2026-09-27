@@ -36,14 +36,28 @@ const ALGORITHM = 'HS256';
 const AccessClaims = z.object({
   sub: z.uuid(),
   role: Role,
+  /**
+   * The sign-in this token belongs to: the family of its refresh tokens.
+   * `authenticate` refuses the token once that family is revoked, so logging
+   * out ends the access token at once instead of when it expires.
+   */
+  sid: z.uuid(),
 });
 export type AccessClaims = z.infer<typeof AccessClaims>;
 
 const toSeconds = (date: Date) => Math.floor(date.getTime() / 1000);
 
-/** `now` exists for tests; production code never passes it. */
-export function signAccessToken(user: { id: string; role: Role }, now: Date = new Date()): string {
-  return jwt.sign({ role: user.role, iat: toSeconds(now) }, env.JWT_ACCESS_SECRET, {
+/**
+ * `sessionId` is the refresh token family of the sign-in (see `sid` above).
+ * `now` exists for tests; production code never passes it.
+ */
+export function signAccessToken(
+  user: { id: string; role: Role },
+  sessionId: string,
+  now: Date = new Date(),
+): string {
+  const claims = { role: user.role, sid: sessionId, iat: toSeconds(now) };
+  return jwt.sign(claims, env.JWT_ACCESS_SECRET, {
     algorithm: ALGORITHM,
     expiresIn: env.ACCESS_TOKEN_TTL,
     subject: user.id,

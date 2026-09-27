@@ -3,7 +3,7 @@
   "info": {
     "title": "Hourly API",
     "version": "0.1.0",
-    "description": "A marketplace for freelance work with transparent time tracking. Hierarchy: project -> task -> work session, addressed as `/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}`. A child requested under a parent it does not belong to answers 404. A known address used with an unsupported method answers 405 with an `Allow` header.\n\n**Hypermedia.** Every resource carries `_links`: related resources (`self`, `project`, `tasks`) and the actions the caller may take right now, with their method (`update`, `publish`, `stop`, `accept`...). Actions follow the role of the caller and the state of the resource. Lists add `first`, `prev`, `next` and `last`. Start at `GET /`.\n\n**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) and sets the `hourly_refresh` cookie. Send the token as `Authorization: Bearer <token>` (the **Authorize** button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one."
+    "description": "A marketplace for freelance work with transparent time tracking. Hierarchy: project -> task -> work session, addressed as `/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}`. A child requested under a parent it does not belong to answers 404. A known address used with an unsupported method answers 405 with an `Allow` header.\n\n**Hypermedia.** Every resource carries `_links`: related resources (`self`, `project`, `tasks`) and the actions the caller may take right now, with their method (`update`, `publish`, `stop`, `accept`...). Actions follow the role of the caller and the state of the resource. Lists add `first`, `prev`, `next` and `last`. Start at `GET /`.\n\n**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) and sets the `hourly_refresh` cookie. Send the token as `Authorization: Bearer <token>` (the **Authorize** button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one. After logout, a detected token replay or a password change on another device the token is refused with 401 `SESSION_REVOKED` - sign in again."
   },
   "servers": [
     {
@@ -375,6 +375,49 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many attempts (TOO_MANY_REQUESTS); retry after `Retry-After` seconds",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds until the limit resets",
+                "schema": {
+                  "type": "string",
+                  "description": "Seconds until the limit resets"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {}
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
@@ -385,7 +428,7 @@
           "Authentication"
         ],
         "summary": "Sign in",
-        "description": "An unknown e-mail and a wrong password get the same 401. A blocked account gets 403 only after its password has been verified.",
+        "description": "An unknown e-mail and a wrong password get the same 401. A blocked account gets 403 only after its password has been verified. Ten failed attempts for one e-mail from one address within 15 minutes are answered 429 until the window passes; successful sign-ins are not counted.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -626,6 +669,49 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many attempts (TOO_MANY_REQUESTS); retry after `Retry-After` seconds",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds until the limit resets",
+                "schema": {
+                  "type": "string",
+                  "description": "Seconds until the limit resets"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {}
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
@@ -790,6 +876,49 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many attempts (TOO_MANY_REQUESTS); retry after `Retry-After` seconds",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds until the limit resets",
+                "schema": {
+                  "type": "string",
+                  "description": "Seconds until the limit resets"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "details": {}
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
@@ -800,7 +929,7 @@
           "Authentication"
         ],
         "summary": "Sign out",
-        "description": "Revokes every refresh token of this login and clears the cookie. Works without an access token and without a cookie (idempotent). Access tokens already issued stay valid until they expire.",
+        "description": "Ends this login: revokes every refresh token of it and clears the cookie. The access tokens of the login stop working at once too - they name it in their `sid` claim, so the next request with one answers 401 SESSION_REVOKED. Works without an access token and without a cookie (idempotent).",
         "security": [
           {
             "refreshCookie": []
