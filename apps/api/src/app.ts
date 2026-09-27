@@ -10,6 +10,7 @@ import { errorHandler, methodNotAllowed, notFound } from './middleware/error.js'
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { projectsRouter } from './routes/projects.js';
+import { rootRouter } from './routes/root.js';
 import { proposalsRouter } from './routes/proposals.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { sharesRouter } from './routes/shares.js';
@@ -42,6 +43,7 @@ export function buildApp(): Express {
   app.use('/api', authenticate);
 
   const routers = [
+    rootRouter,
     healthRouter,
     authRouter,
     projectsRouter,

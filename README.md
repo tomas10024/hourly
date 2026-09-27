@@ -243,6 +243,49 @@ gretimi laikotarpiai (vienos savaitės `to` – kitos `from`) sesijos neskaičiu
 dukart. Loginiai filtrai priima tik žodžius `true` ir `false`. Netinkama
 reikšmė arba `from`, einantis po `to`, grąžina 400.
 
+**Hypermedia.** Kiekvienas resursas grąžinamas su `_links` objektu (HAL
+stilius), kuriame yra dviejų rūšių nuorodos:
+
+- **ryšiai** – kur rasti susijusius resursus: `self`, `project`, `task`,
+  `tasks`, `sessions`, `report`, `client`, `specialist`;
+- **veiksmai** – ką kviečiantysis gali daryti **dabar**, su HTTP metodu:
+  `update`, `delete`, `publish`, `complete`, `cancel`, `create-task`,
+  `submit-proposal`, `start-session`, `stop`, `approve`, `accept`, `reject`,
+  `withdraw`, `revoke`.
+
+```json
+{
+  "id": "…", "status": "IN_PROGRESS", "endedAt": null,
+  "_links": {
+    "self":    { "href": "/api/projects/P/tasks/T/sessions/S" },
+    "task":    { "href": "/api/projects/P/tasks/T" },
+    "project": { "href": "/api/projects/P" },
+    "stop":    { "href": "/api/projects/P/tasks/T/sessions/S", "method": "PATCH" }
+  }
+}
+```
+
+Veiksmai priklauso nuo kviečiančiojo rolės ir resurso būsenos: juodraštis
+užsakovui siūlo `publish`, paskelbtas projektas specialistui – `submit-proposal`,
+vykdoma sesija jos autoriui – `stop`, o svečiui nesiūloma nieko. Veiksmo
+nuoroda rodoma tada ir tik tada, kai maršrutas užklausą priimtų, nes sprendžiama
+paleidžiant **tas pačias** `assert*` taisykles
+([lib/links.ts](apps/api/src/lib/links.ts), funkcija `allows`), o ne jų kopiją.
+Todėl klientas gali rodyti mygtukus pagal nuorodas ir nežinoti teisių lentelės.
+Vienintelis dalykas, kurio nuoroda negali garantuoti, – konfliktas su kitais
+resursais (409), pvz., antra vykdoma sesija.
+
+Būsenos perėjimai (`publish`, `complete`, `cancel`, `accept`, `reject`,
+`withdraw`, `stop`) yra `PATCH` tuo pačiu adresu – su `{"status": …}` arba,
+sesijai, su `{"endedAt": …}`. Sąrašų vokas turi `self`, `first`, `last` ir, kai
+yra, `prev` bei `next`; jos išlaiko visus užklausos filtrus. Adresai santykiniai
+(`/api/…`), todėl veikia ir per web tarpinį maršrutą, ir įdiegus.
+
+Įėjimo taškas `GET /api` grąžina nuorodas į viską, ką kviečiantysis gali
+pasiekti: svečiui – aikštelę, registraciją ir prisijungimą, prisijungusiam –
+savo projektus, užduotis, sesijas ar pasiūlymus, administratoriui – ir naudotojų
+sąrašą. Klientui užtenka žinoti šį vieną adresą.
+
 **Pasiūlymų valdymo metodai:**
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
@@ -275,8 +318,8 @@ resursas grąžinamas kaip `application/json` arba, nurodžius
 `Accept: text/csv`, – kaip parsisiunčiamas CSV failas. Nepalaikomas tipas
 grąžina 406, o ne tyliai JSON.
 
-**Tarnybiniai metodai:** `GET /health` ir `GET /health/ready` (pastarasis tikrina
-ir jungtį su duomenų baze).
+**Tarnybiniai metodai:** `GET /api` (įėjimo taškas su nuorodomis), `GET /health` ir
+`GET /health/ready` (pastarasis tikrina ir jungtį su duomenų baze).
 
 **Autentifikacijos metodai:**
 
@@ -732,7 +775,7 @@ Kolekciją sudaro šešios dalys:
 | Dalis | Turinys |
 |---|---|
 | 0. Autentifikacija | Registracija, žetono rotacija, pakartotinio panaudojimo aptikimas, atsijungimas, 409 / 422 / 401 / 403 atvejai, JWT turinio patikra ir prisijungimas keturiomis paskyromis |
-| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda; puslapiavimas ir filtrai |
+| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda; puslapiavimas ir filtrai; hypermedia – užklausos, sekančios `_links` |
 | 2. Klaidų apdorojimas | Kodai 400, 401, 404, 405, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas ir vaikas ne savo tėvo adresu |
 | 3. Rolės ir teisės | 5.3 skyriaus lentelė: kas mato, kas gali kurti, redaguoti ir šalinti; 403 ir 404 skirtumas |
 | 4. Administratorius | Naudotojų sąrašas, viešas profilis, blokavimas (žetonas atmetamas iš karto), atblokavimas, šalinimas, netinkamo projekto pašalinimas |
@@ -743,7 +786,7 @@ demonstracijos metu užregistruotą paskyrą, – todėl demonstraciją galima k
 nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
 
 ```
-requests 101 | assertions 228 | failed 0 | total run duration: ~11s
+requests 109 | assertions 245 | failed 0 | total run duration: ~11s
 ```
 
 Kadangi laikai užklausose fiksuoti, testai tikrina ne „kažkokį skaičių“, o
@@ -751,7 +794,7 @@ konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekt
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 255 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 276 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
 skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
 suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių

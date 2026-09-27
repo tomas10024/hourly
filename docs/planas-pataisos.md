@@ -152,6 +152,8 @@ kodėl vieni vaikai įdėti, o kiti ne.
 
 ## 4. Etapas D – hypermedia (HATEOAS)
 
+**Būsena:** atlikta (2026-09-27). Veiksmų nuorodos sprendžiamos paleidžiant maršrutų `assert*` taisykles (`allows` `lib/links.ts`). Nuorodos turi ir `GET /api`, `/auth/me`, naudotojai ir ataskaita (JSON). Peržiūros nuoroda neturi `self` (jos negalima perskaityti atskirai), bet sukūrimo atsakyme turi `public`. Postman: aplankas „1. Darbo eiga / Hypermedia“.
+
 **Formatas** – HAL stiliaus `_links`, santykiniai adresai (veiks už Azure / Next tarpinio
 maršruto):
 

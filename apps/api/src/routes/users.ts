@@ -4,6 +4,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';
 import { noContent } from '../lib/http.js';
+import { linked, userLinks } from '../lib/links.js';
 import { pageArgs, pageOf } from '../lib/pagination.js';
 import { toCurrentUser, toPublicUser } from '../lib/serialize.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
@@ -47,7 +48,8 @@ usersRouter.get('/users', requireRole('ADMIN'), async (req, res) => {
     prisma.user.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toCurrentUser), total, query));
+  const items = rows.map((row) => linked(toCurrentUser(row), userLinks(row.id)));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**
@@ -60,7 +62,7 @@ usersRouter.get('/users/:id', async (req, res) => {
   const { id } = parseParams(IdParam, req);
   requireActor(req);
 
-  res.json(toPublicUser(await findUserOr404(id)));
+  res.json(linked(toPublicUser(await findUserOr404(id)), userLinks(id)));
 });
 
 /**
@@ -87,7 +89,7 @@ usersRouter.patch('/users/:id', requireRole('ADMIN'), async (req, res) => {
     return tx.user.update({ where: { id }, data: { isBlocked: input.isBlocked } });
   });
 
-  res.json(toCurrentUser(updated));
+  res.json(linked(toCurrentUser(updated), userLinks(updated.id)));
 });
 
 /**

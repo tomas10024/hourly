@@ -10,6 +10,13 @@ describe('API foundation', () => {
     expect(res.body.status).toBe('ok');
   });
 
+  it('offers a guest the way in at the entry point', async () => {
+    const res = await request(app).get('/api').expect(200);
+    expect(res.body._links.self.href).toBe('/api');
+    expect(res.body._links.login).toEqual({ href: '/api/auth/login', method: 'POST' });
+    expect(res.body._links.me).toBeUndefined();
+  });
+
   it('returns 404 in the error envelope for an unknown address', async () => {
     const res = await request(app).get('/api/nera-tokio').expect(404);
     expect(res.body.error.code).toBe('NOT_FOUND');

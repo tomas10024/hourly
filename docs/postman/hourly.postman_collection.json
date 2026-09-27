@@ -2383,6 +2383,330 @@
               ]
             }
           ]
+        },
+        {
+          "name": "Hypermedia",
+          "item": [
+            {
+              "name": "Įėjimo taškas svečiui (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": []
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const links = pm.response.json()._links;",
+                      "pm.test('svečiui – registracija ir prisijungimas', () => {",
+                      "  pm.expect(links.login).to.eql({ href: '/api/auth/login', method: 'POST' });",
+                      "  pm.expect(links.me).to.be.undefined;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Įėjimo taškas užsakovui → savo projektai (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": []
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const links = pm.response.json()._links;",
+                      "pm.test('užsakovui – savo projektai ir kūrimas', () => {",
+                      "  pm.expect(links.projects.href).to.include('scope=owned');",
+                      "  pm.expect(links['create-project'].method).to.eql('POST');",
+                      "});",
+                      "const origin = pm.environment.get('baseUrl').replace(/\\/api$/, '');",
+                      "pm.collectionVariables.set('followUrl', origin + links.projects.href);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Sekama nuoroda „projects“ → projekto užduotys (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{followUrl}}",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "pm.test('puslapis ir kiekvieno projekto nuorodos', () => {",
+                      "  pm.expect(body._links.first.href).to.include('page=1');",
+                      "  body.items.forEach((project) =>",
+                      "    pm.expect(project._links.self.href).to.eql('/api/projects/' + project.id));",
+                      "});",
+                      "const inProgress = body.items.find((project) => project._links.complete);",
+                      "pm.test('vykdomam projektui siūloma „complete“, ne „publish“', () => {",
+                      "  pm.expect(inProgress).to.exist;",
+                      "  pm.expect(inProgress._links.publish).to.be.undefined;",
+                      "});",
+                      "const origin = pm.environment.get('baseUrl').replace(/\\/api$/, '');",
+                      "pm.collectionVariables.set('followUrl', origin + inProgress._links.tasks.href);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Sekama nuoroda „tasks“ (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{followUrl}}",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const items = pm.response.json().items;",
+                      "pm.test('užduotys turi „self“ ir „project“', () => {",
+                      "  pm.expect(items).to.not.be.empty;",
+                      "  items.forEach((task) => pm.expect(task._links.self.href).to.include('/tasks/' + task.id));",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Paskelbtas projektas specialistui – „submit-proposal“ (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{publishedProjectId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{publishedProjectId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{specialistToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const links = pm.response.json()._links;",
+                      "pm.test('galima pateikti pasiūlymą, bet ne redaguoti', () => {",
+                      "  pm.expect(links['submit-proposal']).to.eql({",
+                      "    href: '/api/projects/' + pm.environment.get('publishedProjectId') + '/proposals',",
+                      "    method: 'POST',",
+                      "  });",
+                      "  pm.expect(links.update).to.be.undefined;",
+                      "  pm.expect(links.delete).to.be.undefined;",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Tas pats projektas svečiui – jokių veiksmų (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{publishedProjectId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{publishedProjectId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "pm.test('tik ryšiai, be metodų', () => {",
+                      "  const links = pm.response.json()._links;",
+                      "  Object.values(links).forEach((link) => pm.expect(link.method).to.be.undefined);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Pirmas puslapis po 2 → sekama „next“",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/sessions?running=false&perPage=2",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sessions"
+                  ],
+                  "query": [
+                    {
+                      "key": "running",
+                      "value": "false"
+                    },
+                    {
+                      "key": "perPage",
+                      "value": "2"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{specialistToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const links = pm.response.json()._links;",
+                      "pm.test('„next“ išlaiko filtrą', () => pm.expect(links.next.href).to.include('running=false'));",
+                      "const origin = pm.environment.get('baseUrl').replace(/\\/api$/, '');",
+                      "pm.collectionVariables.set('followUrl', origin + links.next.href);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Antras puslapis per „next“ (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": "{{followUrl}}",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{specialistToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "pm.test('tai antras puslapis su tuo pačiu filtru', () => {",
+                      "  pm.expect(body.page).to.eql(2);",
+                      "  body.items.forEach((session) => pm.expect(session.endedAt).to.not.be.null);",
+                      "  pm.expect(body._links.prev.href).to.include('page=1');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
         }
       ],
       "description": "Pilnas gyvavimo ciklas: 5 projektų, 5 užduočių ir 5 darbo sesijų metodai, hierarchiniai metodai, pasiūlymai, ataskaita ir peržiūros nuoroda."
@@ -4552,6 +4876,10 @@
     },
     {
       "key": "moderatedProjectId",
+      "value": ""
+    },
+    {
+      "key": "followUrl",
       "value": ""
     }
   ]

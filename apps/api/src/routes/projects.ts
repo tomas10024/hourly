@@ -9,6 +9,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { linked, paths, projectLinks } from '../lib/links.js';
 import { pageArgs, pageOf } from '../lib/pagination.js';
 import { money, toProject } from '../lib/serialize.js';
 import { UTF8_BOM, toCsv } from '../lib/csv.js';
@@ -84,7 +85,8 @@ projectsRouter.get('/projects', async (req, res) => {
     prisma.project.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toProject), total, query));
+  const items = rows.map((row) => linked(toProject(row), projectLinks(row, viewer(req))));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**
@@ -99,7 +101,7 @@ projectsRouter.get('/projects/:id', async (req, res) => {
   const project = await findProjectOr404(id);
   assertCanViewProject(project, viewer(req));
 
-  res.json(toProject(project));
+  res.json(linked(toProject(project), projectLinks(project, viewer(req))));
 });
 
 /**
@@ -139,7 +141,7 @@ projectsRouter.post('/projects', async (req, res) => {
     },
   });
 
-  created(res, `/api/projects/${row.id}`, toProject(row));
+  created(res, `/api/projects/${row.id}`, linked(toProject(row), projectLinks(row, viewer(req))));
 });
 
 /**
@@ -177,7 +179,8 @@ projectsRouter.patch('/projects/:id', async (req, res) => {
     data.deadline = input.deadline === null ? null : new Date(input.deadline);
   }
 
-  res.json(toProject(await prisma.project.update({ where: { id }, data })));
+  const row = await prisma.project.update({ where: { id }, data });
+  res.json(linked(toProject(row), projectLinks(row, auth)));
 });
 
 /**
@@ -257,7 +260,12 @@ projectsRouter.get('/projects/:id/report', async (req, res) => {
     return;
   }
 
-  res.json(report);
+  res.json(
+    linked(report, {
+      self: { href: `${paths.project(project.id)}/report` },
+      project: { href: paths.project(project.id) },
+    }),
+  );
 });
 
 /**

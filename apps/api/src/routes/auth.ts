@@ -1,10 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { Router, type Response } from 'express';
-import { LoginInput, RegisterInput, UpdateMeInput, type AuthResponse } from '@hourly/shared';
+import {
+  LoginInput,
+  RegisterInput,
+  UpdateMeInput,
+  type AuthResponse,
+  type Links,
+} from '@hourly/shared';
 import type { User as UserRow } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { linked, paths } from '../lib/links.js';
 import { DUMMY_HASH, hashPassword, verifyPassword } from '../lib/passwords.js';
 import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from '../lib/refresh-cookie.js';
 import { hashToken } from '../lib/secure-token.js';
@@ -199,6 +206,16 @@ authRouter.post('/auth/logout', async (req, res) => {
   noContent(res);
 });
 
+/** The own account: itself, the public profile others see, and the way out. */
+function meLinks(userId: string): Links {
+  return {
+    self: { href: '/api/auth/me' },
+    update: { href: '/api/auth/me', method: 'PATCH' },
+    profile: { href: paths.user(userId) },
+    logout: { href: '/api/auth/logout', method: 'POST' },
+  };
+}
+
 async function findMeOr401(id: string): Promise<UserRow> {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw unauthorized('INVALID_TOKEN', 'The account no longer exists');
@@ -208,7 +225,7 @@ async function findMeOr401(id: string): Promise<UserRow> {
 /** GET /auth/me - the signed-in user, including the e-mail. */
 authRouter.get('/auth/me', async (req, res) => {
   const user = await findMeOr401(requireActor(req));
-  res.json(toCurrentUser(user));
+  res.json(linked(toCurrentUser(user), meLinks(user.id)));
 });
 
 /**
@@ -256,5 +273,5 @@ authRouter.patch('/auth/me', async (req, res) => {
     });
   }
 
-  res.json(toCurrentUser(updated));
+  res.json(linked(toCurrentUser(updated), meLinks(updated.id)));
 });

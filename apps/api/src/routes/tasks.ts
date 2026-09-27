@@ -1,14 +1,15 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import {
   CreateTaskInput,
   ProjectTaskListQuery,
   TaskListQuery,
   UpdateTaskInput,
 } from '@hourly/shared';
-import type { Prisma } from '../generated/prisma/client.js';
+import type { Prisma, Project, Task } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { linked, taskLinks } from '../lib/links.js';
 import { pageArgs, pageOf } from '../lib/pagination.js';
 import { toTask } from '../lib/serialize.js';
 import { ProjectParams, TaskParams, findProjectOr404, findTaskOr404 } from '../lib/scope.js';
@@ -27,6 +28,11 @@ const TASK_ORDER: Prisma.TaskOrderByWithRelationInput[] = [
   { position: 'asc' },
   { createdAt: 'asc' },
 ];
+
+/** A task as it is sent: its fields and the links this caller is offered. */
+function present(task: Task, project: Project, req: Request) {
+  return linked(toTask(task), taskLinks(task, project, viewer(req)));
+}
 
 /** The filters both task lists share: `status` and a text search. */
 function taskFilters({ status, q }: ProjectTaskListQuery): Prisma.TaskWhereInput[] {
@@ -76,13 +82,15 @@ tasksRouter.get('/tasks', async (req, res) => {
   const [rows, total] = await prisma.$transaction([
     prisma.task.findMany({
       where,
+      include: { project: true },
       orderBy: [{ projectId: 'asc' }, ...TASK_ORDER],
       ...pageArgs(query),
     }),
     prisma.task.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toTask), total, query));
+  const items = rows.map((row) => present(row, row.project, req));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**
@@ -108,7 +116,8 @@ tasksRouter.get('/projects/:projectId/tasks', async (req, res) => {
     prisma.task.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toTask), total, query));
+  const items = rows.map((row) => present(row, project, req));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**
@@ -119,7 +128,7 @@ tasksRouter.get('/projects/:projectId/tasks/:taskId', async (req, res) => {
   const task = await findTaskOr404(parseParams(TaskParams, req));
   assertCanViewProject(task.project, viewer(req));
 
-  res.json(toTask(task));
+  res.json(present(task, task.project, req));
 });
 
 /**
@@ -151,7 +160,7 @@ tasksRouter.post('/projects/:projectId/tasks', async (req, res) => {
     },
   });
 
-  created(res, `/api/projects/${project.id}/tasks/${row.id}`, toTask(row));
+  created(res, `/api/projects/${project.id}/tasks/${row.id}`, present(row, project, req));
 });
 
 /**
@@ -186,7 +195,8 @@ tasksRouter.patch('/projects/:projectId/tasks/:taskId', async (req, res) => {
     data.approvedAt = input.approved ? new Date() : null;
   }
 
-  res.json(toTask(await prisma.task.update({ where: { id: task.id }, data })));
+  const row = await prisma.task.update({ where: { id: task.id }, data });
+  res.json(present(row, task.project, req));
 });
 
 /**

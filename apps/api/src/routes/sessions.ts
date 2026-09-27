@@ -1,14 +1,15 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import {
   CreateWorkSessionInput,
   SessionListQuery,
   TaskSessionListQuery,
   UpdateWorkSessionInput,
 } from '@hourly/shared';
-import type { Prisma } from '../generated/prisma/client.js';
+import type { Prisma, Project, Task, WorkSession } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { linked, sessionLinks } from '../lib/links.js';
 import { pageArgs, pageOf } from '../lib/pagination.js';
 import { SessionParams, TaskParams, findSessionOr404, findTaskOr404 } from '../lib/scope.js';
 import { money, toSession } from '../lib/serialize.js';
@@ -43,8 +44,21 @@ function sessionFilters({
   return filters;
 }
 
-/** What `toSession` needs besides the row itself: the project of the task. */
-const WITH_PROJECT_ID = { task: { select: { projectId: true } } } as const;
+/**
+ * What a session is sent with: its task and project give its address, and
+ * the project decides which actions the caller is offered.
+ */
+const WITH_PARENTS = { task: { include: { project: true } } } as const;
+
+type SessionWithParents = WorkSession & { task: Task & { project: Project } };
+
+/** A session as it is sent: its fields and the links this caller is offered. */
+function present(session: SessionWithParents, req: Request) {
+  return linked(
+    toSession(session),
+    sessionLinks(session, session.task, session.task.project, viewer(req)),
+  );
+}
 
 /**
  * At most one running session per specialist.
@@ -61,7 +75,7 @@ async function assertNoOtherRunningSession(specialistId: string, exceptId?: stri
       endedAt: null,
       ...(exceptId ? { id: { not: exceptId } } : {}),
     },
-    include: WITH_PROJECT_ID,
+    include: WITH_PARENTS,
   });
 
   if (running) {
@@ -99,14 +113,14 @@ sessionsRouter.get('/sessions', async (req, res) => {
   const [rows, total] = await prisma.$transaction([
     prisma.workSession.findMany({
       where,
-      include: WITH_PROJECT_ID,
+      include: WITH_PARENTS,
       orderBy: SESSION_ORDER,
       ...pageArgs(query),
     }),
     prisma.workSession.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toSession), total, query));
+  res.json(pageOf(req, rows.map((row) => present(row, req)), total, query));
 });
 
 /**
@@ -130,14 +144,14 @@ sessionsRouter.get('/projects/:projectId/tasks/:taskId/sessions', async (req, re
   const [rows, total] = await prisma.$transaction([
     prisma.workSession.findMany({
       where,
-      include: WITH_PROJECT_ID,
+      include: WITH_PARENTS,
       orderBy: SESSION_ORDER,
       ...pageArgs(query),
     }),
     prisma.workSession.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toSession), total, query));
+  res.json(pageOf(req, rows.map((row) => present(row, req)), total, query));
 });
 
 /**
@@ -148,7 +162,7 @@ sessionsRouter.get('/projects/:projectId/tasks/:taskId/sessions/:sessionId', asy
   const session = await findSessionOr404(parseParams(SessionParams, req));
   assertCanInspectProject(session.task.project, viewer(req));
 
-  res.json(toSession(session));
+  res.json(present(session, req));
 });
 
 /**
@@ -193,13 +207,13 @@ sessionsRouter.post('/projects/:projectId/tasks/:taskId/sessions', async (req, r
         ? resolveAppliedRate(money(task.hourlyRate), money(task.project.hourlyRate))
         : null,
     },
-    include: WITH_PROJECT_ID,
+    include: WITH_PARENTS,
   });
 
   created(
     res,
     `/api/projects/${task.projectId}/tasks/${task.id}/sessions/${row.id}`,
-    toSession(row),
+    present(row, req),
   );
 });
 
@@ -264,9 +278,9 @@ sessionsRouter.patch(
     const row = await prisma.workSession.update({
       where: { id: session.id },
       data,
-      include: WITH_PROJECT_ID,
+      include: WITH_PARENTS,
     });
-    res.json(toSession(row));
+    res.json(present(row, req));
   },
 );
 

@@ -3,7 +3,7 @@
   "info": {
     "title": "Hourly API",
     "version": "0.1.0",
-    "description": "A marketplace for freelance work with transparent time tracking. Hierarchy: project -> task -> work session, addressed as `/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}`. A child requested under a parent it does not belong to answers 404. A known address used with an unsupported method answers 405 with an `Allow` header.\n\n**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) and sets the `hourly_refresh` cookie. Send the token as `Authorization: Bearer <token>` (the **Authorize** button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one."
+    "description": "A marketplace for freelance work with transparent time tracking. Hierarchy: project -> task -> work session, addressed as `/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}`. A child requested under a parent it does not belong to answers 404. A known address used with an unsupported method answers 405 with an `Allow` header.\n\n**Hypermedia.** Every resource carries `_links`: related resources (`self`, `project`, `tasks`) and the actions the caller may take right now, with their method (`update`, `publish`, `stop`, `accept`...). Actions follow the role of the caller and the state of the resource. Lists add `first`, `prev`, `next` and `last`. Start at `GET /`.\n\n**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) and sets the `hourly_refresh` cookie. Send the token as `Authorization: Bearer <token>` (the **Authorize** button). When it expires (401 `TOKEN_EXPIRED`), `POST /auth/refresh` issues a new one."
   },
   "servers": [
     {
@@ -38,6 +38,71 @@
     }
   ],
   "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Operations"
+        ],
+        "summary": "Entry point: links to everything the caller can reach",
+        "description": "A client that knows only this address can discover the others by following `_links`. What is offered depends on the caller: a guest gets the marketplace and the way in, a signed-in user their own collections, the administrator the user list as well.",
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry point",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "_links"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -804,6 +869,34 @@
                     },
                     "isBlocked": {
                       "type": "boolean"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -813,7 +906,8 @@
                     "bio",
                     "createdAt",
                     "email",
-                    "isBlocked"
+                    "isBlocked",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -946,6 +1040,34 @@
                     },
                     "isBlocked": {
                       "type": "boolean"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -955,7 +1077,8 @@
                     "bio",
                     "createdAt",
                     "email",
-                    "isBlocked"
+                    "isBlocked",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -1284,6 +1407,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -1301,7 +1452,8 @@
                           "clientId",
                           "specialistId",
                           "createdAt",
-                          "updatedAt"
+                          "updatedAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -1325,6 +1477,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -1332,7 +1512,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -1755,6 +1936,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -1772,7 +1981,8 @@
                     "clientId",
                     "specialistId",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -2105,6 +2315,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -2122,7 +2360,8 @@
                     "clientId",
                     "specialistId",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -2535,6 +2774,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -2552,7 +2819,8 @@
                     "clientId",
                     "specialistId",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -3066,6 +3334,34 @@
                       "type": "number",
                       "minimum": 0,
                       "multipleOf": 0.01
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -3073,7 +3369,8 @@
                     "generatedAt",
                     "lines",
                     "totalMinutes",
-                    "totalAmount"
+                    "totalAmount",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -3443,6 +3740,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -3456,7 +3781,8 @@
                           "estimatedHours",
                           "approvedAt",
                           "createdAt",
-                          "updatedAt"
+                          "updatedAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -3480,6 +3806,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -3487,7 +3841,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -3821,6 +4176,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -3834,7 +4217,8 @@
                           "estimatedHours",
                           "approvedAt",
                           "createdAt",
-                          "updatedAt"
+                          "updatedAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -3858,6 +4242,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -3865,7 +4277,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -4210,6 +4623,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -4223,7 +4664,8 @@
                     "estimatedHours",
                     "approvedAt",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -4521,6 +4963,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -4534,7 +5004,8 @@
                     "estimatedHours",
                     "approvedAt",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -4898,6 +5369,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -4911,7 +5410,8 @@
                     "estimatedHours",
                     "approvedAt",
                     "createdAt",
-                    "updatedAt"
+                    "updatedAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -5478,6 +5978,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -5490,7 +6018,8 @@
                           "durationMinutes",
                           "comment",
                           "appliedRate",
-                          "createdAt"
+                          "createdAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -5514,6 +6043,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -5521,7 +6078,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -5886,6 +6444,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -5898,7 +6484,8 @@
                           "durationMinutes",
                           "comment",
                           "appliedRate",
-                          "createdAt"
+                          "createdAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -5922,6 +6509,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -5929,7 +6544,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -6262,6 +6878,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -6274,7 +6918,8 @@
                     "durationMinutes",
                     "comment",
                     "appliedRate",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -6608,6 +7253,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -6620,7 +7293,8 @@
                     "durationMinutes",
                     "comment",
                     "appliedRate",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -6960,6 +7634,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -6972,7 +7674,8 @@
                     "durationMinutes",
                     "comment",
                     "appliedRate",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -7523,6 +8226,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -7534,7 +8265,8 @@
                           "estimatedDays",
                           "message",
                           "status",
-                          "createdAt"
+                          "createdAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -7558,6 +8290,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -7565,7 +8325,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -7881,6 +8642,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -7892,7 +8681,8 @@
                           "estimatedDays",
                           "message",
                           "status",
-                          "createdAt"
+                          "createdAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -7916,6 +8706,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -7923,7 +8741,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -8259,6 +9078,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -8270,7 +9117,8 @@
                     "estimatedDays",
                     "message",
                     "status",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -8591,6 +9439,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -8602,7 +9478,8 @@
                     "estimatedDays",
                     "message",
                     "status",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -8910,6 +9787,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -8921,7 +9826,8 @@
                     "estimatedDays",
                     "message",
                     "status",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -9448,6 +10354,34 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                             "example": "2026-09-24T09:00:00.000Z"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -9456,7 +10390,8 @@
                           "expiresAt",
                           "revokedAt",
                           "lastViewedAt",
-                          "createdAt"
+                          "createdAt",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -9480,6 +10415,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -9487,7 +10450,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -9763,6 +10727,34 @@
                     "url": {
                       "type": "string",
                       "format": "uri"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -9773,7 +10765,8 @@
                     "lastViewedAt",
                     "createdAt",
                     "token",
-                    "url"
+                    "url",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -10489,6 +11482,34 @@
                           },
                           "isBlocked": {
                             "type": "boolean"
+                          },
+                          "_links": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "href": {
+                                  "type": "string",
+                                  "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                                },
+                                "method": {
+                                  "type": "string",
+                                  "enum": [
+                                    "POST",
+                                    "PATCH",
+                                    "DELETE"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "href"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "description": "Hypermedia controls: related resources and the actions the caller may take now"
                           }
                         },
                         "required": [
@@ -10498,7 +11519,8 @@
                           "bio",
                           "createdAt",
                           "email",
-                          "isBlocked"
+                          "isBlocked",
+                          "_links"
                         ],
                         "additionalProperties": false
                       }
@@ -10522,6 +11544,34 @@
                       "type": "integer",
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -10529,7 +11579,8 @@
                     "page",
                     "perPage",
                     "total",
-                    "totalPages"
+                    "totalPages",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -10697,6 +11748,34 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                       "example": "2026-09-24T09:00:00.000Z"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -10704,7 +11783,8 @@
                     "displayName",
                     "role",
                     "bio",
-                    "createdAt"
+                    "createdAt",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }
@@ -10896,6 +11976,34 @@
                     },
                     "isBlocked": {
                       "type": "boolean"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "href": {
+                            "type": "string",
+                            "example": "/api/projects/b0000000-0000-4000-8000-000000000001"
+                          },
+                          "method": {
+                            "type": "string",
+                            "enum": [
+                              "POST",
+                              "PATCH",
+                              "DELETE"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "href"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Hypermedia controls: related resources and the actions the caller may take now"
                     }
                   },
                   "required": [
@@ -10905,7 +12013,8 @@
                     "bio",
                     "createdAt",
                     "email",
-                    "isBlocked"
+                    "isBlocked",
+                    "_links"
                   ],
                   "additionalProperties": false
                 }

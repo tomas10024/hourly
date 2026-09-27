@@ -11,6 +11,7 @@ import {
   CreateWorkSessionInput,
   CurrentUser,
   LoginInput,
+  Links,
   Project,
   ProjectListQuery,
   ProjectTaskListQuery,
@@ -35,6 +36,7 @@ import {
   UserListQuery,
   WorkSession,
   paginated,
+  withLinks,
 } from '@hourly/shared';
 import { env } from './env.js';
 import {
@@ -67,6 +69,20 @@ const scopedNotFound = json(
   'Not found - also when a child is addressed under a parent it does not belong to',
 );
 
+/*
+ * Every resource is sent with its `_links` (see `lib/links.ts`), so the
+ * documented responses carry them too.
+ */
+const LinkedProject = withLinks(Project);
+const LinkedTask = withLinks(Task);
+const LinkedWorkSession = withLinks(WorkSession);
+const LinkedProposal = withLinks(Proposal);
+const LinkedShareLink = withLinks(ShareLink);
+const LinkedShareLinkCreated = withLinks(ShareLinkCreated);
+const LinkedCurrentUser = withLinks(CurrentUser);
+const LinkedPublicUser = withLinks(PublicUser);
+const LinkedProjectReport = withLinks(ProjectReport);
+
 const pathId = z.object({ id: z.uuid() });
 
 /**
@@ -93,6 +109,11 @@ export const openApiDocument = createDocument({
       '`/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}`. A child requested ' +
       'under a parent it does not belong to answers 404. A known address used with an ' +
       'unsupported method answers 405 with an `Allow` header.\n\n' +
+      '**Hypermedia.** Every resource carries `_links`: related resources (`self`, ' +
+      '`project`, `tasks`) and the actions the caller may take right now, with their ' +
+      'method (`update`, `publish`, `stop`, `accept`...). Actions follow the role of ' +
+      'the caller and the state of the resource. Lists add `first`, `prev`, `next` and ' +
+      '`last`. Start at `GET /`.\n\n' +
       '**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) ' +
       `and sets the \`${REFRESH_COOKIE}\` cookie. ` +
       'Send the token as `Authorization: Bearer <token>` (the **Authorize** ' +
@@ -116,6 +137,21 @@ export const openApiDocument = createDocument({
     },
   },
   paths: {
+    '/': {
+      get: {
+        tags: ['Operations'],
+        summary: 'Entry point: links to everything the caller can reach',
+        description:
+          'A client that knows only this address can discover the others by following ' +
+          '`_links`. What is offered depends on the caller: a guest gets the marketplace ' +
+          'and the way in, a signed-in user their own collections, the administrator ' +
+          'the user list as well.',
+        security: optionalBearer,
+        responses: {
+          '200': json(z.object({ name: z.string(), _links: Links }), 'Entry point'),
+        },
+      },
+    },
     '/health': {
       get: {
         tags: ['Operations'],
@@ -214,7 +250,7 @@ export const openApiDocument = createDocument({
         tags: ['Authentication'],
         summary: 'Details of the signed-in user',
         security: bearer,
-        responses: { '200': json(CurrentUser, 'User'), '401': errors['401'] },
+        responses: { '200': json(LinkedCurrentUser, 'User'), '401': errors['401'] },
       },
       patch: {
         tags: ['Authentication'],
@@ -225,7 +261,7 @@ export const openApiDocument = createDocument({
         security: bearer,
         requestBody: { content: { 'application/json': { schema: UpdateMeInput } } },
         responses: {
-          '200': json(CurrentUser, 'Updated user'),
+          '200': json(LinkedCurrentUser, 'Updated user'),
           '400': errors['400'],
           '401': errors['401'],
           '422': json(ApiError, 'Invalid content or wrong current password (INVALID_PASSWORD)'),
@@ -244,7 +280,7 @@ export const openApiDocument = createDocument({
           'every project, for the administrator only (403 otherwise).',
         requestParams: { query: ProjectListQuery },
         security: optionalBearer,
-        responses: { '200': json(paginated(Project), 'Project list'), ...errors },
+        responses: { '200': json(paginated(LinkedProject), 'Project list'), ...errors },
       },
       post: {
         tags: ['Projects'],
@@ -256,7 +292,7 @@ export const openApiDocument = createDocument({
           'client, a DIRECT one by a specialist; any other role gets 403.',
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProjectInput } } },
-        responses: { '201': json(Project, 'Project created'), ...errors },
+        responses: { '201': json(LinkedProject, 'Project created'), ...errors },
       },
     },
     '/projects/{id}': {
@@ -268,7 +304,7 @@ export const openApiDocument = createDocument({
           'specialist and the administrator - for everyone else it answers 404.',
         requestParams: { path: pathId },
         security: optionalBearer,
-        responses: { '200': json(Project, 'Project'), ...errors },
+        responses: { '200': json(LinkedProject, 'Project'), ...errors },
       },
       patch: {
         tags: ['Projects'],
@@ -279,7 +315,7 @@ export const openApiDocument = createDocument({
         requestParams: { path: pathId },
         security: bearer,
         requestBody: { content: { 'application/json': { schema: UpdateProjectInput } } },
-        responses: { '200': json(Project, 'Project updated'), ...errors },
+        responses: { '200': json(LinkedProject, 'Project updated'), ...errors },
       },
       delete: {
         tags: ['Projects'],
@@ -309,7 +345,7 @@ export const openApiDocument = createDocument({
           '200': {
             description: 'Report',
             content: {
-              'application/json': { schema: ProjectReport },
+              'application/json': { schema: LinkedProjectReport },
               'text/csv': { schema: z.string() },
             },
           },
@@ -330,7 +366,7 @@ export const openApiDocument = createDocument({
           'description) filter it. Each task lives at `/projects/{projectId}/tasks/{taskId}`.',
         requestParams: { query: TaskListQuery },
         security: bearer,
-        responses: { '200': json(paginated(Task), 'Task list'), ...errors },
+        responses: { '200': json(paginated(LinkedTask), 'Task list'), ...errors },
       },
     },
     '/projects/{projectId}/tasks': {
@@ -343,7 +379,7 @@ export const openApiDocument = createDocument({
           'description) filter the list.',
         requestParams: { path: ProjectParams, query: ProjectTaskListQuery },
         security: optionalBearer,
-        responses: { '200': json(paginated(Task), 'Task list'), ...errors },
+        responses: { '200': json(paginated(LinkedTask), 'Task list'), ...errors },
       },
       post: {
         tags: ['Tasks'],
@@ -355,7 +391,7 @@ export const openApiDocument = createDocument({
         requestParams: { path: ProjectParams },
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateTaskInput } } },
-        responses: { '201': json(Task, 'Task created'), ...errors },
+        responses: { '201': json(LinkedTask, 'Task created'), ...errors },
       },
     },
     '/projects/{projectId}/tasks/{taskId}': {
@@ -367,7 +403,7 @@ export const openApiDocument = createDocument({
           'not exist at this address.',
         requestParams: { path: TaskParams },
         security: optionalBearer,
-        responses: { '200': json(Task, 'Task'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedTask, 'Task'), ...errors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Tasks'],
@@ -378,7 +414,7 @@ export const openApiDocument = createDocument({
         requestParams: { path: TaskParams },
         security: bearer,
         requestBody: { content: { 'application/json': { schema: UpdateTaskInput } } },
-        responses: { '200': json(Task, 'Task updated'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedTask, 'Task updated'), ...errors, '404': scopedNotFound },
       },
       delete: {
         tags: ['Tasks'],
@@ -402,7 +438,7 @@ export const openApiDocument = createDocument({
           'each entry give its address under `/projects/{projectId}/tasks/{taskId}/sessions`.',
         requestParams: { query: SessionListQuery },
         security: bearer,
-        responses: { '200': json(paginated(WorkSession), 'Session list'), ...errors },
+        responses: { '200': json(paginated(LinkedWorkSession), 'Session list'), ...errors },
       },
     },
     '/projects/{projectId}/tasks/{taskId}/sessions': {
@@ -417,7 +453,7 @@ export const openApiDocument = createDocument({
         requestParams: { path: TaskParams, query: TaskSessionListQuery },
         security: bearer,
         responses: {
-          '200': json(paginated(WorkSession), 'Session list'),
+          '200': json(paginated(LinkedWorkSession), 'Session list'),
           ...errors,
           '404': scopedNotFound,
         },
@@ -435,7 +471,7 @@ export const openApiDocument = createDocument({
           content: { 'application/json': { schema: CreateWorkSessionInput } },
         },
         responses: {
-          '201': json(WorkSession, 'Session created'),
+          '201': json(LinkedWorkSession, 'Session created'),
           '409': json(ApiError, 'A work session is already running'),
           ...errors,
           '404': scopedNotFound,
@@ -449,7 +485,7 @@ export const openApiDocument = createDocument({
         description: 'Readable by the parties of the project and the administrator.',
         requestParams: { path: SessionParams },
         security: bearer,
-        responses: { '200': json(WorkSession, 'Session'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedWorkSession, 'Session'), ...errors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Work sessions'],
@@ -463,7 +499,7 @@ export const openApiDocument = createDocument({
           content: { 'application/json': { schema: UpdateWorkSessionInput } },
         },
         responses: {
-          '200': json(WorkSession, 'Session updated'),
+          '200': json(LinkedWorkSession, 'Session updated'),
           '409': json(ApiError, 'Reopening would leave two sessions running'),
           ...errors,
           '404': scopedNotFound,
@@ -485,7 +521,7 @@ export const openApiDocument = createDocument({
         summary: 'Offers submitted by the actor, with their statuses',
         requestParams: { query: ProposalListQuery },
         security: bearer,
-        responses: { '200': json(paginated(Proposal), 'Proposal list'), ...errors },
+        responses: { '200': json(paginated(LinkedProposal), 'Proposal list'), ...errors },
       },
     },
     '/projects/{projectId}/proposals': {
@@ -497,7 +533,7 @@ export const openApiDocument = createDocument({
           'specialist sees only their own. `status` filters the list.',
         requestParams: { path: ProjectParams, query: ProposalListQuery },
         security: bearer,
-        responses: { '200': json(paginated(Proposal), 'Proposal list'), ...errors },
+        responses: { '200': json(paginated(LinkedProposal), 'Proposal list'), ...errors },
       },
       post: {
         tags: ['Proposals'],
@@ -509,7 +545,7 @@ export const openApiDocument = createDocument({
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProposalInput } } },
         responses: {
-          '201': json(Proposal, 'Proposal submitted'),
+          '201': json(LinkedProposal, 'Proposal submitted'),
           '409': json(ApiError, 'This specialist has already bid on the project'),
           ...errors,
         },
@@ -524,7 +560,7 @@ export const openApiDocument = createDocument({
           'who submitted it; for anyone else it answers 404, as it is absent from their list.',
         requestParams: { path: ProposalParams },
         security: bearer,
-        responses: { '200': json(Proposal, 'Proposal'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedProposal, 'Proposal'), ...errors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Proposals'],
@@ -541,7 +577,7 @@ export const openApiDocument = createDocument({
           content: { 'application/json': { schema: UpdateProposalInput } },
         },
         responses: {
-          '200': json(Proposal, 'Proposal updated'),
+          '200': json(LinkedProposal, 'Proposal updated'),
           '409': json(ApiError, 'Another proposal of this project is already accepted'),
           ...errors,
           '404': scopedNotFound,
@@ -568,7 +604,7 @@ export const openApiDocument = createDocument({
           'and expired ones.',
         requestParams: { path: ProjectParams, query: ShareListQuery },
         security: bearer,
-        responses: { '200': json(paginated(ShareLink), 'Share link list'), ...errors },
+        responses: { '200': json(paginated(LinkedShareLink), 'Share link list'), ...errors },
       },
       post: {
         tags: ['Share links'],
@@ -581,7 +617,7 @@ export const openApiDocument = createDocument({
         requestBody: {
           content: { 'application/json': { schema: CreateShareLinkInput } },
         },
-        responses: { '201': json(ShareLinkCreated, 'Share link created'), ...errors },
+        responses: { '201': json(LinkedShareLinkCreated, 'Share link created'), ...errors },
       },
     },
     '/projects/{projectId}/shares/{shareId}': {
@@ -625,7 +661,7 @@ export const openApiDocument = createDocument({
         requestParams: { query: UserListQuery },
         security: bearer,
         responses: {
-          '200': json(paginated(CurrentUser), 'User list'),
+          '200': json(paginated(LinkedCurrentUser), 'User list'),
           '400': errors['400'],
           '401': errors['401'],
           '403': json(ApiError, 'Not an administrator'),
@@ -640,7 +676,7 @@ export const openApiDocument = createDocument({
         requestParams: { path: pathId },
         security: bearer,
         responses: {
-          '200': json(PublicUser, 'Public profile'),
+          '200': json(LinkedPublicUser, 'Public profile'),
           '400': errors['400'],
           '401': errors['401'],
           '404': errors['404'],
@@ -657,7 +693,7 @@ export const openApiDocument = createDocument({
         security: bearer,
         requestBody: { content: { 'application/json': { schema: AdminUpdateUserInput } } },
         responses: {
-          '200': json(CurrentUser, 'Updated account'),
+          '200': json(LinkedCurrentUser, 'Updated account'),
           '400': errors['400'],
           '401': errors['401'],
           '403': json(ApiError, 'Not an administrator'),

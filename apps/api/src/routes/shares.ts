@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { iso, money, toShareLink } from '../lib/serialize.js';
+import { linked, shareLinks } from '../lib/links.js';
 import { pageArgs, pageOf } from '../lib/pagination.js';
 import { ProjectParams, ShareParams, findProjectOr404, findShareOr404 } from '../lib/scope.js';
 import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
@@ -49,6 +50,11 @@ sharesRouter.post('/projects/:projectId/shares', async (req, res) => {
     ...toShareLink(row),
     token,
     url: shareUrl(env.WEB_ORIGIN, token),
+    _links: {
+      ...shareLinks(row),
+      // Only this response knows the token, so only it can point at the view.
+      public: { href: `/api/public/projects/${token}` },
+    },
   });
 });
 
@@ -82,7 +88,8 @@ sharesRouter.get('/projects/:projectId/shares', async (req, res) => {
     prisma.shareLink.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toShareLink), total, query));
+  const items = rows.map((row) => linked(toShareLink(row), shareLinks(row)));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**

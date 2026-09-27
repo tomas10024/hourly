@@ -1,9 +1,10 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { CreateProposalInput, ProposalListQuery, UpdateProposalInput } from '@hourly/shared';
-import type { Prisma } from '../generated/prisma/client.js';
+import type { Prisma, Project, Proposal } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { linked, proposalLinks } from '../lib/links.js';
 import { pageArgs, pageOf } from '../lib/pagination.js';
 import { toProposal } from '../lib/serialize.js';
 import {
@@ -28,6 +29,11 @@ import {
 
 export const proposalsRouter: Router = Router();
 
+/** A proposal as it is sent: its fields and the links this caller is offered. */
+function present(proposal: Proposal, project: Project, req: Request) {
+  return linked(toProposal(proposal), proposalLinks(proposal, project, viewer(req)));
+}
+
 /** Newest first - the client reviews the most recent offers. */
 const PROPOSAL_ORDER: Prisma.ProposalOrderByWithRelationInput = { createdAt: 'desc' };
 
@@ -46,11 +52,17 @@ proposalsRouter.get('/proposals', async (req, res) => {
     ...(query.status ? { status: query.status } : {}),
   };
   const [rows, total] = await prisma.$transaction([
-    prisma.proposal.findMany({ where, orderBy: PROPOSAL_ORDER, ...pageArgs(query) }),
+    prisma.proposal.findMany({
+      where,
+      include: { project: true },
+      orderBy: PROPOSAL_ORDER,
+      ...pageArgs(query),
+    }),
     prisma.proposal.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toProposal), total, query));
+  const items = rows.map((row) => present(row, row.project, req));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**
@@ -78,7 +90,8 @@ proposalsRouter.get('/projects/:projectId/proposals', async (req, res) => {
     prisma.proposal.count({ where }),
   ]);
 
-  res.json(pageOf(rows.map(toProposal), total, query));
+  const items = rows.map((row) => present(row, project, req));
+  res.json(pageOf(req, items, total, query));
 });
 
 /**
@@ -93,7 +106,7 @@ proposalsRouter.get('/projects/:projectId/proposals/:proposalId', async (req, re
   assertCanViewProject(proposal.project, auth);
   assertCanSeeProposal(proposal, proposal.project, auth);
 
-  res.json(toProposal(proposal));
+  res.json(present(proposal, proposal.project, req));
 });
 
 /**
@@ -136,7 +149,7 @@ proposalsRouter.post('/projects/:projectId/proposals', async (req, res) => {
     },
   });
 
-  created(res, `/api/projects/${project.id}/proposals/${row.id}`, toProposal(row));
+  created(res, `/api/projects/${project.id}/proposals/${row.id}`, present(row, project, req));
 });
 
 /**
@@ -158,7 +171,7 @@ proposalsRouter.patch('/projects/:projectId/proposals/:proposalId', async (req, 
   if (status === 'WITHDRAWN') {
     assertIsProposalAuthor(proposal, actor);
     const row = await prisma.proposal.update({ where: { id }, data: { status } });
-    res.json(toProposal(row));
+    res.json(present(row, proposal.project, req));
     return;
   }
 
@@ -166,7 +179,7 @@ proposalsRouter.patch('/projects/:projectId/proposals/:proposalId', async (req, 
 
   if (status === 'REJECTED') {
     const row = await prisma.proposal.update({ where: { id }, data: { status } });
-    res.json(toProposal(row));
+    res.json(present(row, proposal.project, req));
     return;
   }
 
@@ -194,7 +207,9 @@ proposalsRouter.patch('/projects/:projectId/proposals/:proposalId', async (req, 
     return row;
   });
 
-  res.json(toProposal(accepted));
+  // The project changed inside the transaction, and the links follow it.
+  const project = await findProjectOr404({ projectId: proposal.projectId });
+  res.json(present(accepted, project, req));
 });
 
 /**

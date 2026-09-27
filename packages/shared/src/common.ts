@@ -44,8 +44,36 @@ export const PageQuery = z.object({
 export type PageQuery = z.infer<typeof PageQuery>;
 
 /**
+ * A hypermedia control: where a related resource lives, or - with `method` -
+ * an action the caller may take on it right now.
+ */
+export const Link = z.object({
+  href: z.string().meta({ example: '/api/projects/b0000000-0000-4000-8000-000000000001' }),
+  method: z.enum(['POST', 'PATCH', 'DELETE']).optional(),
+});
+export type Link = z.infer<typeof Link>;
+
+/**
+ * The `_links` object of a response (HAL style). Relations (`self`, `project`,
+ * `tasks`) are always there; actions (`update`, `publish`, `stop`) appear only
+ * when the caller's role and the resource's state allow them, so a client can
+ * decide which buttons to show without repeating the server's rules.
+ */
+export const Links = z.record(z.string(), Link).meta({
+  description:
+    'Hypermedia controls: related resources and the actions the caller may take now',
+});
+export type Links = z.infer<typeof Links>;
+
+/** A response schema extended with its `_links`. */
+export function withLinks<T extends z.ZodObject>(schema: T) {
+  return schema.extend({ _links: Links });
+}
+
+/**
  * Envelope for a paginated list response. `totalPages` spares every client the
  * same division; a page past the end is not an error, it is simply empty.
+ * `_links` leads to the neighbouring pages with the same filters.
  */
 export function paginated<T extends z.ZodTypeAny>(item: T) {
   return z.object({
@@ -54,6 +82,7 @@ export function paginated<T extends z.ZodTypeAny>(item: T) {
     perPage: z.number().int(),
     total: z.number().int(),
     totalPages: z.number().int(),
+    _links: Links,
   });
 }
 
