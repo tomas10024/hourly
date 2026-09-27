@@ -17,6 +17,7 @@ Kauno technologijos universitetas, Informatikos fakultetas
    - [1.2. Funkciniai reikalavimai](#12-funkciniai-reikalavimai)
    - [1.3. Taikomosios srities objektai](#13-taikomosios-srities-objektai)
    - [1.4. Sąsajos metodai](#14-sąsajos-metodai)
+   - [1.5. REST principai](#15-rest-principai)
 2. [Sistemos architektūra](#2-sistemos-architektūra)
 3. [Pasirinktų technologijų aprašymas](#3-pasirinktų-technologijų-aprašymas)
 4. [Projekto paleidimas](#4-projekto-paleidimas)
@@ -24,6 +25,7 @@ Kauno technologijos universitetas, Informatikos fakultetas
 6. [Klaidų apdorojimas](#6-klaidų-apdorojimas)
 7. [Sąsajos demonstracija](#7-sąsajos-demonstracija)
 8. [Reikalavimų atitiktis](#8-reikalavimų-atitiktis)
+9. [Dirbtinio intelekto įrankių naudojimas](#9-dirbtinio-intelekto-įrankių-naudojimas)
 
 ---
 
@@ -344,6 +346,31 @@ grąžina 406, o ne tyliai JSON.
 Iš viso sąsaja turi 38 metodus: 28 dalykinius (iš jų 15 pagrindinių CRUD),
 6 autentifikacijos ir 4 naudotojų valdymo.
 
+### 1.5. REST principai
+
+| Principas | Kaip įgyvendintas | Ką suteikia |
+|---|---|---|
+| **Klientas–serveris** | API (`apps/api`) ir internetinė aplikacija (`apps/web`) – atskiri paketai, bendra tik duomenų sutartis `@hourly/shared` | Abi dalys vystomos ir diegiamos nepriklausomai; tą patį API naudoja ir naršyklė, ir Postman |
+| **Būsenos neturėjimas** (angl. stateless) | Kiekviena užklausa neša viską, ko reikia: prieigos žetoną `Authorization` antraštėje. Serveris neturi sesijų atmintyje | Bet kuris API egzempliorius gali aptarnauti bet kurią užklausą – galima pridėti egzempliorių |
+| **Podėliavimas** (angl. cacheable) | Kiekvienas atsakymas turi `Cache-Control`: `private, no-cache` įprastiems, `no-store` – `/auth/*` ir `/public/*`. Express prideda `ETag`; su `If-None-Match` nepasikeitęs resursas grąžina **304** be kūno ([middleware/cache.ts](apps/api/src/middleware/cache.ts)) | Mažiau perduodamų duomenų, bet niekada pasenusių; žetonai niekur neišsaugomi |
+| **Vienoda sąsaja** | Resursai identifikuojami URI (daiktavardžiai, hierarchija `/projects/{id}/tasks/{id}/sessions`); veiksmai – HTTP metodais; reprezentacijos – JSON arba CSV pagal `Accept` (kitaip 406); pranešimai aprašo save patys (statuso kodai, `Location`, `Allow`, `WWW-Authenticate`, `Retry-After`); **hypermedia** – `_links` su ryšiais ir leidžiamais veiksmais | Klientas nežino serverio vidaus: užtenka HTTP semantikos ir nuorodų, pradedant `GET /api` |
+| **Sluoksniuota sistema** | Klientas nežino, ar kalba su API, ar su Next.js tarpiniu maršrutu `/api/[...path]`, ar su Azure balansavimu; visi adresai `_links` santykiniai | Tarpinius sluoksnius (saugumas, podėlis, balansavimas) galima pridėti nekeičiant kliento |
+| **Kodas pagal pareikalavimą** (neprivalomas) | Nenaudojamas | – |
+
+**Kur „stateless“ sąmoningai ne visiškas.** Atnaujinimo žetonai saugomi duomenų
+bazėje, o `authenticate` kiekvienai užklausai patikrina, ar žetono prisijungimas
+(`sid`) dar galioja. Tai serverio būsena, bet ji yra **duomenų bazėje**, o ne
+konkretaus proceso atmintyje, todėl horizontalus mastelis išlieka. Kaina – viena
+paieška pagal indeksą, nauda – tikras atsijungimas ir blokavimas iš karto
+(5.2 skyrius). Vienintelė proceso atmintyje laikoma būsena – bandymų ribojimo
+skaitliukai (5.4 skyrius).
+
+**HTTP metodų semantika.** `GET` saugus ir idempotentiškas. `PATCH` keičia tik
+kūne esančius laukus (dalinis atnaujinimas), todėl `PUT` nenaudojamas ir
+grąžina 405. `DELETE` idempotentiškas būsenos prasme: nuorodos atšaukimas antrą
+kartą vėl grąžina 204, o jau ištrintas projektas – 404, bet sistemos būsena
+nebesikeičia. `POST` naudojamas tik kūrimui (ir autentifikacijos veiksmams).
+
 ---
 
 ## 2. Sistemos architektūra
@@ -377,6 +404,18 @@ Pats „Hourly“ API vykdo duomenų mainus su duomenų baze – tam naudojama O
 **Prisma ORM** – objektinio ir reliacinio atvaizdavimo sąsaja. Aprašo duomenų schemą viename faile, iš kurio generuojami tipizuoti duomenų prieigos metodai ir duomenų bazės migracijos.
 
 **PostgreSQL** – reliacinė duomenų bazių valdymo sistema. Pasirinkta dėl dalinių unikalių indeksų (angl. partial unique index) palaikymo, kuris naudojamas užtikrinti, kad vienam projektui galėtų būti priimtas tik vienas pasiūlymas, o vienas naudotojas tuo pačiu metu galėtų turėti tik vieną neužbaigtą darbo sesiją.
+
+Duomenys iš prigimties reliaciniai: hierarchija projektas → užduotis → sesija su
+išoriniais raktais ir kaskadiniu šalinimu, pinigai tiksliu `numeric(10,2)` tipu,
+o pasiūlymo priėmimas keičia tris lenteles vienoje transakcijoje. Svarstytos
+alternatyvos:
+
+| Alternatyva | Kodėl nepasirinkta |
+|---|---|
+| MySQL / MariaDB | Tinkama reliacinė DBVS, tačiau neturi dalinių (sąlyginių) unikalių indeksų – taisyklę „viena vykdoma sesija“ tektų įgyvendinti generuojamais stulpeliais arba trigeriais |
+| MongoDB | Dokumentinė DB: hierarchiją su ryšiais, kaskadomis ir kelių kolekcijų transakcijomis tektų prižiūrėti programoje; mažiau schemos garantijų pinigų ir laiko apskaitai |
+| SQLite | Vienas failas be tinklinio serverio: ribotas lygiagretus rašymas, netinka keliems API egzemplioriams ir Azure App Service be nuolatinio disko; tinka nebent testams |
+| Microsoft SQL Server / Azure SQL | Techniškai tinka (yra filtruoti indeksai), tačiau licencijuojama; PostgreSQL atviras, lokaliai veikia Docker konteineryje, o Azure turi valdomą Flexible Server paslaugą |
 
 **JWT (JSON Web Token)** – autentifikacijos ir autorizacijos priemonė. Naudojama trumpos galiojimo trukmės prieigos žetonų (15 min.) ir atnaujinimo žetonų pora. Prieigos žetone yra naudotojo identifikatorius, rolė ir prisijungimo identifikatorius (`sid`), todėl rolė žinoma be papildomos užklausos duomenų bazei, o atsijungus žetonas atmetamas iš karto. Atnaujinimo žetonas saugomas `httpOnly` slapuke, o duomenų bazėje laikoma tik jo maiša. Taikoma žetonų rotacijos strategija: kiekvienas atnaujinimas išduoda naują žetoną ir panaikina ankstesnįjį, o pakartotinai panaudojus jau anuliuotą žetoną panaikinama visa to prisijungimo žetonų šeima. Plačiau – 5 skyriuje.
 
@@ -707,6 +746,10 @@ neatitiko reikalavimų.
 
 | Kodas | Kada grąžinamas | Pavyzdys |
 |---|---|---|
+| 200 | Sėkmingas skaitymas arba keitimas | `GET /projects/{id}`, `PATCH /projects/{id}` |
+| 201 | Resursas sukurtas; `Location` antraštė rodo jo adresą | `POST /projects/{id}/tasks` |
+| 204 | Sėkmė, grąžinti nėra ko | `DELETE …`, `POST /auth/logout` |
+| 304 | Resursas nepasikeitė nuo kliento turimos versijos (`If-None-Match`) | pakartotinis `GET` su `ETag` |
 | 400 | Užklausos **sintaksė** netinkama – serveris jos net negali suprasti | netaisyklingas JSON, `id` ne UUID, `scope=nesamas` |
 | 401 | Naudotojas neatpažintas: žetono nėra, jis netinkamas arba pasibaigęs | užduoties kūrimas be žetono |
 | 403 | Naudotojas atpažintas, bet jo rolė ar ryšys su resursu neleidžia veiksmo | specialistas kuria aikštelės projektą, redaguojamas svetimas paskelbtas projektas |
@@ -714,7 +757,11 @@ neatitiko reikalavimų.
 | 405 | Adresas žinomas, bet metodas nepalaikomas (`Allow` antraštė) | `PUT /projects/{id}` |
 | 406 | Prašomas turinio tipas neprieinamas | `Accept: application/xml` ataskaitai |
 | 409 | Konfliktas su esama duomenų būsena | antra neužbaigta darbo sesija |
-| 422 | Užklausa suprantama, bet jos **turinys** prieštarauja taisyklėms | per trumpas pavadinimas, neleistinas būsenos perėjimas |
+| 413 | Užklausos kūnas didesnis nei 1 MB | per didelis JSON |
+| 422 | Užklausa suprantama, bet jos **turinys** prieštarauja taisyklėms | per trumpas pavadinimas, neleistinas būsenos perėjimas, per didelė suma |
+| 429 | Viršytas bandymų limitas (`Retry-After`) | 11-as nesėkmingas prisijungimas per 15 min. |
+| 500 | Serverio klaida – **neturi pasitaikyti**; priežastis klientui neatskleidžiama | – |
+| 503 | Duomenų bazė nepasiekiama | `GET /health/ready` |
 
 Skirtumas tarp 400 ir 422 yra esminis ir nuoseklus visoje sąsajoje: 400 reiškia
 netvarkingą užklausą, 422 – tvarkingą užklausą su netinkamu turiniu. Tėviniai
@@ -804,7 +851,7 @@ demonstracijos metu užregistruotą paskyrą, – todėl demonstraciją galima k
 nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
 
 ```
-requests 138 | assertions 295 | failed 0 | total run duration: ~18s
+requests 140 | assertions 300 | failed 0 | total run duration: ~18s
 ```
 
 Kolekcija kviečia **visus** dokumentuotus metodus. Tai tikrina CI:
@@ -816,7 +863,7 @@ konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekt
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 286 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 288 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
 skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
 suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių
@@ -826,36 +873,77 @@ ir teisių lentelę ir tai, kad atsakymų struktūra atitinka OpenAPI specifikac
 
 ## 8. Reikalavimų atitiktis
 
-### 8.1. 1 laboratorinis darbas – sąsaja
+Lentelėse – oficialūs vertinimo kriterijai (skliaustuose – balai), kaip jie
+tenkinami ir kur tai parodyti. Stulpelyje „Demonstracija“ nurodytos Postman
+kolekcijos dalys (7 skyrius).
 
-| Reikalavimas | Kaip tenkinamas |
-|---|---|
-| Realizuoti visi numatyti API metodai | 28 dalykiniai metodai, iš jų 15 pagrindinių CRUD (1.4 skyrius) |
-| OpenAPI specifikacija kiekvienam metodui | Generuojama iš Zod schemų, pateikiama `/api/docs` ir [docs/openapi.json](docs/openapi.json) |
-| Patogi paleidimo aplinka | `npm install` → `npm run db:up` → `db:migrate` → `db:seed` → `npm run dev` |
-| Duomenų bazės sprendimas | PostgreSQL 17 su Prisma ORM, migracijos saugykloje |
-| Prasmingi duomenys gynimo metu | 9 naudotojai, 7 projektai (visos būsenos), 21 užduotis, 26 darbo sesijos, 7 pasiūlymai, 6 peržiūros nuorodos |
-| Teisingas turinio tipas | `application/json` ir `text/csv` (ataskaitos parsisiuntimas) |
-| 404, kai resursas nerandamas | 6 skyrius; demonstracijos 2, 3 ir 5 dalys |
-| 400 / 422 netinkamam turiniui | 6.1 skyrius; demonstracijoje – trys 400 ir trys 422 atvejai |
-| 201 sukūrus resursą | Visi kūrimo metodai, kartu grąžinama `Location` antraštė |
-| 200 / 204 ištrynus resursą | Visi šalinimo metodai grąžina 204 be turinio |
-| Kodas Git saugykloje, dokumentacija | GitHub; ataskaita – šis `README.md`, darbų planai – [docs/planas.md](docs/planas.md), [docs/planas-2.md](docs/planas-2.md) |
+### 8.1. 1 laboratorinis darbas – REST sąsaja
+
+| Kriterijus | Kaip tenkinamas | Demonstracija |
+|---|---|---|
+| **Bent 3 taikomosios srities objektai ir operacijos su jais (3)** | | |
+| ↳ prasmingi objektai, ne naudotojai | Projektas (15 laukų), užduotis (11), darbo sesija (10) – 1.3 skyrius | [schema.prisma](apps/api/prisma/schema.prisma) |
+| ↳ CRUD ir LIST kiekvienam | 15 pagrindinių metodų – 1.4 skyrius | „1. Darbo eiga“ |
+| ↳ puslapiavimas | Visi 9 sąrašai: `page`, `perPage`, vokas su `total` ir `totalPages` | „1. / Puslapiavimas ir filtrai“ |
+| ↳ filtravimas | Būsena, paieška, laikotarpis, `running`, `active` ir kt. – 1.4 skyriaus lentelė | „1. / Puslapiavimas ir filtrai“ |
+| ↳ hypermedia | `_links` kiekviename resurse: ryšiai ir pagal rolę bei būseną leidžiami veiksmai; sąrašų `first/prev/next/last`; įėjimo taškas `GET /api` | „1. / Hypermedia“ |
+| ↳ resursas iš kelių esybių | `GET /projects/{id}/report` – projektas, jo užduotys ir sesijos su suvestine (JSON arba CSV); `GET /public/projects/{token}` – tas pats be paskyros | „1. / ataskaita JSON, CSV“ |
+| **Objektų hierarchinis sąryšis (1)** | Projektas ──< Užduotis ──< Darbo sesija: du vienas-su-daug ryšiai, išoriniai raktai su kaskadomis; naudotojų lentelė į grandinę neįeina | 1.3 skyrius |
+| **Paruošta testavimo aplinka (1)** | Postman kolekcija ir aplinka (140 užklausų, 300 patikrų), paleidžiama `npm run demo`; CI tikrina, kad kolekcija kviečia **visus 41** dokumentuotus metodus (`npm run postman:coverage`); Swagger UI `/api/docs` | 7 skyrius |
+| **Duomenų bazė užpildyta prasmingais duomenimis (1)** | Kiekvienoje su hierarchija susijusioje lentelėje ≥ 5 įrašai: 7 projektai, 21 užduotis, 26 sesijos, 7 pasiūlymai, 6 peržiūros nuorodos (ir 9 naudotojai); realistiški lietuviški duomenys, visos būsenos | [seed.ts](apps/api/prisma/seed.ts), 4 skyrius |
+| **Grąžinami teisingi kodai (2)** | 200, 201 + `Location`, 204, 304, 400, 401, 403, 404, 405 + `Allow`, 406, 409, 413, 422, 429, 503 – 6 skyrius. 500 negrąžinamas: ribiniai atvejai (NUL simbolis, neiškoduojamas adresas, per didelis skaičius, `null` kūnas) patikrinti ir padengti testais | „2. Klaidų apdorojimas“, „2. / Ribiniai atvejai (niekada 500)“ |
+| **REST semantikos laikymasis ir apimtis (2)** | Daiktavardžiai URI, veiksmai – HTTP metodais (1.5 skyrius). Trijų lygių metodai `/projects/{id}/tasks/{id}/sessions[/{id}]`; kiekvienas vaikas ieškomas savo tėvo viduje, kitaip 404 ([lib/scope.ts](apps/api/src/lib/scope.ts)) | „1. / 3 lygių hierarchija“, „2. / Apimtis per URL ir metodai“ |
 
 ### 8.2. 2 laboratorinis darbas – autentifikacija ir autorizacija
 
-| Reikalavimas | Kaip tenkinamas |
+| Kriterijus | Kaip tenkinamas | Demonstracija |
+|---|---|---|
+| **Integruota autorizacija naudojant JWT (3)** | Prieigos žetonas – JWT, pasirašytas `HS256` ([lib/tokens.ts](apps/api/src/lib/tokens.ts)); jame `sub` (naudotojo ID), `role` ir `sid`. Apsaugoti metodai be žetono grąžina 401 su `WWW-Authenticate` | „0. / JWT turinio patikra“, „2. / 401“ |
+| **Tinkama žetonų atnaujinimo strategija (2)** | Prieigos žetonas galioja 15 min., atnaujinimo – 30 d. (`httpOnly` slapukas). Rotacija: kiekvienas atnaujinimo žetonas veikia vieną kartą; pakartotinai panaudojus panaikinama visa šeima. Naudotojui nereikia prisijungti iš naujo | 5.2 skyrius; „0. / rotacija, pakartotinis panaudojimas“ |
+| **Realizuoti register, login ir logout (2)** | Vietinė autentifikacija. Žetonai valdomi serveryje (DB saugomos maišos). Atsijungimas panaikina prisijungimo šeimą, o to prisijungimo prieigos žetonai atmetami iš karto (`SESSION_REVOKED`). Dviejų faktorių autentifikacija nerealizuota | „0. Autentifikacija“ |
+| **Autorizacija pagal rolę ir ID, bent 3 rolės (3)** | `CLIENT`, `SPECIALIST`, `ADMIN` (ir svečias). Rolės – `requireRole` (pvz., `/users` tik administratoriui). Nuosavybė – [services/access.ts](apps/api/src/services/access.ts) ir `services/*`: svetimos sesijos neredaguosi, svetimo pasiūlymo nepriimsi ir neištrinsi, svetimas juodraštis tau neegzistuoja (404). Visa matrica – 5.3 skyriuje | „3. Rolės ir teisės“, „4. Administratorius“ |
+
+### 8.3. Papildomai
+
+Šie dalykai vertinimo kriterijuose nenurodyti, bet realizuoti:
+
+| Dalykas | Kaip |
 |---|---|
-| Žetonais grįsta autentifikacija | JWT prieigos žetonas `Authorization: Bearer` antraštėje (5.1 skyrius) |
-| Bent trys rolės | Svečias, užsakovas, specialistas, administratorius (5.3 skyrius) |
-| Rolė JWT žetone | `role` žetono turinyje; demonstracija tikrina dekoduotą žetoną |
-| Atnaujinimo žetonų strategija | `httpOnly` slapukas, rotacija, šeimos panaikinimas pakartotinai panaudojus (5.2 skyrius) |
-| Atsijungimas | `POST /auth/logout` panaikina prisijungimo žetonų šeimą; to prisijungimo prieigos žetonai atmetami iš karto (`SESSION_REVOKED`) |
-| Metodų apsauga pagal roles | `requireRole`, `services/access.ts`; demonstracijos 3 ir 4 dalys |
-| Naudotojas keičia tik savo resursus | Šalies, autoriaus ir kūrėjo patikros (5.3 skyrius) |
-| 401 neautentifikuotam naudotojui | Be žetono, su suklastotu ar pasibaigusiu žetonu; `WWW-Authenticate` antraštė |
-| 403 neturinčiam teisių | Netinkama rolė, svetimas matomas resursas, užblokuota paskyra |
-| Administratoriaus funkcijos | `/users` metodai, `scope=all`, bet kurio projekto šalinimas |
-| Saugus slaptažodžių ir žetonų saugojimas | `bcrypt`; atnaujinimo žetonų tik `sha256` maišos (5.4 skyrius) |
-| Saugumas aprašytas specifikacijoje | OpenAPI `bearerAuth` ir `refreshCookie` schemos, **Authorize** mygtukas Swagger UI |
-| Demonstracija iki ~15 s | `npm run demo` – 91 užklausa per ~11 s |
+| OpenAPI specifikacija | Generuojama iš tų pačių Zod schemų, kurios tikrina užklausas; `/api/docs` ir [docs/openapi.json](docs/openapi.json); CI tikrina, ar sutampa su kodu |
+| Bandymų ribojimas | 429 su `Retry-After` prisijungimui, registracijai ir atnaujinimui (5.4 skyrius; „6. Bandymų ribojimas“) |
+| Saugus slaptažodžių ir žetonų saugojimas | `bcrypt`; atnaujinimo ir peržiūros žetonų tik `sha256` maišos |
+| Podėliavimas | `Cache-Control`, `ETag` → 304 („1. / Podėlis“) |
+| Automatiniai testai ir CI | 288 vienetiniai ir integraciniai testai; GitHub Actions: lint, testai, OpenAPI, Postman aprėptis, demonstracija su tikra DB |
+| Demonstracija | `npm run demo` – 140 užklausų per ~18 s |
+| Kodas ir dokumentacija | GitHub; ataskaita – šis `README.md`, darbų planai – [docs/planas.md](docs/planas.md), [docs/planas-2.md](docs/planas-2.md), [docs/planas-pataisos.md](docs/planas-pataisos.md) |
+
+---
+
+## 9. Dirbtinio intelekto įrankių naudojimas
+
+Kuriant projektą naudotas Claude Code (Anthropic) – programavimo asistentas,
+veikiantis kaip agentas: jis skaito projekto failus, siūlo ir atlieka
+pakeitimus, paleidžia testus.
+
+**Kaip buvo dirbama:**
+
+1. **Planas prieš kodą.** Kiekvienam etapui LLM parengdavo darbų planą
+   (`docs/planas*.md`): kas daroma, kokie sprendimai ir kodėl. Planą peržiūrėdavau
+   ir priimdavau sprendimus pats – pvz., šalinti plokščius užduočių ir sesijų
+   adresus, 2FA nedaryti, demonstracijos trukmę palikti.
+2. **Auditas pagal kriterijus.** Prieš 3 lab. LLM palygino kodą su oficialiais
+   vertinimo kriterijais ir paleistam API siuntė ribines užklausas – taip rasti
+   keli atvejai, grąžinę 500, ir trūkstamas trijų lygių adresas
+   ([docs/planas-pataisos.md](docs/planas-pataisos.md)).
+3. **Mažais etapais.** Kiekvienas etapas – vienas commit'as. Po kiekvieno
+   paleidžiami testai, `lint`, `typecheck`, OpenAPI eksportas ir Postman
+   demonstracija. Commit'us darau pats, peržiūrėjęs pakeitimus.
+
+**Kaip LLM buvo valdomas:** nuolatinės taisyklės projekto atmintyje (kodas ir
+komentarai – angliškai, ataskaita ir duomenys – lietuviškai; commit'ų LLM
+nedaro), sprendimai užrašomi planuose, o LLM teiginiai netikimi aklai – juos
+tikrina automatiniai testai, CI ir Postman kolekcija.
+
+**Ką išmokau ir ką moku be LLM:** projekto architektūrą (maršrutai →
+taisyklės → duomenų bazė), kur aprašomi keliai ir kaip pridėti naują objektą su
+CRUD – žr. [docs/cheatsheet.md](docs/cheatsheet.md).

@@ -2,7 +2,8 @@
 
 Trumpas žinynas: kuris failas ką daro ir kodėl. Skirtas skaityti atsidarius kodą
 šalia. Ataskaita yra [README.md](../README.md), darbų planai — [planas.md](planas.md)
-(1 lab.) ir [planas-2.md](planas-2.md) (2 lab.).
+(1 lab.), [planas-2.md](planas-2.md) (2 lab.), [planas-pataisos.md](planas-pataisos.md)
+(1–2 lab. pataisos) ir [planas-3.md](planas-3.md) (3 lab.). Gynimui – [10 skyrius](#10-gynimui).
 
 ---
 
@@ -95,10 +96,12 @@ toks pats.
 | `openapi.ts` | Sąsajos specifikacija visiems metodams | Iš jos gimsta `/api/docs` ir `docs/openapi.json` |
 | `routes/` | **HTTP sluoksnis**: ką paimti iš užklausos, ką grąžinti | `auth.ts`, `users.ts`, `projects.ts`, `tasks.ts`, `sessions.ts`, `proposals.ts`, `shares.ts` |
 | `services/` | **Dalykinės taisyklės**: kas leidžiama, kas ne | `access.ts` — kas ką mato ir gali; `sessions.ts` — trukmė, įkainis; `projects.ts` — būsenų perėjimai |
-| `lib/` | **Įrankiai**, kuriuos naudoja visi maršrutai | `validate`, `serialize`, `http`, `actor`, `tokens`, `passwords`, `prisma`, `csv` |
+| `lib/` | **Įrankiai**, kuriuos naudoja visi maršrutai | `validate`, `scope`, `pagination`, `links`, `serialize`, `http`, `actor`, `tokens`, `rate-limit`, `passwords`, `prisma`, `csv` |
 | `middleware/auth.ts` | Kas siunčia užklausą: žetono tikrinimas, `requireRole` | Blogas žetonas → 401, baigtas prisijungimas → 401 `SESSION_REVOKED`, užblokuota paskyra → 403 |
-| `middleware/error.ts` | Vienintelė vieta, kur klaida virsta atsakymu | `P2025` → 404, sugadintas JSON → 400 |
+| `middleware/error.ts` | Vienintelė vieta, kur klaida virsta atsakymu; taip pat 405 | `P2025` → 404, sugadintas JSON → 400, `PUT` → 405 |
+| `middleware/cache.ts` | `Cache-Control` kiekvienam atsakymui | `private, no-cache`; `/auth/*` – `no-store` |
 | `tools/export-openapi.ts` | Įrašo specifikaciją į `docs/openapi.json` | `npm run openapi:export` |
+| `tools/check-postman-coverage.ts` | Ar Postman kviečia visus OpenAPI metodus | `npm run postman:coverage` (CI) |
 
 ### `apps/api/prisma/` — duomenys
 
@@ -139,7 +142,7 @@ apie tai, kas kam leidžiama — tas `if` turi keliauti į `services/`.
 
 Grynos funkcijos: gauna duomenis, arba praleidžia, arba meta klaidą. Jų
 nedomina nei `req`, nei `res`, todėl jas galima ištestuoti be serverio ir be
-duomenų bazės — visi 286 testai bėga per kelias sekundes.
+duomenų bazės — visi 288 testai bėga per kelias sekundes.
 
 ```ts
 // services/projects.ts — projektas negali šokinėti tarp bet kokių būsenų
@@ -168,7 +171,11 @@ export const ALLOWED_STATUS_TRANSITIONS = {
 
 | Failas | Atsako į klausimą | Ką grąžina blogu atveju |
 |---|---|---|
-| `validate.ts` | Ar atsiųsti duomenys tinkami? | `parseParams`/`parseQuery` → **400**, `parseBody` → **422** |
+| `validate.ts` | Ar atsiųsti duomenys tinkami? | `parseParams`/`parseQuery` → **400**, `parseBody` → **422**; NUL simbolis bet kur → 400/422 |
+| `scope.ts` | Ar vaikas tikrai šio tėvo? (`/projects/A/tasks/B`) | **404**, jei B ne projekto A užduotis |
+| `pagination.ts` | Kaip suskaidyti sąrašą puslapiais? | — (`pageArgs`, `pageOf`) |
+| `links.ts` | Kokias `_links` nuorodas rodyti? | — (veiksmai tik tie, kuriuos maršrutas priimtų) |
+| `rate-limit.ts` | Ar per daug bandymų? | **429** + `Retry-After` |
 | `serialize.ts` | Kaip DB eilutė virsta atsakymu? | — (kartu apsaugo, kad neišeitų slapti laukai) |
 | `http.ts` | Kaip atrodo sėkmė? | `created()` → 201 + `Location`, `noContent()` → 204 |
 | `actor.ts` | Kas atlieka veiksmą? | **401**, jei neprisijungęs; **403**, jei netinka rolė |
@@ -191,7 +198,9 @@ Viena funkcija, kuri atpažįsta klaidos tipą ir parenka kodą:
 | Prisma `P2025` (įrašo nėra) | 404 |
 | Prisma `P2002` (unikalumo pažeidimas) | 409 |
 | Prisma `P2003` (nėra susijusio įrašo) | 422 |
-| Visa kita | 500 (gamyboje priežastis neatskleidžiama) |
+| Prisma `P2020` (skaičius netelpa į stulpelį) | 422 |
+| Express klaida su 4xx statusu (pvz., neiškoduojamas adresas) | tas pats 4xx (`MALFORMED_URL`) |
+| Visa kita | 500 (priežastis niekada neatskleidžiama) |
 
 ---
 
@@ -281,7 +290,7 @@ Atsiuntus `{"status":"PUBLISHED"}` biudžetas nedingsta, o atsiuntus
 | `npm run dev:api` | Tik API (`localhost:4000`) |
 | `npm run demo` | Postman demonstracija per Newman (~18 s, reikia `db:seed`) |
 | `npm run postman:coverage` | Ar kolekcija kviečia visus OpenAPI metodus |
-| `npm run test` | 233 vienetiniai testai |
+| `npm run test` | 288 vienetiniai ir integraciniai testai |
 | `npm run lint` | Statinė analizė |
 | `npm run openapi:export` | Atnaujina `docs/openapi.json` |
 | `npm run db:studio` | Duomenų peržiūra naršyklėje |
@@ -295,4 +304,62 @@ Adresai: `localhost:4000/api/health` (būsena), `localhost:4000/api/docs`
 
 | Darbas | Kas keisis |
 |---|---|
-| 3 lab. — naudotojo sąsaja | `apps/web` — puslapiai, komponentai, stiliai. API jau paruoštas: prieigos žetonas laikomas atmintyje, o gavus 401 `TOKEN_EXPIRED` kviečiamas `/auth/refresh` |
+| 3 lab. — naudotojo sąsaja | `apps/web` — puslapiai, komponentai, stiliai. API jau paruoštas: prieigos žetonas laikomas atmintyje, o gavus 401 `TOKEN_EXPIRED` kviečiamas `/auth/refresh`; mygtukai rodomi pagal `_links` |
+
+---
+
+## 10. Gynimui
+
+### Klausimas → kur atsakymas
+
+| Klausimas | Trumpai | Kur |
+|---|---|---|
+| Kur aprašomi keliai? | Kiekvienas resursas – savo `Router`; visi prijungiami `app.ts` po `/api` | [routes/](../apps/api/src/routes), [app.ts](../apps/api/src/app.ts) |
+| Kur vykdomos su užklausa susijusios operacijos? | Maršrutas: validuoja → randa (`lib/scope.ts`) → tikrina taisykles (`services/`) → rašo per Prisma → serializuoja | 2 skyrius čia |
+| Kokie REST principai ir kur? | Klientas–serveris, stateless (JWT), cacheable (`Cache-Control`, `ETag` → 304), vienoda sąsaja (URI, metodai, kodai, `_links`), sluoksniuota sistema | README 1.5 |
+| Kodėl PostgreSQL, kokios alternatyvos? | Reliacinė hierarchija, kaskados, transakcijos, `numeric` pinigams, **daliniai unikalūs indeksai** | README 3 skyrius |
+| Kokia žetono struktūra? | `header.payload.signature`, base64url. Mūsų payload: `sub`, `role`, `sid`, `iat`, `exp`, `iss`, `aud` | README 5.1 |
+| Kur sukuriamas žetonas? | `signAccessToken` ([tokens.ts:54](../apps/api/src/lib/tokens.ts:54)), kviečiamas iš `issueTokens` ([auth.ts:38](../apps/api/src/routes/auth.ts:38)) | |
+| Ar pasirašomas, kuo, kur raktas? | Taip, `HS256` (HMAC-SHA256, [tokens.ts:29](../apps/api/src/lib/tokens.ts:29)); raktas `JWT_ACCESS_SECRET` iš `.env`, tikrinamas `env.ts` (gamyboje ≥ 32 simboliai) | |
+| Kur tikrinamas? | `authenticate` ([middleware/auth.ts:53](../apps/api/src/middleware/auth.ts:53)) → `verifyAccessToken` ([tokens.ts:76](../apps/api/src/lib/tokens.ts:76)) | |
+| Kodėl rolė žetone? | Serveris žino rolę be DB paieškos; klientas gali rodyti sąsają pagal rolę. Rolės pakeisti negalima – pasikeistų parašas | |
+| Kaip galima / negalima nulaužti? | Negalima: pakeisti turinio (parašas), `alg: none` ar kitas algoritmas (prisegtas `HS256`), panaudoti po atsijungimo (`sid`). Galima: perrinkti **silpną** raktą neprisijungus – todėl ilgas atsitiktinis raktas; pavogti žetoną (XSS) – todėl jis atmintyje ir galioja 15 min. | `tokens.test.ts` |
+| Kaip perduodamas? | Prieigos – `Authorization: Bearer`; atnaujinimo – slapukas `httpOnly`, `Secure` (gamyboje), `SameSite=Lax`, `Path=/api/auth` | [refresh-cookie.ts](../apps/api/src/lib/refresh-cookie.ts) |
+| Antraštė ar slapukas? | Antraštė: nėra CSRF, veikia bet kuriam klientui, bet JS turi laikyti žetoną (XSS rizika). Slapukas `httpOnly`: JS nepasiekiamas, bet siunčiamas automatiškai (CSRF → `SameSite`, `Path`) | README 5.1 |
+| Apsauga nuo injekcijų? | Prisma – parametrizuotos užklausos (vienintelis „raw“ – `SELECT 1`); Zod atmeta netinkamus tipus ir **išmeta nežinomus laukus** | `lib/validate.ts` |
+| Apsauga nuo teisių eskalacijos? | Registracijoje `ADMIN` negalimas; `PATCH /auth/me` ignoruoja `role`; `requireRole`; nuosavybės patikros `services/access.ts`; svetimas – 404 | Postman „0. / PATCH /auth/me“, „3. Rolės ir teisės“ |
+| Kitos grėsmės | Brute force → 429; XSS / clickjacking → `helmet` antraštės; CSRF → `SameSite`, CORS tik `WEB_ORIGIN`; slaptažodžiai → `bcrypt` | README 5.4 |
+
+### Statuso kodų demonstracija (Postman)
+
+| Kodas | Užklausa |
+|---|---|
+| 201 + `Location` | „1. / POST /projects“ |
+| 204 | „1. / DELETE … atšaukti nuorodą“, „5. Valymas“ |
+| 304 | „1. / Podėlis / Pakartotinis skaitymas“ |
+| 400 | „2. / netaisyklingas id“, „2. / Ribiniai atvejai / NUL simbolis“ |
+| 401 | „2. / be prieigos žetono“, „0. / Prieigos žetonas po atsijungimo“ (`SESSION_REVOKED`) |
+| 403 | „3. / Specialistas kuria aikštelės projektą“, „4. / Užblokuotojo žetonas“ |
+| 404 | „2. / nesamas projektas“, „2. / Apimtis / Svetimo projekto užduotis“, „3. / svetimas juodraštis“ |
+| 405 | „2. / Apimtis / Nepalaikomas metodas“ |
+| 406 | „2. / neprieinamas turinio tipas“ |
+| 409 | „1. / antra vykdoma sesija“ |
+| 422 | „2. / netinkamas turinys“, „1. / priimto šalinti negalima“ |
+| 429 | „6. Bandymų ribojimas“ |
+
+### Repeticija: naujas objektas su CRUD be LLM
+
+Pavyzdys – **komentaras prie užduoties**
+(`/projects/{projectId}/tasks/{taskId}/comments[/{commentId}]`). Pasimatuok laiką,
+po to pakeitimus atmesk (`git stash` arba `git checkout .`).
+
+1. `prisma/schema.prisma`: modelis `Comment` (`id`, `taskId`, `authorId`, `body`, `createdAt`, `updatedAt`), ryšys `Task.comments`, `onDelete: Cascade`.
+2. `npm run db:migrate --workspace apps/api -- --name add-comments` – nauja migracija.
+3. `packages/shared/src/schemas.ts`: `Comment`, `CreateCommentInput`, `UpdateCommentInput`, `CommentListQuery = PageQuery`; `npm run build --workspace packages/shared`.
+4. `lib/serialize.ts`: `toComment`.
+5. `lib/scope.ts`: `CommentParams = TaskParams.extend({ commentId })`, `findCommentOr404` (ieškoti `where: { id, taskId, task: { projectId } }`).
+6. `routes/comments.ts`: `GET` sąrašas (`pageArgs`/`pageOf`), `GET` vienas, `POST` (`created` + `Location`), `PATCH`, `DELETE` (`noContent`). Teisės: skaityti – `assertCanInspectProject`, keisti / trinti – tik autorius (`403`).
+7. `app.ts`: pridėti `commentsRouter` į `routers` masyvą (405 veiks savaime).
+8. `openapi.ts`: aprašyti kelius; `npm run openapi:export`.
+9. Postman: bent po užklausą kiekvienam metodui; `npm run postman:coverage` turi praeiti.
+10. Patikrinti: `npm run typecheck`, `npm test`, `npm run demo`.

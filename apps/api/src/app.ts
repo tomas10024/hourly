@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './env.js';
 import { openApiDocument } from './openapi.js';
 import { authenticate } from './middleware/auth.js';
+import { cacheControl } from './middleware/cache.js';
 import { errorHandler, methodNotAllowed, notFound } from './middleware/error.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
@@ -30,6 +31,9 @@ export function buildApp(): Express {
   );
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
+
+  // Who may store a response and for how long (see `middleware/cache.ts`).
+  app.use('/api', cacheControl);
 
   // A share-link token travels in the URL, so public responses must not be
   // indexed by search engines.

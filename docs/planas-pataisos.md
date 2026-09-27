@@ -221,6 +221,8 @@ maršruto):
 
 ## 8. Etapas H – ataskaita ir gynimas
 
+**Būsena:** atlikta (2026-09-27). README: 1.5 „REST principai“, DB alternatyvos (3 sk.), pilna 6.1 kodų lentelė, 8 sk. pagal oficialius kriterijus, 9 sk. apie LLM. Kodas: `middleware/cache.ts` (`Cache-Control`, `ETag` → 304) ir Postman „1. / Podėlis“. Cheatsheet: 10 sk. „Gynimui“ ir repeticijos žingsniai. **Liko tau:** ryšys su bakalauriniu (README 3 sk.) ir 9 sk. perrašyti savais žodžiais.
+
 - **H1. README 8 skyrius** – perrašyti pagal oficialius kriterijus (su balais), kiekvienam – kur realizuota ir kuri Postman užklausa parodo. Dabartines eilutes palikti kaip „papildomai“.
 - **H2. README 1.4** – nauji URL, metodų skaičius, poskyriai „Hierarchija ir apimtis“, „Puslapiavimas ir filtrai“, „Hypermedia“.
 - **H3. Naujas skyrius „REST principai“:** kliento-serverio, *stateless* (JWT; sąžiningai – refresh žetonas yra serverio būsena ir kodėl tai priimtina), *cacheable* (Express `ETag` → 304; pridėti `Cache-Control: no-store` auth atsakymams ir `private` autentifikuotiems GET – mažas middleware), vienoda sąsaja (resursai, metodai, reprezentacijos, HATEOAS), sluoksniuota sistema (Next tarpinis maršrutas, Azure), *code on demand* – nenaudojama.

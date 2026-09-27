@@ -3148,6 +3148,88 @@
               ]
             }
           ]
+        },
+        {
+          "name": "Podėlis (ETag ir 304)",
+          "item": [
+            {
+              "name": "Pirmas skaitymas – ETag (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{publishedProjectId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{publishedProjectId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "pm.test('saugoti gali tik kviečiantysis ir tik patikrinęs', () =>",
+                      "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('private, no-cache'));",
+                      "pm.test('atsakymas turi ETag', () => pm.expect(pm.response.headers.get('ETag')).to.be.a('string'));",
+                      "pm.collectionVariables.set('etag', pm.response.headers.get('ETag'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Pakartotinis skaitymas su If-None-Match (304)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "If-None-Match",
+                    "value": "{{etag}}"
+                  },
+                  {
+                    "key": "Cache-Control",
+                    "value": "max-age=0",
+                    "description": "Postman adds no-cache by default, which tells the server to skip revalidation; a browser reload sends max-age=0."
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{publishedProjectId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{publishedProjectId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('304 Not Modified', () => pm.response.to.have.status(304));",
+                      "pm.test('kūnas nesiunčiamas', () => pm.expect(pm.response.text()).to.eql(''));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
         }
       ],
       "description": "Pilnas gyvavimo ciklas: 5 projektų, 5 užduočių ir 5 darbo sesijų metodai, hierarchiniai metodai, pasiūlymai, ataskaita ir peržiūros nuoroda."
@@ -5795,6 +5877,10 @@
     },
     {
       "key": "limitAttempts",
+      "value": ""
+    },
+    {
+      "key": "etag",
       "value": ""
     }
   ]

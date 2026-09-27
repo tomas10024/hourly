@@ -17,6 +17,19 @@ describe('API foundation', () => {
     expect(res.body._links.me).toBeUndefined();
   });
 
+  it('lets only the caller keep a response, and only after revalidating it', async () => {
+    const first = await request(app).get('/api').expect(200);
+    expect(first.headers['cache-control']).toBe('private, no-cache');
+    expect(first.headers.etag).toBeDefined();
+
+    await request(app).get('/api').set('If-None-Match', first.headers.etag!).expect(304);
+  });
+
+  it('forbids storing authentication and share-link responses', async () => {
+    const res = await request(app).post('/api/auth/logout').expect(204);
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+
   it('returns 404 in the error envelope for an unknown address', async () => {
     const res = await request(app).get('/api/nera-tokio').expect(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
