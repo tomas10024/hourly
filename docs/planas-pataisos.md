@@ -58,7 +58,7 @@ aprašymo, kurių klausiama gynime.
 
 ## 1. Etapas A – jokių 500 (didžiausia rizika)
 
-**Būsena:** A1–A3, A5 atlikta (2026-09-27); A4 daroma kartu su B, A6 – kartu su F.
+**Būsena:** A1–A5 atlikta (2026-09-27; A4 – kartu su B); A6 – kartu su F.
 
 ### Rasti atvejai (atkartota lokaliai)
 
@@ -88,6 +88,8 @@ keliu. Gynimas vyks lokaliai – dėstytojas tai pamatys.
 ---
 
 ## 2. Etapas B – hierarchiniai URL ir apimtis
+
+**Būsena:** atlikta (2026-09-27), įskaitant pasiūlymus, nuorodas ir 405. Papildomai: `GET /projects/{projectId}/proposals/{proposalId}`, sesijos atsakyme – `projectId`. Postman: nauji URL ir aplankas „Apimtis per URL ir metodai“.
 
 ### Tikslinė schema
 

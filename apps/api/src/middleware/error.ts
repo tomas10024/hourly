@@ -1,4 +1,4 @@
-import type { ErrorRequestHandler, RequestHandler } from 'express';
+import type { ErrorRequestHandler, RequestHandler, Router } from 'express';
 import { ZodError, z } from 'zod';
 import { isProduction } from '../env.js';
 
@@ -46,6 +46,50 @@ export function unauthorized(code: UnauthorizedCode, message: string): HttpError
     ? `Bearer realm="hourly", error="invalid_token", error_description="${message}"`
     : 'Bearer realm="hourly"';
   return new HttpError(401, code, message, undefined, { 'WWW-Authenticate': challenge });
+}
+
+/** The part of an Express 5 router layer this file relies on (untyped upstream). */
+type RouteLayer = {
+  route?: { methods: Record<string, boolean> };
+  match(path: string): boolean;
+};
+
+/**
+ * A known address used with a method it does not support.
+ *
+ * 404 would be wrong here - the resource exists - so the answer is 405 with an
+ * `Allow` header listing what the address does support (RFC 9110). The list is
+ * read from the routes the routers already declare, so it cannot fall out of
+ * step with them. Registered after the routers: it is only reached when no
+ * route has handled the request.
+ */
+export function methodNotAllowed(routers: Router[]): RequestHandler {
+  const layers = routers
+    .flatMap((router) => router.stack as unknown as RouteLayer[])
+    .filter((layer) => layer.route !== undefined);
+
+  return (req, _res, next) => {
+    const allowed = new Set<string>();
+    for (const layer of layers) {
+      if (!layer.match(req.path)) continue;
+      for (const method of Object.keys(layer.route!.methods)) allowed.add(method.toUpperCase());
+    }
+    if (allowed.size === 0) {
+      next();
+      return;
+    }
+
+    // Express answers HEAD with the GET handler.
+    if (allowed.has('GET')) allowed.add('HEAD');
+    const methods = [...allowed];
+    throw new HttpError(
+      405,
+      'METHOD_NOT_ALLOWED',
+      `${req.method} is not supported at this address`,
+      { allowed: methods },
+      { Allow: methods.join(', ') },
+    );
+  };
 }
 
 /** Unknown address - the last route before error handling. */

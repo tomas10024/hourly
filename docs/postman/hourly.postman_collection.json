@@ -914,7 +914,7 @@
           ]
         },
         {
-          "name": "POST /projects/{id}/proposals — pateikti pasiūlymą (201)",
+          "name": "POST /projects/{projectId}/proposals — pateikti pasiūlymą (201)",
           "request": {
             "method": "POST",
             "header": [
@@ -965,7 +965,7 @@
           ]
         },
         {
-          "name": "GET /projects/{id}/proposals — užsakovas mato pasiūlymus (200)",
+          "name": "GET /projects/{projectId}/proposals — užsakovas mato pasiūlymus (200)",
           "request": {
             "method": "GET",
             "header": [],
@@ -1005,7 +1005,49 @@
           ]
         },
         {
-          "name": "PATCH /proposals/{id} — priimti pasiūlymą (200)",
+          "name": "GET /projects/{projectId}/proposals/{proposalId} — perskaityti pasiūlymą (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals",
+                "{{proposalId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('tas pats pasiūlymas', () =>",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('proposalId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /projects/{projectId}/proposals/{proposalId} — priimti pasiūlymą (200)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1015,11 +1057,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/proposals/{{proposalId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "proposals",
                 "{{proposalId}}"
               ]
@@ -1095,7 +1139,7 @@
           ]
         },
         {
-          "name": "POST /tasks — sukurti užduotį (201)",
+          "name": "POST /projects/{projectId}/tasks — sukurti užduotį (201)",
           "request": {
             "method": "POST",
             "header": [
@@ -1105,17 +1149,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/tasks",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"title\": \"Demonstracinė užduotis\",\n  \"estimatedHours\": 8\n}"
+              "raw": "{\n  \"title\": \"Demonstracinė užduotis\",\n  \"estimatedHours\": 8\n}"
             },
             "auth": {
               "type": "bearer",
@@ -1144,7 +1190,7 @@
           ]
         },
         {
-          "name": "GET /projects/{id}/tasks — hierarchija (200)",
+          "name": "GET /projects/{projectId}/tasks — hierarchija (200)",
           "request": {
             "method": "GET",
             "header": [],
@@ -1185,16 +1231,18 @@
           ]
         },
         {
-          "name": "GET /tasks/{id} — perskaityti užduotį (200)",
+          "name": "GET /projects/{projectId}/tasks/{taskId} — perskaityti užduotį (200)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks",
                 "{{taskId}}"
               ]
@@ -1268,7 +1316,7 @@
           ]
         },
         {
-          "name": "PATCH /tasks/{id} — keisti būseną (200)",
+          "name": "PATCH /projects/{projectId}/tasks/{taskId} — keisti būseną (200)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1278,11 +1326,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks",
                 "{{taskId}}"
               ]
@@ -1316,7 +1366,7 @@
           ]
         },
         {
-          "name": "PATCH /tasks/{id} — užsakovas patvirtina (200)",
+          "name": "PATCH /projects/{projectId}/tasks/{taskId} — užsakovas patvirtina (200)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1326,11 +1376,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks",
                 "{{taskId}}"
               ]
@@ -1365,7 +1417,7 @@
           ]
         },
         {
-          "name": "POST /sessions — paleisti laikmatį (201)",
+          "name": "POST /projects/{projectId}/tasks/{taskId}/sessions — paleisti laikmatį (201)",
           "request": {
             "method": "POST",
             "header": [
@@ -1375,17 +1427,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/sessions",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"startedAt\": \"{{timerStart}}\",\n  \"comment\": \"Vykdoma sesija\"\n}"
+              "raw": "{\n  \"startedAt\": \"{{timerStart}}\",\n  \"comment\": \"Vykdoma sesija\"\n}"
             },
             "auth": {
               "type": "bearer",
@@ -1415,7 +1471,7 @@
           ]
         },
         {
-          "name": "POST /sessions — antra vykdoma sesija (409)",
+          "name": "POST /projects/{projectId}/tasks/{taskId}/sessions — antra vykdoma sesija (409)",
           "request": {
             "method": "POST",
             "header": [
@@ -1425,18 +1481,22 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/sessions",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions"
               ]
             },
             "description": "Dalinis unikalus indeksas neleidžia dviejų neužbaigtų sesijų.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"startedAt\": \"{{timerStart}}\"\n}"
+              "raw": "{\n  \"startedAt\": \"{{timerStart}}\"\n}"
             },
             "auth": {
               "type": "bearer",
@@ -1464,7 +1524,7 @@
           ]
         },
         {
-          "name": "PATCH /sessions/{id} — sustabdyti laikmatį (200)",
+          "name": "PATCH /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} — sustabdyti laikmatį (200)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1474,11 +1534,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/sessions/{{sessionId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions/{{sessionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions",
                 "{{sessionId}}"
               ]
@@ -1515,7 +1579,7 @@
           ]
         },
         {
-          "name": "POST /sessions — rankinis įvedimas (201)",
+          "name": "POST /projects/{projectId}/tasks/{taskId}/sessions — rankinis įvedimas (201)",
           "request": {
             "method": "POST",
             "header": [
@@ -1525,17 +1589,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/sessions",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"taskId\": \"{{taskId}}\",\n  \"startedAt\": \"{{manualStart}}\",\n  \"endedAt\": \"{{manualEnd}}\",\n  \"comment\": \"Rankiniu būdu įvesta sesija\"\n}"
+              "raw": "{\n  \"startedAt\": \"{{manualStart}}\",\n  \"endedAt\": \"{{manualEnd}}\",\n  \"comment\": \"Rankiniu būdu įvesta sesija\"\n}"
             },
             "auth": {
               "type": "bearer",
@@ -1564,16 +1632,18 @@
           ]
         },
         {
-          "name": "GET /tasks/{id}/sessions — hierarchija (200)",
+          "name": "GET /projects/{projectId}/tasks/{taskId}/sessions — 3 lygių hierarchija (200)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/tasks/{{taskId}}/sessions",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks",
                 "{{taskId}}",
                 "sessions"
@@ -1605,16 +1675,20 @@
           ]
         },
         {
-          "name": "GET /sessions/{id} — perskaityti sesiją (200)",
+          "name": "GET /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} — perskaityti sesiją (200)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/sessions/{{sessionId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions/{{sessionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions",
                 "{{sessionId}}"
               ]
@@ -1787,7 +1861,7 @@
           ]
         },
         {
-          "name": "POST /projects/{id}/shares — peržiūros nuoroda (201)",
+          "name": "POST /projects/{projectId}/shares — peržiūros nuoroda (201)",
           "request": {
             "method": "POST",
             "header": [
@@ -1840,7 +1914,7 @@
           ]
         },
         {
-          "name": "GET /projects/{id}/shares — nuorodų sąrašas (200)",
+          "name": "GET /projects/{projectId}/shares — nuorodų sąrašas (200)",
           "request": {
             "method": "GET",
             "header": [],
@@ -1918,16 +1992,18 @@
           ]
         },
         {
-          "name": "DELETE /shares/{id} — atšaukti nuorodą (204)",
+          "name": "DELETE /projects/{projectId}/shares/{shareId} — atšaukti nuorodą (204)",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/shares/{{shareId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/shares/{{shareId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "shares",
                 "{{shareId}}"
               ]
@@ -2185,7 +2261,7 @@
           ]
         },
         {
-          "name": "422 — nuoroda į nesamą įrašą",
+          "name": "404 — nesamas projektas adrese",
           "request": {
             "method": "POST",
             "header": [
@@ -2195,18 +2271,20 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/tasks",
+              "raw": "{{baseUrl}}/projects/00000000-0000-4000-8000-000000000000/tasks",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "00000000-0000-4000-8000-000000000000",
                 "tasks"
               ]
             },
             "description": "Identifikatorius kūne, o ne adrese, todėl 422, o ne 404.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"projectId\": \"00000000-0000-4000-8000-000000000000\",\n  \"title\": \"Užduotis be projekto\"\n}"
+              "raw": "{\n  \"title\": \"Užduotis be projekto\"\n}"
             },
             "auth": {
               "type": "bearer",
@@ -2225,9 +2303,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
-                  "pm.test('kodas INVALID_REFERENCE', () =>",
-                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_REFERENCE'));"
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('kodas NOT_FOUND', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('NOT_FOUND'));"
                 ]
               }
             }
@@ -2472,6 +2550,146 @@
                   "pm.test('kodas NOT_ACCEPTABLE', () => pm.expect(pm.response.json().error.code).to.eql('NOT_ACCEPTABLE'));"
                 ]
               }
+            }
+          ]
+        },
+        {
+          "name": "Apimtis per URL ir metodai",
+          "item": [
+            {
+              "name": "Svetimo projekto užduotis šio projekto adresu (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{publishedProjectId}}/tasks/{{taskId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{publishedProjectId}}",
+                    "tasks",
+                    "{{taskId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{specialistToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                      "pm.test('pranešime – ne tas projektas', () =>",
+                      "  pm.expect(pm.response.json().error.message).to.include('does not exist in project'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Kitos užduoties sesija šios užduoties adresu (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{inProgressProjectId}}/tasks/{{inProgressTaskId}}/sessions/{{sessionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{inProgressProjectId}}",
+                    "tasks",
+                    "{{inProgressTaskId}}",
+                    "sessions",
+                    "{{sessionId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{specialistToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                      "pm.test('pranešime – ne ta užduotis', () =>",
+                      "  pm.expect(pm.response.json().error.message).to.include('does not exist in task'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Nepalaikomas metodas žinomu adresu (405)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{projectId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{projectId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Viską pakeičiantis PUT\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('405 Method Not Allowed', () => pm.response.to.have.status(405));",
+                      "pm.test('Allow antraštė išvardija palaikomus metodus', () =>",
+                      "  pm.expect(pm.response.headers.get('Allow')).to.eql('GET, PATCH, DELETE, HEAD'));"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }
@@ -2955,11 +3173,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/tasks/{{taskId}}/sessions",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks",
                 "{{taskId}}",
                 "sessions"
@@ -3723,16 +3943,20 @@
       "name": "5. Valymas",
       "item": [
         {
-          "name": "DELETE /sessions/{id} — šalinti sesiją (204)",
+          "name": "DELETE /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} — šalinti sesiją (204)",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/sessions/{{manualSessionId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions/{{manualSessionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions",
                 "{{manualSessionId}}"
               ]
@@ -3761,16 +3985,20 @@
           ]
         },
         {
-          "name": "GET /sessions/{id} — po šalinimo (404)",
+          "name": "GET /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} — po šalinimo (404)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/sessions/{{manualSessionId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/sessions/{{manualSessionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
+                "tasks",
+                "{{taskId}}",
                 "sessions",
                 "{{manualSessionId}}"
               ]
@@ -3799,16 +4027,18 @@
           ]
         },
         {
-          "name": "DELETE /tasks/{id} — šalinti užduotį (204)",
+          "name": "DELETE /projects/{projectId}/tasks/{taskId} — šalinti užduotį (204)",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
+                "projects",
+                "{{projectId}}",
                 "tasks",
                 "{{taskId}}"
               ]

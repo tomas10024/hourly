@@ -32,6 +32,13 @@ import {
   paginated,
 } from '@hourly/shared';
 import { env } from './env.js';
+import {
+  ProjectParams,
+  ProposalParams,
+  SessionParams,
+  ShareParams,
+  TaskParams,
+} from './lib/scope.js';
 import { REFRESH_COOKIE } from './lib/refresh-cookie.js';
 
 const bearer = [{ bearerAuth: [] }];
@@ -48,6 +55,12 @@ const errors = {
   '404': json(ApiError, 'Not found'),
   '422': json(ApiError, 'Validation failed'),
 };
+
+/** A resource below a project that does not exist at the given address. */
+const scopedNotFound = json(
+  ApiError,
+  'Not found - also when a child is addressed under a parent it does not belong to',
+);
 
 const pathId = z.object({ id: z.uuid() });
 
@@ -71,7 +84,10 @@ export const openApiDocument = createDocument({
     version: '0.1.0',
     description:
       'A marketplace for freelance work with transparent time tracking. ' +
-      'Hierarchy: project -> task -> work session.\n\n' +
+      'Hierarchy: project -> task -> work session, addressed as ' +
+      '`/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}`. A child requested ' +
+      'under a parent it does not belong to answers 404. A known address used with an ' +
+      'unsupported method answers 405 with an `Allow` header.\n\n' +
       '**Authentication.** `POST /auth/login` returns a short-lived access token (JWT) ' +
       `and sets the \`${REFRESH_COOKIE}\` cookie. ` +
       'Send the token as `Authorization: Bearer <token>` (the **Authorize** ' +
@@ -272,18 +288,6 @@ export const openApiDocument = createDocument({
         responses: { '204': { description: 'Deleted' }, ...errors },
       },
     },
-    '/projects/{id}/tasks': {
-      get: {
-        tags: ['Tasks'],
-        summary: 'Tasks of a given project',
-        description:
-          'A missing project answers 404, which is not the same as an empty list. The ' +
-          'tasks are as visible as their project.',
-        requestParams: { path: pathId },
-        security: optionalBearer,
-        responses: { '200': json(z.array(Task), 'Task list'), ...errors },
-      },
-    },
     '/projects/{id}/report': {
       get: {
         tags: ['Projects'],
@@ -314,34 +318,52 @@ export const openApiDocument = createDocument({
     '/tasks': {
       get: {
         tags: ['Tasks'],
-        summary: 'List tasks',
+        summary: 'My tasks across projects',
         description:
-          'Tasks of the projects the actor takes part in; `projectId` narrows it to one.',
+          'A personal view, not a second address: tasks of the projects the actor takes ' +
+          'part in; `projectId` narrows it to one. Each task lives at ' +
+          '`/projects/{projectId}/tasks/{taskId}`.',
         requestParams: {
           query: z.object({ projectId: z.uuid().optional() }),
         },
         security: bearer,
         responses: { '200': json(z.array(Task), 'Task list'), ...errors },
       },
+    },
+    '/projects/{projectId}/tasks': {
+      get: {
+        tags: ['Tasks'],
+        summary: 'Tasks of a given project',
+        description:
+          'A missing project answers 404, which is not the same as an empty list. The ' +
+          'tasks are as visible as their project.',
+        requestParams: { path: ProjectParams },
+        security: optionalBearer,
+        responses: { '200': json(z.array(Task), 'Task list'), ...errors },
+      },
       post: {
         tags: ['Tasks'],
-        summary: 'Create a task',
+        summary: 'Create a task in the project',
         description:
           'Written by whoever the project named in `taskAuthoring`. Omitting `position` ' +
-          'appends the task to the end of the list. An unknown `projectId` answers 422.',
+          'appends the task to the end of the list. The `Location` header points at ' +
+          'the new task.',
+        requestParams: { path: ProjectParams },
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateTaskInput } } },
         responses: { '201': json(Task, 'Task created'), ...errors },
       },
     },
-    '/tasks/{id}': {
+    '/projects/{projectId}/tasks/{taskId}': {
       get: {
         tags: ['Tasks'],
         summary: 'Task details',
-        description: 'As visible as the project the task belongs to.',
-        requestParams: { path: pathId },
+        description:
+          'As visible as the project. A task of another project answers 404: it does ' +
+          'not exist at this address.',
+        requestParams: { path: TaskParams },
         security: optionalBearer,
-        responses: { '200': json(Task, 'Task'), ...errors },
+        responses: { '200': json(Task, 'Task'), ...errors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Tasks'],
@@ -349,30 +371,18 @@ export const openApiDocument = createDocument({
         description:
           'Both parties of the project may edit and reorder tasks. `approved` is the ' +
           'decision of the client and applies only when the specialist authored the list.',
-        requestParams: { path: pathId },
+        requestParams: { path: TaskParams },
         security: bearer,
         requestBody: { content: { 'application/json': { schema: UpdateTaskInput } } },
-        responses: { '200': json(Task, 'Task updated'), ...errors },
+        responses: { '200': json(Task, 'Task updated'), ...errors, '404': scopedNotFound },
       },
       delete: {
         tags: ['Tasks'],
         summary: 'Delete a task',
         description: 'Work sessions of the task are removed with it.',
-        requestParams: { path: pathId },
+        requestParams: { path: TaskParams },
         security: bearer,
-        responses: { '204': { description: 'Deleted' }, ...errors },
-      },
-    },
-    '/tasks/{id}/sessions': {
-      get: {
-        tags: ['Work sessions'],
-        summary: 'Work sessions of a given task',
-        description:
-          'A missing task answers 404, which is not the same as an empty list. Logged ' +
-          'hours are readable by the parties of the project and the administrator.',
-        requestParams: { path: pathId },
-        security: bearer,
-        responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
+        responses: { '204': { description: 'Deleted' }, ...errors, '404': scopedNotFound },
       },
     },
 
@@ -380,13 +390,33 @@ export const openApiDocument = createDocument({
     '/sessions': {
       get: {
         tags: ['Work sessions'],
-        summary: 'List work sessions',
-        description: 'The work log of the actor; `taskId` narrows it to one task.',
+        summary: 'My work log across projects',
+        description:
+          'A personal view, not a second address: the sessions of the actor; `taskId` ' +
+          'narrows it to one task. `projectId` and `taskId` of each entry give its ' +
+          'address under `/projects/{projectId}/tasks/{taskId}/sessions`.',
         requestParams: {
           query: z.object({ taskId: z.uuid().optional() }),
         },
         security: bearer,
         responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
+      },
+    },
+    '/projects/{projectId}/tasks/{taskId}/sessions': {
+      get: {
+        tags: ['Work sessions'],
+        summary: 'Work sessions of a task (project -> task -> sessions)',
+        description:
+          'The whole hierarchy in one address. A missing project, or a task that does ' +
+          'not belong to it, answers 404 - not an empty list. Logged hours are readable ' +
+          'by the parties of the project and the administrator.',
+        requestParams: { path: TaskParams },
+        security: bearer,
+        responses: {
+          '200': json(z.array(WorkSession), 'Session list'),
+          ...errors,
+          '404': scopedNotFound,
+        },
       },
       post: {
         tags: ['Work sessions'],
@@ -395,6 +425,7 @@ export const openApiDocument = createDocument({
           'Without `endedAt` the session is treated as running. A user may have only one ' +
           'unfinished session at a time, so a second one answers 409. `durationMinutes` ' +
           'and `appliedRate` are computed by the server and cannot be sent in.',
+        requestParams: { path: TaskParams },
         security: bearer,
         requestBody: {
           content: { 'application/json': { schema: CreateWorkSessionInput } },
@@ -403,17 +434,18 @@ export const openApiDocument = createDocument({
           '201': json(WorkSession, 'Session created'),
           '409': json(ApiError, 'A work session is already running'),
           ...errors,
+          '404': scopedNotFound,
         },
       },
     },
-    '/sessions/{id}': {
+    '/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}': {
       get: {
         tags: ['Work sessions'],
         summary: 'Work session details',
         description: 'Readable by the parties of the project and the administrator.',
-        requestParams: { path: pathId },
+        requestParams: { path: SessionParams },
         security: bearer,
-        responses: { '200': json(WorkSession, 'Session'), ...errors },
+        responses: { '200': json(WorkSession, 'Session'), ...errors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Work sessions'],
@@ -421,7 +453,7 @@ export const openApiDocument = createDocument({
         description:
           'Sending `endedAt` stops the timer: the server then measures the duration and ' +
           'locks in the rate that was in force. Only the author may change a session.',
-        requestParams: { path: pathId },
+        requestParams: { path: SessionParams },
         security: bearer,
         requestBody: {
           content: { 'application/json': { schema: UpdateWorkSessionInput } },
@@ -430,14 +462,15 @@ export const openApiDocument = createDocument({
           '200': json(WorkSession, 'Session updated'),
           '409': json(ApiError, 'Reopening would leave two sessions running'),
           ...errors,
+          '404': scopedNotFound,
         },
       },
       delete: {
         tags: ['Work sessions'],
         summary: 'Delete a work session',
-        requestParams: { path: pathId },
+        requestParams: { path: SessionParams },
         security: bearer,
-        responses: { '204': { description: 'Deleted' }, ...errors },
+        responses: { '204': { description: 'Deleted' }, ...errors, '404': scopedNotFound },
       },
     },
 
@@ -453,14 +486,14 @@ export const openApiDocument = createDocument({
         responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
       },
     },
-    '/projects/{id}/proposals': {
+    '/projects/{projectId}/proposals': {
       get: {
         tags: ['Proposals'],
         summary: 'Proposals submitted for a project',
         description:
           'Competing bids reveal prices, so the client sees every offer while a ' +
           'specialist sees only their own.',
-        requestParams: { path: pathId },
+        requestParams: { path: ProjectParams },
         security: bearer,
         responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
       },
@@ -470,7 +503,7 @@ export const openApiDocument = createDocument({
         description:
           'Only while the project is a PUBLISHED marketplace project. One offer per ' +
           'specialist per project, so a repeated attempt answers 409.',
-        requestParams: { path: pathId },
+        requestParams: { path: ProjectParams },
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProposalInput } } },
         responses: {
@@ -480,7 +513,17 @@ export const openApiDocument = createDocument({
         },
       },
     },
-    '/proposals/{id}': {
+    '/projects/{projectId}/proposals/{proposalId}': {
+      get: {
+        tags: ['Proposals'],
+        summary: 'Proposal details',
+        description:
+          'Visible to the client of the project, the administrator and the specialist ' +
+          'who submitted it; for anyone else it answers 404, as it is absent from their list.',
+        requestParams: { path: ProposalParams },
+        security: bearer,
+        responses: { '200': json(Proposal, 'Proposal'), ...errors, '404': scopedNotFound },
+      },
       patch: {
         tags: ['Proposals'],
         summary: 'Accept, reject or withdraw a proposal',
@@ -490,7 +533,7 @@ export const openApiDocument = createDocument({
           'transaction: the offer wins, the competing offers are rejected, and the project ' +
           'moves to IN_PROGRESS with the specialist assigned. Only one proposal per project ' +
           'may be accepted.',
-        requestParams: { path: pathId },
+        requestParams: { path: ProposalParams },
         security: bearer,
         requestBody: {
           content: { 'application/json': { schema: UpdateProposalInput } },
@@ -499,25 +542,26 @@ export const openApiDocument = createDocument({
           '200': json(Proposal, 'Proposal updated'),
           '409': json(ApiError, 'Another proposal of this project is already accepted'),
           ...errors,
+          '404': scopedNotFound,
         },
       },
       delete: {
         tags: ['Proposals'],
         summary: 'Delete your own proposal',
         description: 'An accepted proposal is kept as the record of how the work was awarded.',
-        requestParams: { path: pathId },
+        requestParams: { path: ProposalParams },
         security: bearer,
-        responses: { '204': { description: 'Deleted' }, ...errors },
+        responses: { '204': { description: 'Deleted' }, ...errors, '404': scopedNotFound },
       },
     },
 
     /* -------------------------------- Share links -------------------------------- */
-    '/projects/{id}/shares': {
+    '/projects/{projectId}/shares': {
       get: {
         tags: ['Share links'],
         summary: 'Share links of a project',
         description: 'Answers what exists and until when - never how to get in.',
-        requestParams: { path: pathId },
+        requestParams: { path: ProjectParams },
         security: bearer,
         responses: { '200': json(z.array(ShareLink), 'Share link list'), ...errors },
       },
@@ -527,7 +571,7 @@ export const openApiDocument = createDocument({
         description:
           'The token is readable only in this response: the database keeps nothing but ' +
           'its SHA-256 hash, so a lost link cannot be recovered, only replaced.',
-        requestParams: { path: pathId },
+        requestParams: { path: ProjectParams },
         security: bearer,
         requestBody: {
           content: { 'application/json': { schema: CreateShareLinkInput } },
@@ -535,16 +579,16 @@ export const openApiDocument = createDocument({
         responses: { '201': json(ShareLinkCreated, 'Share link created'), ...errors },
       },
     },
-    '/shares/{id}': {
+    '/projects/{projectId}/shares/{shareId}': {
       delete: {
         tags: ['Share links'],
         summary: 'Revoke a share link',
         description:
           'The record is kept and stamped with `revokedAt`, because the fact that a ' +
           'project was shared is part of its history. Revoking twice answers 204 again.',
-        requestParams: { path: pathId },
+        requestParams: { path: ShareParams },
         security: bearer,
-        responses: { '204': { description: 'Revoked' }, ...errors },
+        responses: { '204': { description: 'Revoked' }, ...errors, '404': scopedNotFound },
       },
     },
     '/public/projects/{token}': {

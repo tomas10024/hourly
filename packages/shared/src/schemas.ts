@@ -183,8 +183,8 @@ export const Task = z.object({
 });
 export type Task = z.infer<typeof Task>;
 
+/** The project comes from the address: `POST /projects/{projectId}/tasks`. */
 export const CreateTaskInput = z.object({
-  projectId: Id,
   title: z.string().min(3).max(150),
   description: z.string().max(5000).nullish(),
   hourlyRate: MoneyInput.nullish(),
@@ -193,16 +193,14 @@ export const CreateTaskInput = z.object({
 });
 export type CreateTaskInput = z.infer<typeof CreateTaskInput>;
 
-export const UpdateTaskInput = CreateTaskInput.omit({ projectId: true })
-  .partial()
-  .extend({
-    status: TaskStatus.optional(),
-    /**
-     * Client approval of a task authored by the specialist.
-     * `true` stamps `approvedAt`, `false` clears it.
-     */
-    approved: z.boolean().optional(),
-  });
+export const UpdateTaskInput = CreateTaskInput.partial().extend({
+  status: TaskStatus.optional(),
+  /**
+   * Client approval of a task authored by the specialist.
+   * `true` stamps `approvedAt`, `false` clears it.
+   */
+  approved: z.boolean().optional(),
+});
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInput>;
 
 /* -------------------------------------------------------------------------- */
@@ -211,6 +209,8 @@ export type UpdateTaskInput = z.infer<typeof UpdateTaskInput>;
 
 export const WorkSession = z.object({
   id: Id,
+  /** Together with `taskId` it forms the session's address. */
+  projectId: Id,
   taskId: Id,
   specialistId: Id,
   startedAt: DateTime,
@@ -224,10 +224,12 @@ export const WorkSession = z.object({
 });
 export type WorkSession = z.infer<typeof WorkSession>;
 
-/** Manual session entry: both start and end are supplied. */
+/**
+ * Starting a session (no `endedAt`) or entering a finished one by hand. The
+ * task comes from the address: `POST /projects/{projectId}/tasks/{taskId}/sessions`.
+ */
 export const CreateWorkSessionInput = z
   .object({
-    taskId: Id,
     startedAt: DateTime,
     endedAt: DateTime.nullish(),
     comment: z.string().max(2000).nullish(),

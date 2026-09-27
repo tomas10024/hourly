@@ -6,7 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './env.js';
 import { openApiDocument } from './openapi.js';
 import { authenticate } from './middleware/auth.js';
-import { errorHandler, notFound } from './middleware/error.js';
+import { errorHandler, methodNotAllowed, notFound } from './middleware/error.js';
 import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 import { projectsRouter } from './routes/projects.js';
@@ -41,14 +41,17 @@ export function buildApp(): Express {
   // an anonymous one. Whether anonymity is acceptable is up to each endpoint.
   app.use('/api', authenticate);
 
-  app.use('/api', healthRouter);
-  app.use('/api', authRouter);
-  app.use('/api', projectsRouter);
-  app.use('/api', proposalsRouter);
-  app.use('/api', tasksRouter);
-  app.use('/api', sessionsRouter);
-  app.use('/api', sharesRouter);
-  app.use('/api', usersRouter);
+  const routers = [
+    healthRouter,
+    authRouter,
+    projectsRouter,
+    proposalsRouter,
+    tasksRouter,
+    sessionsRouter,
+    sharesRouter,
+    usersRouter,
+  ];
+  for (const router of routers) app.use('/api', router);
 
   // The document is generated from the same Zod schemas used for request
   // validation, so the documentation cannot drift from the implementation.
@@ -57,6 +60,8 @@ export function buildApp(): Express {
   });
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
+  // A known address with an unsupported method: 405, not 404.
+  app.use('/api', methodNotAllowed(routers));
   app.use(notFound);
   app.use(errorHandler);
 

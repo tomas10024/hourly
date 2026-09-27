@@ -48,6 +48,30 @@ describe('API foundation', () => {
     expect(res.body.error.code).toBe('INVALID_QUERY');
   });
 
+  it('answers an unsupported method on a known address with 405 and Allow', async () => {
+    const res = await request(app)
+      .put('/api/projects/00000000-0000-4000-8000-000000000000')
+      .send({})
+      .expect(405);
+    expect(res.body.error.code).toBe('METHOD_NOT_ALLOWED');
+    expect(res.headers.allow).toBe('GET, PATCH, DELETE, HEAD');
+  });
+
+  it('knows the nested addresses of the hierarchy', async () => {
+    const res = await request(app)
+      .put(
+        '/api/projects/00000000-0000-4000-8000-000000000000/tasks/' +
+          '00000000-0000-4000-8000-000000000001/sessions',
+      )
+      .expect(405);
+    expect(res.headers.allow).toBe('GET, POST, HEAD');
+  });
+
+  it('no longer serves the flat task and session addresses', async () => {
+    await request(app).get('/api/tasks/00000000-0000-4000-8000-000000000000').expect(404);
+    await request(app).post('/api/sessions').send({}).expect(405);
+  });
+
   it('no longer accepts the lab 1 X-Actor-Id header as an identity', async () => {
     const res = await request(app)
       .post('/api/projects')

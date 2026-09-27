@@ -141,6 +141,21 @@ Sąsaja suprojektuota pagal taikomosios srities objektų hierarchiją: kiekviena
 iš trijų pagrindinių objektų turi pilną penkių metodų rinkinį (sąrašas,
 peržiūra, kūrimas, redagavimas, šalinimas).
 
+Hierarchija atsispindi adresuose: užduotis pasiekiama tik per jos projektą, o
+darbo sesija – per projektą ir užduotį:
+
+```
+/projects/{projectId}/tasks/{taskId}/sessions/{sessionId}
+```
+
+Kiekvienas identifikatorius ieškomas **savo tėvo viduje** (apimties valdymas per
+URL, angl. scoping). Todėl kito projekto užduotis, paprašyta šio projekto adresu,
+grąžina **404** – tokiu adresu resurso tiesiog nėra. Paieška vyksta iš išorės į
+vidų, tad klaidos pranešimas įvardija pirmą netinkantį lygį („Task … does not
+exist in project …“). Tai realizuota vienoje vietoje –
+[lib/scope.ts](apps/api/src/lib/scope.ts). Tas pats principas taikomas
+pasiūlymams ir peržiūros nuorodoms.
+
 Lentelėse nurodyti klaidų kodai, būdingi konkrečiam metodui. Be jų, bet kuris
 metodas su netinkamu ar pasibaigusiu prieigos žetonu grąžina **401**, o
 užblokuoto naudotojo žetonu – **403**. Kas kokį metodą gali kviesti, aprašyta
@@ -160,32 +175,38 @@ užblokuoto naudotojo žetonu – **403**. Kas kokį metodą gali kviesti, apra�
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /tasks` | Naudotojo projektų užduotys | 200 | 400, 401 |
-| `GET /tasks/{id}` | Užduoties duomenys | 200 | 400, 404 |
-| `POST /tasks` | Sukurti užduotį | 201 | 400, 401, 403, 422 |
-| `PATCH /tasks/{id}` | Redaguoti, perstumti, keisti būseną, patvirtinti | 200 | 400, 401, 403, 404, 422 |
-| `DELETE /tasks/{id}` | Šalinti užduotį | 204 | 400, 401, 403, 404, 422 |
+| `GET /projects/{projectId}/tasks` | Projekto užduotys | 200 | 400, 404 |
+| `GET /projects/{projectId}/tasks/{taskId}` | Užduoties duomenys | 200 | 400, 404 |
+| `POST /projects/{projectId}/tasks` | Sukurti užduotį | 201 | 400, 401, 403, 404, 422 |
+| `PATCH /projects/{projectId}/tasks/{taskId}` | Redaguoti, perstumti, keisti būseną, patvirtinti | 200 | 400, 401, 403, 404, 422 |
+| `DELETE /projects/{projectId}/tasks/{taskId}` | Šalinti užduotį | 204 | 400, 401, 403, 404, 422 |
 
 **Darbo sesija**
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /sessions` | Naudotojo darbo žurnalas | 200 | 400, 401 |
-| `GET /sessions/{id}` | Sesijos duomenys | 200 | 400, 401, 403, 404 |
-| `POST /sessions` | Pradėti sesiją arba įvesti rankiniu būdu | 201 | 400, 401, 403, 409, 422 |
-| `PATCH /sessions/{id}` | Redaguoti arba užbaigti sesiją | 200 | 400, 401, 403, 404, 409, 422 |
-| `DELETE /sessions/{id}` | Šalinti sesiją | 204 | 400, 401, 403, 404, 422 |
-
-**Hierarchiniai sąsajos metodai:**
-
-| Metodas | Paskirtis | Sėkmė | Klaidos |
-|---|---|---|---|
-| `GET /projects/{id}/tasks` | Konkretaus projekto užduotys | 200 | 400, 404 |
-| `GET /tasks/{id}/sessions` | Konkrečios užduoties darbo sesijos | 200 | 400, 401, 403, 404 |
-| `GET /projects/{id}/proposals` | Konkrečiam projektui pateikti pasiūlymai | 200 | 400, 401, 404 |
+| `GET /projects/{projectId}/tasks/{taskId}/sessions` | Užduoties darbo sesijos (visi trys hierarchijos lygiai) | 200 | 400, 401, 403, 404 |
+| `GET /projects/{projectId}/tasks/{taskId}/sessions/{sessionId}` | Sesijos duomenys | 200 | 400, 401, 403, 404 |
+| `POST /projects/{projectId}/tasks/{taskId}/sessions` | Pradėti sesiją arba įvesti rankiniu būdu | 201 | 400, 401, 403, 404, 409, 422 |
+| `PATCH /projects/{projectId}/tasks/{taskId}/sessions/{sessionId}` | Redaguoti arba užbaigti sesiją | 200 | 400, 401, 403, 404, 409, 422 |
+| `DELETE /projects/{projectId}/tasks/{taskId}/sessions/{sessionId}` | Šalinti sesiją | 204 | 400, 401, 403, 404, 422 |
 
 Nerastas tėvinis resursas grąžina 404, o ne tuščią sąrašą: „projekto nėra“ ir
 „projektas yra, bet be užduočių“ yra du skirtingi atsakymai.
+
+**Asmeniniai vaizdai.** Du sąrašai apima kelis projektus iš karto, todėl
+negali būti vieno projekto viduje. Tai ne antri užduočių ar sesijų adresai, o
+naudotojo atranka; kiekvienas elementas turi `projectId` (ir `taskId`), iš kurių
+sudaromas jo vienintelis adresas.
+
+| Metodas | Paskirtis | Sėkmė | Klaidos |
+|---|---|---|---|
+| `GET /tasks` | Naudotojo projektų užduotys (`?projectId=`) | 200 | 400, 401 |
+| `GET /sessions` | Naudotojo darbo žurnalas (`?taskId=`) | 200 | 400, 401 |
+
+Žinomu adresu naudojant nepalaikomą metodą (pvz., `PUT /projects/{id}`)
+grąžinama **405** su `Allow` antrašte, išvardijančia palaikomus metodus. Sąrašas
+sudaromas iš pačių maršrutų, todėl negali jiems prieštarauti.
 
 Projektų sąrašo metodas priima `scope` parametrą, nurodantį, kurios projektų
 aibės prašoma: `GET /projects?scope=marketplace` grąžina viešai paskelbtus,
@@ -200,9 +221,11 @@ priimami `q` (paieška), `status`, `page` ir `perPage`.
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
 | `GET /proposals` | Savo pateiktų pasiūlymų sąrašas ir būsenos | 200 | 400, 401 |
-| `POST /projects/{id}/proposals` | Pateikti pasiūlymą | 201 | 400, 401, 403, 404, 409, 422 |
-| `PATCH /proposals/{id}` | Priimti, atmesti arba atšaukti | 200 | 400, 401, 403, 404, 409, 422 |
-| `DELETE /proposals/{id}` | Šalinti savo pasiūlymą | 204 | 400, 401, 403, 404, 422 |
+| `GET /projects/{projectId}/proposals` | Projektui pateikti pasiūlymai | 200 | 400, 401, 404 |
+| `GET /projects/{projectId}/proposals/{proposalId}` | Pasiūlymo duomenys | 200 | 400, 401, 404 |
+| `POST /projects/{projectId}/proposals` | Pateikti pasiūlymą | 201 | 400, 401, 403, 404, 409, 422 |
+| `PATCH /projects/{projectId}/proposals/{proposalId}` | Priimti, atmesti arba atšaukti | 200 | 400, 401, 403, 404, 409, 422 |
+| `DELETE /projects/{projectId}/proposals/{proposalId}` | Šalinti savo pasiūlymą | 204 | 400, 401, 403, 404, 422 |
 
 Pasiūlymo priėmimas vykdomas viena duomenų bazės transakcija: pasiūlymas įgyja
 būseną `ACCEPTED`, kiti to projekto pasiūlymai atmetami, o projektas pereina į
@@ -214,9 +237,9 @@ vykdomoje būsenoje be priskirto specialisto.
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /projects/{id}/shares` | Projekto peržiūros nuorodų sąrašas | 200 | 400, 401, 403, 404 |
-| `POST /projects/{id}/shares` | Sugeneruoti peržiūros nuorodą | 201 | 400, 401, 403, 404, 422 |
-| `DELETE /shares/{id}` | Atšaukti peržiūros nuorodą | 204 | 400, 401, 403, 404 |
+| `GET /projects/{projectId}/shares` | Projekto peržiūros nuorodų sąrašas | 200 | 400, 401, 403, 404 |
+| `POST /projects/{projectId}/shares` | Sugeneruoti peržiūros nuorodą | 201 | 400, 401, 403, 404, 422 |
+| `DELETE /projects/{projectId}/shares/{shareId}` | Atšaukti peržiūros nuorodą | 204 | 400, 401, 403, 404 |
 | `GET /public/projects/{token}` | Projekto darbo eiga pagal nuorodą | 200 | 400, 404 |
 | `GET /projects/{id}/report` | Projekto ataskaita (JSON arba CSV) | 200 | 400, 401, 403, 404, 406 |
 
@@ -248,7 +271,7 @@ ir jungtį su duomenų baze).
 | `PATCH /users/{id}` | Užblokuoti arba atblokuoti naudotoją (administratorius) | 200 | 400, 401, 403, 404, 422 |
 | `DELETE /users/{id}` | Šalinti naudotoją be darbo istorijos (administratorius) | 204 | 400, 401, 403, 404, 409, 422 |
 
-Iš viso sąsaja turi 37 metodus: 27 dalykinius (iš jų 15 pagrindinių CRUD),
+Iš viso sąsaja turi 38 metodus: 28 dalykinius (iš jų 15 pagrindinių CRUD),
 6 autentifikacijos ir 4 naudotojų valdymo.
 
 ---
@@ -533,18 +556,18 @@ specialistas.
 | `GET /projects?scope=marketplace` | ✓ | ✓ | ✓ | ✓ |
 | `GET /projects?scope=owned` arba `assigned` | 401 | ✓ | ✓ | ✓ |
 | `GET /projects?scope=all` | 401 | 403 | 403 | ✓ |
-| `GET /projects/{id}`, `/projects/{id}/tasks`, `/tasks/{id}` | paskelbtas | šalis arba paskelbtas | šalis arba paskelbtas | ✓ |
+| `GET /projects/{id}`, `/projects/{id}/tasks`, `/projects/{id}/tasks/{taskId}` | paskelbtas | šalis arba paskelbtas | šalis arba paskelbtas | ✓ |
 | `POST /projects` – aikštelės projektas | 401 | ✓ | 403 | 403 |
 | `POST /projects` – tiesioginis projektas | 401 | 403 | ✓ | 403 |
 | `PATCH /projects/{id}`; užduočių kūrimas, keitimas, šalinimas; peržiūros nuorodos | 401 | šalis | šalis | 403 |
 | `DELETE /projects/{id}` | 401 | savo aikštelės projektas | savo tiesioginis projektas | ✓ |
-| `GET /projects/{id}/report`, `/tasks/{id}/sessions`, `/sessions/{id}` | 401 | šalis | šalis | ✓ |
+| `GET /projects/{id}/report`, `…/tasks/{taskId}/sessions`, `…/sessions/{sessionId}` | 401 | šalis | šalis | ✓ |
 | `GET /tasks`, `/sessions`, `/proposals` | 401 | savo | savo | savo |
-| `POST /sessions`; `PATCH`, `DELETE /sessions/{id}` | 401 | 403 | vykdytojas, sesijos autorius | 403 |
-| `GET /projects/{id}/proposals` | 401 | visi savo projekto | tik savo | visi |
+| `POST …/tasks/{taskId}/sessions`; `PATCH`, `DELETE …/sessions/{sessionId}` | 401 | 403 | vykdytojas, sesijos autorius | 403 |
+| `GET /projects/{id}/proposals`, `…/proposals/{proposalId}` | 401 | visi savo projekto | tik savo | visi |
 | `POST /projects/{id}/proposals` | 401 | 403 | ✓ | 403 |
-| `PATCH /proposals/{id}` | 401 | priimti, atmesti | atšaukti savo | 403 |
-| `DELETE /proposals/{id}` | 401 | 403 | savo | 403 |
+| `PATCH /projects/{id}/proposals/{proposalId}` | 401 | priimti, atmesti | atšaukti savo | 403 |
+| `DELETE /projects/{id}/proposals/{proposalId}` | 401 | 403 | savo | 403 |
 | `GET /public/projects/{token}`, `GET /health` | ✓ | ✓ | ✓ | ✓ |
 
 Kai naudotojas nėra projekto šalis, atsakymas yra 404, jei projektas jam
@@ -602,18 +625,20 @@ neatitiko reikalavimų.
 | 400 | Užklausos **sintaksė** netinkama – serveris jos net negali suprasti | netaisyklingas JSON, `id` ne UUID, `scope=nesamas` |
 | 401 | Naudotojas neatpažintas: žetono nėra, jis netinkamas arba pasibaigęs | užduoties kūrimas be žetono |
 | 403 | Naudotojas atpažintas, bet jo rolė ar ryšys su resursu neleidžia veiksmo | specialistas kuria aikštelės projektą, redaguojamas svetimas paskelbtas projektas |
-| 404 | Resurso nėra arba naudotojas jo negali matyti | nesamas projektas, svetimas juodraštis |
+| 404 | Resurso nėra arba naudotojas jo negali matyti | nesamas projektas, svetimas juodraštis, kito projekto užduotis šio projekto adresu |
+| 405 | Adresas žinomas, bet metodas nepalaikomas (`Allow` antraštė) | `PUT /projects/{id}` |
 | 406 | Prašomas turinio tipas neprieinamas | `Accept: application/xml` ataskaitai |
 | 409 | Konfliktas su esama duomenų būsena | antra neužbaigta darbo sesija |
 | 422 | Užklausa suprantama, bet jos **turinys** prieštarauja taisyklėms | per trumpas pavadinimas, neleistinas būsenos perėjimas |
 
 Skirtumas tarp 400 ir 422 yra esminis ir nuoseklus visoje sąsajoje: 400 reiškia
-netvarkingą užklausą, 422 – tvarkingą užklausą su netinkamu turiniu. Dėl to
-identifikatorius adreso eilutėje ir identifikatorius užklausos kūne elgiasi
-skirtingai:
+netvarkingą užklausą, 422 – tvarkingą užklausą su netinkamu turiniu. Tėviniai
+resursai nurodomi adresu, ne kūne, todėl jų nebuvimas visada yra 404:
 
-- `GET /projects/{nesamas-id}` → **404**, nes adresas nurodo neegzistuojantį resursą;
-- `POST /tasks` su nesamu `projectId` → **422**, nes adresas teisingas, o klaida yra turinyje.
+- `GET /projects/{ne-uuid}` → **400**, nes toks adresas negali egzistuoti;
+- `GET /projects/{nesamas-id}` arba `POST /projects/{nesamas-id}/tasks` → **404**, nes adresas nurodo neegzistuojantį resursą;
+- `GET /projects/{A}/tasks/{B projekto užduotis}` → **404**, nes šiuo adresu užduoties nėra;
+- `POST /projects/{id}/tasks` su per trumpu pavadinimu → **422**, nes adresas teisingas, o klaida yra turinyje.
 
 ### 6.2. Mašininiai klaidų kodai
 
@@ -631,7 +656,10 @@ skirtingai:
 | `EMAIL_TAKEN` | Paskyra su tokiu el. paštu jau yra |
 | `INVALID_PASSWORD` | Keičiant slaptažodį neteisingai nurodytas dabartinis |
 | `CANNOT_MODIFY_SELF`, `USER_HAS_WORK_HISTORY` | Administratorius bando blokuoti save arba šalinti naudotoją su darbo istorija |
-| `NOT_FOUND` | Resursas nerastas |
+| `NOT_FOUND` | Resursas nerastas (taip pat – vaikas ne savo tėvo adresu) |
+| `METHOD_NOT_ALLOWED` | Adresas žinomas, metodas – ne |
+| `MALFORMED_URL`, `BAD_REQUEST` | Adreso nepavyksta iškoduoti arba kita užklausos klaida, aptikta Express |
+| `VALUE_OUT_OF_RANGE` | Skaičius netelpa į duomenų bazės stulpelį |
 | `INVALID_REFERENCE` | Nurodytas neegzistuojantis susijęs įrašas |
 | `INVALID_STATUS_TRANSITION` | Neleistinas projekto būsenos perėjimas |
 | `INVALID_BUDGET_RANGE`, `INVALID_TIME_RANGE`, `TIMESTAMP_IN_FUTURE` | Nenuoseklios reikšmės |
@@ -678,7 +706,7 @@ Kolekciją sudaro šešios dalys:
 |---|---|
 | 0. Autentifikacija | Registracija, žetono rotacija, pakartotinio panaudojimo aptikimas, atsijungimas, 409 / 422 / 401 / 403 atvejai, JWT turinio patikra ir prisijungimas keturiomis paskyromis |
 | 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda |
-| 2. Klaidų apdorojimas | Kodai 400, 401, 404, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas |
+| 2. Klaidų apdorojimas | Kodai 400, 401, 404, 405, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas ir vaikas ne savo tėvo adresu |
 | 3. Rolės ir teisės | 5.3 skyriaus lentelė: kas mato, kas gali kurti, redaguoti ir šalinti; 403 ir 404 skirtumas |
 | 4. Administratorius | Naudotojų sąrašas, viešas profilis, blokavimas (žetonas atmetamas iš karto), atblokavimas, šalinimas, netinkamo projekto pašalinimas |
 | 5. Valymas | Sukurtų duomenų šalinimas ir 204 bei 404 atsakymų patikra |
@@ -688,7 +716,7 @@ demonstracijos metu užregistruotą paskyrą, – todėl demonstraciją galima k
 nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
 
 ```
-requests 91 | assertions 207 | failed 0 | total run duration: ~11s
+requests 95 | assertions 215 | failed 0 | total run duration: ~11s
 ```
 
 Kadangi laikai užklausose fiksuoti, testai tikrina ne „kažkokį skaičių“, o
@@ -696,7 +724,7 @@ konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekt
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 233 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 249 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
 skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
 suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių
@@ -710,7 +738,7 @@ ir teisių lentelę ir tai, kad atsakymų struktūra atitinka OpenAPI specifikac
 
 | Reikalavimas | Kaip tenkinamas |
 |---|---|
-| Realizuoti visi numatyti API metodai | 27 dalykiniai metodai, iš jų 15 pagrindinių CRUD (1.4 skyrius) |
+| Realizuoti visi numatyti API metodai | 28 dalykiniai metodai, iš jų 15 pagrindinių CRUD (1.4 skyrius) |
 | OpenAPI specifikacija kiekvienam metodui | Generuojama iš Zod schemų, pateikiama `/api/docs` ir [docs/openapi.json](docs/openapi.json) |
 | Patogi paleidimo aplinka | `npm install` → `npm run db:up` → `db:migrate` → `db:seed` → `npm run dev` |
 | Duomenų bazės sprendimas | PostgreSQL 17 su Prisma ORM, migracijos saugykloje |

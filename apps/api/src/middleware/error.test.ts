@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import { z } from 'zod';
-import { HttpError, errorHandler, unauthorized } from './error.js';
+import { HttpError, errorHandler, methodNotAllowed, notFound, unauthorized } from './error.js';
 
 /**
  * Error handling tests.
@@ -156,4 +156,32 @@ describe('unauthorized', () => {
       );
     },
   );
+});
+
+describe('methodNotAllowed', () => {
+  function appWith405() {
+    const router = express.Router();
+    router.get('/items/:id', (_req, res) => res.json({ ok: true }));
+    router.delete('/items/:id', (_req, res) => res.status(204).end());
+    const app = express();
+    app.use(router);
+    app.use(methodNotAllowed([router]));
+    app.use(notFound);
+    app.use(errorHandler);
+    return app;
+  }
+
+  it('lists the supported methods of a known address in Allow', async () => {
+    const res = await request(appWith405()).put('/items/1').expect(405);
+    expect(res.headers.allow).toBe('GET, DELETE, HEAD');
+    expect(res.body.error.details.allowed).toEqual(['GET', 'DELETE', 'HEAD']);
+  });
+
+  it('leaves an unknown address to the 404 handler', async () => {
+    await request(appWith405()).put('/nothing').expect(404);
+  });
+
+  it('does not stand in the way of a supported method', async () => {
+    await request(appWith405()).get('/items/1').expect(200);
+  });
 });

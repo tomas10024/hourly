@@ -5,7 +5,8 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { iso, money, toShareLink } from '../lib/serialize.js';
-import { IdParam, parseBody, parseParams } from '../lib/validate.js';
+import { ProjectParams, ShareParams, findProjectOr404, findShareOr404 } from '../lib/scope.js';
+import { parseBody, parseParams } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import { env } from '../env.js';
 import { assertCanManageProject } from '../services/access.js';
@@ -23,33 +24,26 @@ export const sharesRouter: Router = Router();
 /** Long enough to be a real token; anything shorter is a malformed address. */
 const TokenParam = z.object({ token: z.string().min(20).max(200) });
 
-async function findProjectOr404(id: string) {
-  const project = await prisma.project.findUnique({ where: { id } });
-  if (!project) {
-    throw new HttpError(404, 'NOT_FOUND', `Project ${id} does not exist`);
-  }
-  return project;
-}
-
 /**
- * POST /projects/{id}/shares - create a read-only link for the project.
+ * POST /projects/{projectId}/shares - create a read-only link for the project.
  *
  * The response is the only time the token is ever readable: the database keeps
  * nothing but its hash, so a lost link cannot be recovered, only replaced.
  */
-sharesRouter.post('/projects/:id/shares', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+sharesRouter.post('/projects/:projectId/shares', async (req, res) => {
+  const params = parseParams(ProjectParams, req);
   const auth = requireAuth(req);
   const input = parseBody(CreateShareLinkInput, req);
 
-  assertCanManageProject(await findProjectOr404(id), auth);
+  const project = await findProjectOr404(params);
+  assertCanManageProject(project, auth);
 
   const { token, tokenHash } = generateShareToken();
   const row = await prisma.shareLink.create({
-    data: { projectId: id, tokenHash, expiresAt: expiresAtFromNow(input.expiresInDays) },
+    data: { projectId: project.id, tokenHash, expiresAt: expiresAtFromNow(input.expiresInDays) },
   });
 
-  created(res, `/api/shares/${row.id}`, {
+  created(res, `/api/projects/${project.id}/shares/${row.id}`, {
     ...toShareLink(row),
     token,
     url: shareUrl(env.WEB_ORIGIN, token),
@@ -57,19 +51,20 @@ sharesRouter.post('/projects/:id/shares', async (req, res) => {
 });
 
 /**
- * GET /projects/{id}/shares - links created for the project.
+ * GET /projects/{projectId}/shares - links created for the project.
  *
  * Tokens are absent by construction: `toShareLink` cannot serialize the hash,
  * so this endpoint answers what exists and until when, not how to get in.
  */
-sharesRouter.get('/projects/:id/shares', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+sharesRouter.get('/projects/:projectId/shares', async (req, res) => {
+  const params = parseParams(ProjectParams, req);
   const auth = requireAuth(req);
 
-  assertCanManageProject(await findProjectOr404(id), auth);
+  const project = await findProjectOr404(params);
+  assertCanManageProject(project, auth);
 
   const rows = await prisma.shareLink.findMany({
-    where: { projectId: id },
+    where: { projectId: project.id },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -77,25 +72,22 @@ sharesRouter.get('/projects/:id/shares', async (req, res) => {
 });
 
 /**
- * DELETE /shares/{id} - revoke a link.
+ * DELETE /projects/{projectId}/shares/{shareId} - revoke a link.
  *
  * The row is kept and only stamped with `revokedAt`, because the fact that a
  * project was shared - and until when it could be read - is part of its
  * history. Revoking twice answers 204 again: the caller asked for a state
  * that already holds.
  */
-sharesRouter.delete('/shares/:id', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+sharesRouter.delete('/projects/:projectId/shares/:shareId', async (req, res) => {
+  const params = parseParams(ShareParams, req);
   const auth = requireAuth(req);
 
-  const link = await prisma.shareLink.findUnique({ where: { id }, include: { project: true } });
-  if (!link) {
-    throw new HttpError(404, 'NOT_FOUND', `Share link ${id} does not exist`);
-  }
+  const link = await findShareOr404(params);
   assertCanManageProject(link.project, auth);
 
   if (link.revokedAt === null) {
-    await prisma.shareLink.update({ where: { id }, data: { revokedAt: new Date() } });
+    await prisma.shareLink.update({ where: { id: link.id }, data: { revokedAt: new Date() } });
   }
 
   noContent(res);

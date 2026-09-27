@@ -3,7 +3,7 @@
 Dokumentas skirtas darbo eigai, ne ataskaitai. Ataskaita yra [README.md](../README.md),
 ankstesni planai – [planas.md](planas.md), [planas-2.md](planas-2.md).
 
-**Tikslas:** Next.js klientas, kuris naudoja visus 37 sąsajos metodus, atrodo
+**Tikslas:** Next.js klientas, kuris naudoja visus 38 sąsajos metodus, atrodo
 kaip [Resend](https://resend.com) (tamsi, minimalistinė, „developer tool“
 estetika), tenkina 3 lab. naudotojo sąsajos reikalavimus ir yra įdiegtas Azure.
 
@@ -43,7 +43,7 @@ prasmingi dalykai – [J skyriuje](#10-etapas-j--papildomi-dalykai-ne-reikalavim
 - `src/app/api/[...path]/route.ts` – tarpinis maršrutas į API (tos pačios kilmės slapukai);
 - `src/lib/api.ts` – `apiFetch` ir `ApiRequestError` (statusas + mašininis kodas);
 - `@hourly/shared` – visos Zod schemos ir tipai (įvesties ir atsakymų);
-- API: 37 metodai, CORS iš `WEB_ORIGIN`, slapuko nustatymai per `env.ts`, visos paslaptys – aplinkos kintamieji.
+- API: 38 metodai (įdėtiniai URL – [planas-pataisos.md](planas-pataisos.md) B etapas), CORS iš `WEB_ORIGIN`, slapuko nustatymai per `env.ts`, visos paslaptys – aplinkos kintamieji.
 
 **Spragos, kurias reikia užtaisyti:**
 
@@ -196,28 +196,29 @@ administratoriui – **Naudotojai · Visi projektai**.
 | `/app/projects` | Skirtukai „Sukurti“ / „Vykdomi“ | `GET /projects?scope=owned\|assigned` |
 | `/app/projects/new` | Forma: pavadinimas, aprašymas, biudžeto rėžiai (`number`), terminas (`date`), užduočių režimas (radio), tiesioginiam darbui – užsakovo vardas, įkainis | `POST /projects` |
 | `/app/projects/[id]` | Skirtukai (žr. žemiau) | `GET /projects/{id}` |
-| ↳ Užduotys | Sąrašas, būsenos keitimas, perrikiavimas, patvirtinimas | `GET /projects/{id}/tasks`, `POST/PATCH/DELETE /tasks` |
-| ↳ Užduoties šoninis skydelis | Užduoties duomenys ir jos sesijos | `GET /tasks/{id}`, `GET /tasks/{id}/sessions` |
-| ↳ Pasiūlymai | Priimti / atmesti (patvirtinimo modalas) | `GET /projects/{id}/proposals`, `PATCH /proposals/{id}` |
-| ↳ Peržiūros nuorodos | Sugeneruoti → **modalas „Nuoroda rodoma tik kartą“** (kaip Resend API rakto sukūrimas), atšaukti | `GET/POST /projects/{id}/shares`, `DELETE /shares/{id}` |
+| ↳ Užduotys | Sąrašas, būsenos keitimas, perrikiavimas, patvirtinimas | `GET/POST /projects/{id}/tasks`, `PATCH/DELETE /projects/{id}/tasks/{taskId}` |
+| ↳ Užduoties šoninis skydelis | Užduoties duomenys ir jos sesijos | `GET /projects/{id}/tasks/{taskId}`, `GET /projects/{id}/tasks/{taskId}/sessions` |
+| ↳ Pasiūlymai | Priimti / atmesti (patvirtinimo modalas) | `GET /projects/{id}/proposals`, `GET/PATCH /projects/{id}/proposals/{proposalId}` |
+| ↳ Peržiūros nuorodos | Sugeneruoti → **modalas „Nuoroda rodoma tik kartą“** (kaip Resend API rakto sukūrimas), atšaukti | `GET/POST /projects/{id}/shares`, `DELETE /projects/{id}/shares/{shareId}` |
 | ↳ Ataskaita | Lentelė pagal užduotis + „Parsisiųsti CSV“ | `GET /projects/{id}/report` (JSON ir CSV) |
 | ↳ Nustatymai | Redaguoti, paskelbti, užbaigti, šalinti („pavojaus zona“ kaip Resend) | `PATCH/DELETE /projects/{id}` |
-| `/app/sessions` | Darbo žurnalas (Resend „Emails“ lentelė), laikmatis, **rankinio įvedimo modalas** (`datetime-local`) | `GET/POST /sessions`, `PATCH/DELETE /sessions/{id}` |
-| `/app/sessions/[id]` | Sesijos detalės (Resend el. laiško detalės puslapio analogas) | `GET /sessions/{id}` |
-| `/app/proposals` | Savo pasiūlymai, atšaukti, šalinti | `GET /proposals`, `PATCH/DELETE /proposals/{id}` |
+| `/app/sessions` | Darbo žurnalas (Resend „Emails“ lentelė), laikmatis, **rankinio įvedimo modalas** (`datetime-local`) | `GET /sessions`, `POST /projects/{id}/tasks/{taskId}/sessions`, `PATCH/DELETE …/sessions/{sessionId}` |
+| `/app/sessions/[id]` | Sesijos detalės (Resend el. laiško detalės puslapio analogas) | `GET /projects/{id}/tasks/{taskId}/sessions/{sessionId}` |
+| `/app/proposals` | Savo pasiūlymai, atšaukti, šalinti | `GET /proposals`, `PATCH/DELETE /projects/{id}/proposals/{proposalId}` |
 | `/app/settings` | Vardas, aprašymas, slaptažodžio keitimas, atsijungti | `GET/PATCH /auth/me`, `POST /auth/logout` |
 | `/app/users/[id]` | Viešas profilis | `GET /users/{id}` |
 | `/app/admin/users` | Lentelė, blokuoti / atblokuoti, šalinti | `GET /users`, `PATCH/DELETE /users/{id}` |
 | `/app/admin/projects` | Visi projektai, šalinti | `GET /projects?scope=all`, `DELETE /projects/{id}` |
 
-**Rezultatas:** naudojami visi 37 metodai (`GET /health/ready` – tik diegimo
+**Rezultatas:** naudojami visi 38 metodai (`GET /health/ready` – tik diegimo
 patikrai). Ši lentelė pereis į README kaip „metodas → langas“ atitiktis.
 
 ### E3. Laikmatis
 
 Viršutinėje juostoje – veikianti sesija (`mm:ss` monospace, pulsuojantis
 gintarinis taškas). „Pradėti“ → užduoties pasirinkimas iš `GET /tasks` →
-`POST /sessions`; „Sustabdyti“ → `PATCH /sessions/{id}`. Laikas skaičiuojamas iš
+`POST /projects/{id}/tasks/{taskId}/sessions`; „Sustabdyti“ → `PATCH …/sessions/{sessionId}`
+(adresas sudaromas iš sesijos `projectId` ir `taskId`). Laikas skaičiuojamas iš
 `startedAt` kliente (`requestAnimationFrame` / 1 s intervalas), ne apklausiant API.
 409 (jau yra neužbaigta sesija) → pranešimas su nuoroda į ją.
 
@@ -362,6 +363,6 @@ Commit'us darai tu – aš tik paruošiu pakeitimus ir pasiūlysiu pranešimą.
 | Perėjimai / animacijos | F etapas |
 | Skirtingi Header / Content / Footer stiliai | D etapo lentelė |
 | Įvairūs įvedimo elementai | `text`, `email`, `password`, `number`, `date`, `datetime-local`, `search`, `textarea`, `select`, `radio`, `checkbox` |
-| Sąsaja naudoja API | Visi 37 metodai (E2 lentelė) |
+| Sąsaja naudoja API | Visi 38 metodai (E2 lentelė) |
 | Autentifikacija kliente | Žetonas atmintyje, automatinis atnaujinimas (B) |
 | Diegimas debesyje | Azure App Service + PostgreSQL Flexible Server (G) |

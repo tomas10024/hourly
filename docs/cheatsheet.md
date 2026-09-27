@@ -29,9 +29,9 @@ realizacija: pakeitus schemą, iš karto pasikeičia ir validavimas, ir aprašas
 Sekime tikrą pavyzdį — specialistas paleidžia laikmatį:
 
 ```
-POST /api/sessions
+POST /api/projects/b0000000-...-000000000001/tasks/c0000000-...-000000000002/sessions
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...   (specialisto prieigos žetonas)
-{ "taskId": "c0000000-...-000000000002", "startedAt": "2026-09-20T09:00:00.000Z" }
+{ "startedAt": "2026-09-20T09:00:00.000Z" }
 ```
 
 | # | Kur | Kas vyksta |
@@ -39,8 +39,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...   (specialisto prieigos žetonas)
 | 1 | [server.ts](../apps/api/src/server.ts) | Programa klauso 4000 prievado |
 | 2 | [app.ts](../apps/api/src/app.ts) | Bendri sluoksniai: `helmet` (saugumo antraštės), `cors`, `express.json()` (tekstas → objektas), `cookieParser` |
 | 3 | [middleware/auth.ts](../apps/api/src/middleware/auth.ts) | `authenticate` patikrina žetono parašą ir galiojimą, patikrina, ar paskyra neužblokuota, ir įrašo `req.auth = { userId, role }` |
-| 4 | [app.ts](../apps/api/src/app.ts) | Pagal adresą parenkamas maršrutizatorius — `/sessions` priklauso `sessionsRouter` |
+| 4 | [app.ts](../apps/api/src/app.ts) | Pagal adresą parenkamas maršrutizatorius — `…/tasks/:taskId/sessions` priklauso `sessionsRouter` |
 | 5 | [routes/sessions.ts](../apps/api/src/routes/sessions.ts) | Maršrutas surenka duomenis ir kviečia taisykles |
+| 5a | [lib/scope.ts](../apps/api/src/lib/scope.ts) | Užduotis ieškoma **projekto viduje**: kito projekto užduotis šiuo adresu → 404 |
 | 6 | [services/sessions.ts](../apps/api/src/services/sessions.ts) | Tikrinamos dalykinės taisyklės ir teisės |
 | 7 | [lib/prisma.ts](../apps/api/src/lib/prisma.ts) | Įrašymas į PostgreSQL |
 | 8 | [lib/serialize.ts](../apps/api/src/lib/serialize.ts) | DB eilutė → atsakymo objektas |
@@ -50,21 +51,24 @@ Jei kuriame nors žingsnyje kas nors negerai — metama klaida, ir ji **visada**
 nukeliauja į vieną vietą: [middleware/error.ts](../apps/api/src/middleware/error.ts),
 kuri paverčia ją vienodo formato JSON atsakymu su teisingu kodu.
 
-Pats maršruto kodas atrodo taip (tikras `POST /sessions` turinys):
+Pats maršruto kodas atrodo taip (sutrumpintas tikras turinys):
 
 ```ts
-sessionsRouter.post('/sessions', async (req, res) => {
-  const actor = requireActor(req);                     // kas veikia -> 401, jei neprisijungęs
+sessionsRouter.post('/projects/:projectId/tasks/:taskId/sessions', async (req, res) => {
+  const params = parseParams(TaskParams, req);          // adresas -> 400, jei ne UUID
+  const actor = requireActor(req);                      // kas veikia -> 401, jei neprisijungęs
   const input = parseBody(CreateWorkSessionInput, req); // ką atsiuntė -> 422, jei netinka
 
-  const task = await findReferencedTaskOr422(input.taskId);  // ar yra užduotis -> 422
-  assertProjectAcceptsWork(task.project);                     // ar projektas vykdomas -> 422
-  assertIsAssignedSpecialist(task.project, actor);            // ar jo darbas -> 403
+  const task = await findTaskOr404(params);             // užduotis šiame projekte? -> 404
+  assertCanViewProject(task.project, viewer(req));      // ar mato projektą -> 404
+  assertProjectAcceptsWork(task.project);               // ar projektas vykdomas -> 422
+  assertIsAssignedSpecialist(task.project, actor);      // ar jo darbas -> 403
 
   // ... laiko patikros, vienos vykdomos sesijos patikra -> 409
 
   const row = await prisma.workSession.create({ data: { /* ... */ } });
-  created(res, `/api/sessions/${row.id}`, toSession(row));    // 201 + Location
+  created(res, `/api/projects/${task.projectId}/tasks/${task.id}/sessions/${row.id}`,
+    toSession(row));                                    // 201 + Location
 });
 ```
 
@@ -74,8 +78,8 @@ perduoda jas klaidų apdorojimui.
 
 Maršrutas žetono pats neliečia — jis tik klausia `requireActor(req)`, kas
 veikia. 1 lab. ta pati funkcija skaitė `X-Actor-Id` antraštę; 2 lab. pakeistas
-tik [lib/actor.ts](../apps/api/src/lib/actor.ts) vidus, o 27 maršrutų vietos
-liko tokios pačios.
+tik [lib/actor.ts](../apps/api/src/lib/actor.ts) vidus, o maršrutų kodas liko
+toks pats.
 
 ---
 
@@ -135,7 +139,7 @@ apie tai, kas kam leidžiama — tas `if` turi keliauti į `services/`.
 
 Grynos funkcijos: gauna duomenis, arba praleidžia, arba meta klaidą. Jų
 nedomina nei `req`, nei `res`, todėl jas galima ištestuoti be serverio ir be
-duomenų bazės — visi 233 testai bėga per kelias sekundes.
+duomenų bazės — visi 249 testai bėga per kelias sekundes.
 
 ```ts
 // services/projects.ts — projektas negali šokinėti tarp bet kokių būsenų

@@ -91,9 +91,17 @@ export function toTask(row: TaskRow): Task {
   };
 }
 
-export function toSession(row: WorkSessionRow): WorkSession {
+/**
+ * A session row needs its task's `projectId`: the session is addressed as
+ * `/projects/{projectId}/tasks/{taskId}/sessions/{id}`, and a client reading
+ * the personal work log (`GET /sessions`) must be able to build that address.
+ */
+export type SessionRow = WorkSessionRow & { task: { projectId: string } };
+
+export function toSession(row: SessionRow): WorkSession {
   return {
     id: row.id,
+    projectId: row.task.projectId,
     taskId: row.taskId,
     specialistId: row.specialistId,
     startedAt: iso(row.startedAt),

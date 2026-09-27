@@ -6,9 +6,17 @@ import type {
   ShareLink as ShareLinkRow,
   Task as TaskRow,
   User as UserRow,
-  WorkSession as WorkSessionRow,
 } from '../generated/prisma/client.js';
-import { money, iso, toCurrentUser, toProject, toShareLink, toTask, toSession } from './serialize.js';
+import {
+  money,
+  iso,
+  toCurrentUser,
+  toProject,
+  toShareLink,
+  toTask,
+  toSession,
+  type SessionRow,
+} from './serialize.js';
 
 /**
  * These tests keep the responses in step with their own OpenAPI document:
@@ -91,8 +99,9 @@ describe('toTask and toSession', () => {
   });
 
   it('produces a running session accepted by the WorkSession schema', () => {
-    const row: WorkSessionRow = {
+    const row: SessionRow = {
       id: '44444444-4444-4444-8444-444444444444',
+      task: { projectId: '11111111-1111-4111-8111-111111111111' },
       taskId: '33333333-3333-4333-8333-333333333333',
       specialistId: '55555555-5555-4555-8555-555555555555',
       startedAt: T('2026-09-20T09:00:00.000Z'),
@@ -106,6 +115,7 @@ describe('toTask and toSession', () => {
     const result = toSession(row);
     expect(() => WorkSession.parse(result)).not.toThrow();
     expect(result.endedAt).toBeNull();
+    expect(result.projectId).toBe('11111111-1111-4111-8111-111111111111');
   });
 });
 

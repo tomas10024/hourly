@@ -5,8 +5,9 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { SessionParams, TaskParams, findSessionOr404, findTaskOr404 } from '../lib/scope.js';
 import { money, toSession } from '../lib/serialize.js';
-import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
+import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import { assertCanInspectProject, assertCanViewProject } from '../services/access.js';
 import {
@@ -26,31 +27,8 @@ const SessionListQuery = z.object({ taskId: z.uuid().optional() });
 /** Newest first: the work log is read from the most recent entry backwards. */
 const SESSION_ORDER: Prisma.WorkSessionOrderByWithRelationInput = { startedAt: 'desc' };
 
-/** A session always carries its task and project - every rule needs them. */
-async function findSessionOr404(id: string) {
-  const session = await prisma.workSession.findUnique({
-    where: { id },
-    include: { task: { include: { project: true } } },
-  });
-  if (!session) {
-    throw new HttpError(404, 'NOT_FOUND', `Work session ${id} does not exist`);
-  }
-  return session;
-}
-
-/** The task a session is being attached to; 422 because it came from the body. */
-async function findReferencedTaskOr422(taskId: string) {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-    include: { project: true },
-  });
-  if (!task) {
-    throw new HttpError(422, 'INVALID_REFERENCE', `Task ${taskId} does not exist`, {
-      field: 'taskId',
-    });
-  }
-  return task;
-}
+/** What `toSession` needs besides the row itself: the project of the task. */
+const WITH_PROJECT_ID = { task: { select: { projectId: true } } } as const;
 
 /**
  * At most one running session per specialist.
@@ -67,12 +45,14 @@ async function assertNoOtherRunningSession(specialistId: string, exceptId?: stri
       endedAt: null,
       ...(exceptId ? { id: { not: exceptId } } : {}),
     },
+    include: WITH_PROJECT_ID,
   });
 
   if (running) {
     throw new HttpError(409, 'SESSION_ALREADY_RUNNING', 'You already have a running work session', {
       sessionId: running.id,
       taskId: running.taskId,
+      projectId: running.task.projectId,
       startedAt: running.startedAt.toISOString(),
     });
   }
@@ -81,8 +61,10 @@ async function assertNoOtherRunningSession(specialistId: string, exceptId?: stri
 /**
  * GET /sessions - the actor's own work log.
  *
- * Scoped to the actor rather than to everything readable, because a work log
- * is personal; `?taskId=` narrows it to one task.
+ * Not a second address of the sessions but a personal view across all
+ * projects: a work log is personal, so it is scoped to the actor rather than
+ * to everything readable. `?taskId=` narrows it to one task. Every entry
+ * carries `projectId` and `taskId`, which together give its address.
  */
 sessionsRouter.get('/sessions', async (req, res) => {
   const actor = requireActor(req);
@@ -90,6 +72,7 @@ sessionsRouter.get('/sessions', async (req, res) => {
 
   const rows = await prisma.workSession.findMany({
     where: { specialistId: actor, ...(taskId ? { taskId } : {}) },
+    include: WITH_PROJECT_ID,
     orderBy: SESSION_ORDER,
   });
 
@@ -97,47 +80,52 @@ sessionsRouter.get('/sessions', async (req, res) => {
 });
 
 /**
- * GET /tasks/{id}/sessions - the hierarchical view: task -> work sessions.
+ * GET /projects/{projectId}/tasks/{taskId}/sessions - the full hierarchy:
+ * project -> task -> work sessions.
  *
- * Logged hours are for the parties of the project and, to settle a dispute,
- * the administrator.
+ * A missing project or a task of another project answers 404, which is not
+ * the same as an empty list. Logged hours are for the parties of the project
+ * and, to settle a dispute, the administrator.
  */
-sessionsRouter.get('/tasks/:id/sessions', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
-
-  const task = await prisma.task.findUnique({ where: { id }, include: { project: true } });
-  if (!task) {
-    throw new HttpError(404, 'NOT_FOUND', `Task ${id} does not exist`);
-  }
+sessionsRouter.get('/projects/:projectId/tasks/:taskId/sessions', async (req, res) => {
+  const task = await findTaskOr404(parseParams(TaskParams, req));
   assertCanInspectProject(task.project, viewer(req));
 
-  const rows = await prisma.workSession.findMany({ where: { taskId: id }, orderBy: SESSION_ORDER });
+  const rows = await prisma.workSession.findMany({
+    where: { taskId: task.id },
+    include: WITH_PROJECT_ID,
+    orderBy: SESSION_ORDER,
+  });
   res.json(rows.map(toSession));
 });
 
-/** GET /sessions/{id} - a single work session; same audience as the task's log. */
-sessionsRouter.get('/sessions/:id', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
-
-  const session = await findSessionOr404(id);
+/**
+ * GET /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} - a single
+ * work session; same audience as the task's log.
+ */
+sessionsRouter.get('/projects/:projectId/tasks/:taskId/sessions/:sessionId', async (req, res) => {
+  const session = await findSessionOr404(parseParams(SessionParams, req));
   assertCanInspectProject(session.task.project, viewer(req));
 
   res.json(toSession(session));
 });
 
 /**
- * POST /sessions - start a session or enter a finished one by hand.
+ * POST /projects/{projectId}/tasks/{taskId}/sessions - start a session or
+ * enter a finished one by hand.
  *
  * Both cases share one endpoint because they create the same resource; the
  * only difference is whether `endedAt` is known yet. Note what the client
  * cannot send: neither the duration nor the rate, because those are exactly
  * the numbers the whole system is supposed to make trustworthy.
  */
-sessionsRouter.post('/sessions', async (req, res) => {
+sessionsRouter.post('/projects/:projectId/tasks/:taskId/sessions', async (req, res) => {
+  const params = parseParams(TaskParams, req);
   const actor = requireActor(req);
   const input = parseBody(CreateWorkSessionInput, req);
 
-  const task = await findReferencedTaskOr422(input.taskId);
+  const task = await findTaskOr404(params);
+  assertCanViewProject(task.project, viewer(req));
   assertProjectAcceptsWork(task.project);
   assertIsAssignedSpecialist(task.project, actor);
 
@@ -152,7 +140,7 @@ sessionsRouter.post('/sessions', async (req, res) => {
 
   const row = await prisma.workSession.create({
     data: {
-      taskId: input.taskId,
+      taskId: task.id,
       specialistId: actor,
       startedAt,
       endedAt,
@@ -164,78 +152,99 @@ sessionsRouter.post('/sessions', async (req, res) => {
         ? resolveAppliedRate(money(task.hourlyRate), money(task.project.hourlyRate))
         : null,
     },
+    include: WITH_PROJECT_ID,
   });
 
-  created(res, `/api/sessions/${row.id}`, toSession(row));
+  created(
+    res,
+    `/api/projects/${task.projectId}/tasks/${task.id}/sessions/${row.id}`,
+    toSession(row),
+  );
 });
 
 /**
- * PATCH /sessions/{id} - correct a session or stop the running one.
+ * PATCH /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} - correct a
+ * session or stop the running one.
  *
  * Stopping the timer is an ordinary update: sending `endedAt` closes the
  * session, and the server then measures the duration and locks in the rate.
  */
-sessionsRouter.patch('/sessions/:id', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
-  const input = parseBody(UpdateWorkSessionInput, req);
+sessionsRouter.patch(
+  '/projects/:projectId/tasks/:taskId/sessions/:sessionId',
+  async (req, res) => {
+    const params = parseParams(SessionParams, req);
+    const actor = requireActor(req);
+    const input = parseBody(UpdateWorkSessionInput, req);
 
-  const session = await findSessionOr404(id);
-  assertCanViewProject(session.task.project, viewer(req));
-  assertIsSessionAuthor(session, actor);
-  assertProjectAcceptsWork(session.task.project);
+    const session = await findSessionOr404(params);
+    assertCanViewProject(session.task.project, viewer(req));
+    assertIsSessionAuthor(session, actor);
+    assertProjectAcceptsWork(session.task.project);
 
-  // The checks run on the merged values: whatever the request leaves out keeps
-  // the value already stored.
-  const startedAt = input.startedAt !== undefined ? new Date(input.startedAt) : session.startedAt;
-  const endedAt =
-    input.endedAt === undefined
-      ? session.endedAt
-      : input.endedAt === null
-        ? null
-        : new Date(input.endedAt);
+    // The checks run on the merged values: whatever the request leaves out
+    // keeps the value already stored.
+    const startedAt =
+      input.startedAt !== undefined ? new Date(input.startedAt) : session.startedAt;
+    const endedAt =
+      input.endedAt === undefined
+        ? session.endedAt
+        : input.endedAt === null
+          ? null
+          : new Date(input.endedAt);
 
-  assertNotInFuture(startedAt, 'startedAt');
-  if (endedAt) assertNotInFuture(endedAt, 'endedAt');
-  assertChronology(startedAt, endedAt);
+    assertNotInFuture(startedAt, 'startedAt');
+    if (endedAt) assertNotInFuture(endedAt, 'endedAt');
+    assertChronology(startedAt, endedAt);
 
-  // Reopening a finished session would give the specialist a second running
-  // one, which the partial unique index forbids.
-  if (endedAt === null && session.endedAt !== null) {
-    await assertNoOtherRunningSession(actor, session.id);
-  }
-
-  const data: Prisma.WorkSessionUpdateInput = {};
-  if (input.comment !== undefined) data.comment = input.comment;
-
-  if (input.startedAt !== undefined || input.endedAt !== undefined) {
-    data.startedAt = startedAt;
-    data.endedAt = endedAt;
-    data.durationMinutes = endedAt ? durationMinutes(startedAt, endedAt) : null;
-
-    // The rate is locked in once, when the session first ends. Correcting the
-    // timestamps afterwards must not reprice work at today's rate.
-    if (endedAt !== null && session.appliedRate === null) {
-      data.appliedRate = resolveAppliedRate(
-        money(session.task.hourlyRate),
-        money(session.task.project.hourlyRate),
-      );
+    // Reopening a finished session would give the specialist a second running
+    // one, which the partial unique index forbids.
+    if (endedAt === null && session.endedAt !== null) {
+      await assertNoOtherRunningSession(actor, session.id);
     }
-  }
 
-  res.json(toSession(await prisma.workSession.update({ where: { id }, data })));
-});
+    const data: Prisma.WorkSessionUpdateInput = {};
+    if (input.comment !== undefined) data.comment = input.comment;
 
-/** DELETE /sessions/{id} - remove an entry from the work log. */
-sessionsRouter.delete('/sessions/:id', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
-  const actor = requireActor(req);
+    if (input.startedAt !== undefined || input.endedAt !== undefined) {
+      data.startedAt = startedAt;
+      data.endedAt = endedAt;
+      data.durationMinutes = endedAt ? durationMinutes(startedAt, endedAt) : null;
 
-  const session = await findSessionOr404(id);
-  assertCanViewProject(session.task.project, viewer(req));
-  assertIsSessionAuthor(session, actor);
-  assertProjectAcceptsWork(session.task.project);
+      // The rate is locked in once, when the session first ends. Correcting the
+      // timestamps afterwards must not reprice work at today's rate.
+      if (endedAt !== null && session.appliedRate === null) {
+        data.appliedRate = resolveAppliedRate(
+          money(session.task.hourlyRate),
+          money(session.task.project.hourlyRate),
+        );
+      }
+    }
 
-  await prisma.workSession.delete({ where: { id } });
-  noContent(res);
-});
+    const row = await prisma.workSession.update({
+      where: { id: session.id },
+      data,
+      include: WITH_PROJECT_ID,
+    });
+    res.json(toSession(row));
+  },
+);
+
+/**
+ * DELETE /projects/{projectId}/tasks/{taskId}/sessions/{sessionId} - remove an
+ * entry from the work log.
+ */
+sessionsRouter.delete(
+  '/projects/:projectId/tasks/:taskId/sessions/:sessionId',
+  async (req, res) => {
+    const params = parseParams(SessionParams, req);
+    const actor = requireActor(req);
+
+    const session = await findSessionOr404(params);
+    assertCanViewProject(session.task.project, viewer(req));
+    assertIsSessionAuthor(session, actor);
+    assertProjectAcceptsWork(session.task.project);
+
+    await prisma.workSession.delete({ where: { id: session.id } });
+    noContent(res);
+  },
+);

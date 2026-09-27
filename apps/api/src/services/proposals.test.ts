@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HttpError } from '../middleware/error.js';
 import {
   assertCanDecide,
+  assertCanSeeProposal,
   assertCanSubmitProposal,
   assertIsProposalAuthor,
   assertProjectAcceptsProposals,
@@ -96,5 +97,25 @@ describe('assertProposalIsDeletable', () => {
     const error = thrownBy(() => assertProposalIsDeletable({ status: 'ACCEPTED' }));
     expect(error.status).toBe(422);
     expect(error.code).toBe('PROPOSAL_ACCEPTED');
+  });
+});
+
+describe('assertCanSeeProposal', () => {
+  const proposal = { id: '44444444-4444-4444-8444-444444444444', specialistId: specialist };
+  const project = { clientId: client };
+
+  it('shows the offer to the client, the administrator and its author', () => {
+    expect(() => assertCanSeeProposal(proposal, project, { userId: client, role: 'CLIENT' })).not.toThrow();
+    expect(() => assertCanSeeProposal(proposal, project, { userId: other, role: 'ADMIN' })).not.toThrow();
+    expect(() =>
+      assertCanSeeProposal(proposal, project, { userId: specialist, role: 'SPECIALIST' }),
+    ).not.toThrow();
+  });
+
+  it('hides a competitor offer as if it did not exist', () => {
+    const error = thrownBy(() =>
+      assertCanSeeProposal(proposal, project, { userId: other, role: 'SPECIALIST' }),
+    );
+    expect(error.status).toBe(404);
   });
 });

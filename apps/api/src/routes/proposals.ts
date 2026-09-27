@@ -10,16 +10,24 @@ import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { toProposal } from '../lib/serialize.js';
-import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
+import {
+  ProjectParams,
+  ProposalParams,
+  findProjectOr404,
+  findProposalOr404,
+} from '../lib/scope.js';
+import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import { assertCanViewProject } from '../services/access.js';
 import {
   assertCanDecide,
+  assertCanSeeProposal,
   assertCanSubmitProposal,
   assertIsProposalAuthor,
   assertProjectAcceptsProposals,
   assertProposalIsDeletable,
   assertProposalIsPending,
+  seesAllProposals,
 } from '../services/proposals.js';
 
 export const proposalsRouter: Router = Router();
@@ -28,25 +36,6 @@ const ProposalListQuery = z.object({ status: ProposalStatus.optional() });
 
 /** Newest first - the client reviews the most recent offers. */
 const PROPOSAL_ORDER: Prisma.ProposalOrderByWithRelationInput = { createdAt: 'desc' };
-
-async function findProposalOr404(id: string) {
-  const proposal = await prisma.proposal.findUnique({
-    where: { id },
-    include: { project: true },
-  });
-  if (!proposal) {
-    throw new HttpError(404, 'NOT_FOUND', `Proposal ${id} does not exist`);
-  }
-  return proposal;
-}
-
-async function findProjectOr404(id: string) {
-  const project = await prisma.project.findUnique({ where: { id } });
-  if (!project) {
-    throw new HttpError(404, 'NOT_FOUND', `Project ${id} does not exist`);
-  }
-  return project;
-}
 
 /**
  * GET /proposals - the actor's own offers and their statuses.
@@ -67,22 +56,24 @@ proposalsRouter.get('/proposals', async (req, res) => {
 });
 
 /**
- * GET /projects/{id}/proposals - offers made for one project.
+ * GET /projects/{projectId}/proposals - offers made for one project.
  *
  * Unlike the other listings this one is not public: competing bids reveal
  * prices. The client (and the administrator) sees every offer, a specialist
  * sees only their own.
  */
-proposalsRouter.get('/projects/:id/proposals', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+proposalsRouter.get('/projects/:projectId/proposals', async (req, res) => {
+  const params = parseParams(ProjectParams, req);
   const auth = requireAuth(req);
 
-  const project = await findProjectOr404(id);
+  const project = await findProjectOr404(params);
   assertCanViewProject(project, auth);
-  const seesAll = project.clientId === auth.userId || auth.role === 'ADMIN';
 
   const rows = await prisma.proposal.findMany({
-    where: { projectId: id, ...(seesAll ? {} : { specialistId: auth.userId }) },
+    where: {
+      projectId: project.id,
+      ...(seesAllProposals(project, auth) ? {} : { specialistId: auth.userId }),
+    },
     orderBy: PROPOSAL_ORDER,
   });
 
@@ -90,18 +81,33 @@ proposalsRouter.get('/projects/:id/proposals', async (req, res) => {
 });
 
 /**
- * POST /projects/{id}/proposals - submit an offer.
+ * GET /projects/{projectId}/proposals/{proposalId} - a single offer, visible
+ * to the same people who see it in the project's list.
+ */
+proposalsRouter.get('/projects/:projectId/proposals/:proposalId', async (req, res) => {
+  const params = parseParams(ProposalParams, req);
+  const auth = requireAuth(req);
+
+  const proposal = await findProposalOr404(params);
+  assertCanViewProject(proposal.project, auth);
+  assertCanSeeProposal(proposal, proposal.project, auth);
+
+  res.json(toProposal(proposal));
+});
+
+/**
+ * POST /projects/{projectId}/proposals - submit an offer.
  *
  * Bidding is what specialists do, so the role is checked first. One offer per
  * specialist per project, enforced by the `@@unique` constraint in the schema;
  * a repeated attempt surfaces as 409 through the error handler.
  */
-proposalsRouter.post('/projects/:id/proposals', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+proposalsRouter.post('/projects/:projectId/proposals', async (req, res) => {
+  const params = parseParams(ProjectParams, req);
   const actor = requireRoleOf(req, 'SPECIALIST');
   const input = parseBody(CreateProposalInput, req);
 
-  const project = await findProjectOr404(id);
+  const project = await findProjectOr404(params);
   assertCanViewProject(project, viewer(req));
   assertProjectAcceptsProposals(project);
   assertCanSubmitProposal(project, actor);
@@ -109,7 +115,7 @@ proposalsRouter.post('/projects/:id/proposals', async (req, res) => {
   // The `@@unique([projectId, specialistId])` constraint is the real guarantee;
   // this lookup only turns it into an answer that names the existing offer.
   const existing = await prisma.proposal.findUnique({
-    where: { projectId_specialistId: { projectId: id, specialistId: actor } },
+    where: { projectId_specialistId: { projectId: project.id, specialistId: actor } },
   });
   if (existing) {
     throw new HttpError(409, 'PROPOSAL_ALREADY_SUBMITTED', 'You have already bid on this project', {
@@ -120,7 +126,7 @@ proposalsRouter.post('/projects/:id/proposals', async (req, res) => {
 
   const row = await prisma.proposal.create({
     data: {
-      projectId: id,
+      projectId: project.id,
       specialistId: actor,
       price: input.price ?? null,
       hourlyRate: input.hourlyRate ?? null,
@@ -129,21 +135,23 @@ proposalsRouter.post('/projects/:id/proposals', async (req, res) => {
     },
   });
 
-  created(res, `/api/proposals/${row.id}`, toProposal(row));
+  created(res, `/api/projects/${project.id}/proposals/${row.id}`, toProposal(row));
 });
 
 /**
- * PATCH /proposals/{id} - accept, reject or withdraw an offer.
+ * PATCH /projects/{projectId}/proposals/{proposalId} - accept, reject or
+ * withdraw an offer.
  *
  * Who may do what differs per target status, so the permission check is chosen
  * by the requested transition rather than by the route.
  */
-proposalsRouter.patch('/proposals/:id', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+proposalsRouter.patch('/projects/:projectId/proposals/:proposalId', async (req, res) => {
+  const params = parseParams(ProposalParams, req);
   const actor = requireActor(req);
   const { status } = parseBody(UpdateProposalInput, req);
 
-  const proposal = await findProposalOr404(id);
+  const proposal = await findProposalOr404(params);
+  const { id } = proposal;
   assertProposalIsPending(proposal);
 
   if (status === 'WITHDRAWN') {
@@ -188,15 +196,18 @@ proposalsRouter.patch('/proposals/:id', async (req, res) => {
   res.json(toProposal(accepted));
 });
 
-/** DELETE /proposals/{id} - withdraw an offer from the list entirely. */
-proposalsRouter.delete('/proposals/:id', async (req, res) => {
-  const { id } = parseParams(IdParam, req);
+/**
+ * DELETE /projects/{projectId}/proposals/{proposalId} - withdraw an offer from
+ * the list entirely.
+ */
+proposalsRouter.delete('/projects/:projectId/proposals/:proposalId', async (req, res) => {
+  const params = parseParams(ProposalParams, req);
   const actor = requireActor(req);
 
-  const proposal = await findProposalOr404(id);
+  const proposal = await findProposalOr404(params);
   assertIsProposalAuthor(proposal, actor);
   assertProposalIsDeletable(proposal);
 
-  await prisma.proposal.delete({ where: { id } });
+  await prisma.proposal.delete({ where: { id: proposal.id } });
   noContent(res);
 });

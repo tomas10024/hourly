@@ -1,4 +1,4 @@
-import type { ProjectOrigin, ProjectStatus, ProposalStatus } from '@hourly/shared';
+import type { ProjectOrigin, ProjectStatus, ProposalStatus, Role } from '@hourly/shared';
 import { HttpError } from '../middleware/error.js';
 
 /**
@@ -98,5 +98,27 @@ export function assertProposalIsDeletable(proposal: { status: ProposalStatus }):
       'PROPOSAL_ACCEPTED',
       'An accepted proposal cannot be deleted - it is the record of how the project was awarded',
     );
+  }
+}
+
+/**
+ * Competing bids reveal prices: the client of the project and the
+ * administrator see every offer, a specialist only their own. For anyone else
+ * the offer does not exist (404), just as it is absent from their list.
+ */
+export function seesAllProposals(
+  project: { clientId: string | null },
+  viewer: { userId: string; role: Role },
+): boolean {
+  return project.clientId === viewer.userId || viewer.role === 'ADMIN';
+}
+
+export function assertCanSeeProposal(
+  proposal: { id: string; specialistId: string },
+  project: { clientId: string | null },
+  viewer: { userId: string; role: Role },
+): void {
+  if (!seesAllProposals(project, viewer) && proposal.specialistId !== viewer.userId) {
+    throw new HttpError(404, 'NOT_FOUND', `Proposal ${proposal.id} does not exist`);
   }
 }
