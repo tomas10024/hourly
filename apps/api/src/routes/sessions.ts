@@ -1,10 +1,15 @@
 import { Router } from 'express';
-import { z } from 'zod';
-import { CreateWorkSessionInput, UpdateWorkSessionInput } from '@hourly/shared';
+import {
+  CreateWorkSessionInput,
+  SessionListQuery,
+  TaskSessionListQuery,
+  UpdateWorkSessionInput,
+} from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { pageArgs, pageOf } from '../lib/pagination.js';
 import { SessionParams, TaskParams, findSessionOr404, findTaskOr404 } from '../lib/scope.js';
 import { money, toSession } from '../lib/serialize.js';
 import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
@@ -22,10 +27,21 @@ import {
 
 export const sessionsRouter: Router = Router();
 
-const SessionListQuery = z.object({ taskId: z.uuid().optional() });
-
 /** Newest first: the work log is read from the most recent entry backwards. */
 const SESSION_ORDER: Prisma.WorkSessionOrderByWithRelationInput = { startedAt: 'desc' };
+
+/** The filters both session lists share: a start-time range and "still running". */
+function sessionFilters({
+  from,
+  to,
+  running,
+}: TaskSessionListQuery): Prisma.WorkSessionWhereInput[] {
+  const filters: Prisma.WorkSessionWhereInput[] = [];
+  if (from) filters.push({ startedAt: { gte: new Date(from) } });
+  if (to) filters.push({ startedAt: { lt: new Date(to) } });
+  if (running !== undefined) filters.push({ endedAt: running ? null : { not: null } });
+  return filters;
+}
 
 /** What `toSession` needs besides the row itself: the project of the task. */
 const WITH_PROJECT_ID = { task: { select: { projectId: true } } } as const;
@@ -63,20 +79,34 @@ async function assertNoOtherRunningSession(specialistId: string, exceptId?: stri
  *
  * Not a second address of the sessions but a personal view across all
  * projects: a work log is personal, so it is scoped to the actor rather than
- * to everything readable. `?taskId=` narrows it to one task. Every entry
- * carries `projectId` and `taskId`, which together give its address.
+ * to everything readable. `projectId` and `taskId` narrow it, `from`/`to`
+ * select a period and `running=true` finds the timer that is still going.
+ * Every entry carries `projectId` and `taskId`, which together give its address.
  */
 sessionsRouter.get('/sessions', async (req, res) => {
   const actor = requireActor(req);
-  const { taskId } = parseQuery(SessionListQuery, req);
+  const query = parseQuery(SessionListQuery, req);
 
-  const rows = await prisma.workSession.findMany({
-    where: { specialistId: actor, ...(taskId ? { taskId } : {}) },
-    include: WITH_PROJECT_ID,
-    orderBy: SESSION_ORDER,
-  });
+  const where: Prisma.WorkSessionWhereInput = {
+    AND: [
+      { specialistId: actor },
+      ...(query.taskId ? [{ taskId: query.taskId }] : []),
+      ...(query.projectId ? [{ task: { projectId: query.projectId } }] : []),
+      ...sessionFilters(query),
+    ],
+  };
 
-  res.json(rows.map(toSession));
+  const [rows, total] = await prisma.$transaction([
+    prisma.workSession.findMany({
+      where,
+      include: WITH_PROJECT_ID,
+      orderBy: SESSION_ORDER,
+      ...pageArgs(query),
+    }),
+    prisma.workSession.count({ where }),
+  ]);
+
+  res.json(pageOf(rows.map(toSession), total, query));
 });
 
 /**
@@ -88,15 +118,26 @@ sessionsRouter.get('/sessions', async (req, res) => {
  * and, to settle a dispute, the administrator.
  */
 sessionsRouter.get('/projects/:projectId/tasks/:taskId/sessions', async (req, res) => {
-  const task = await findTaskOr404(parseParams(TaskParams, req));
+  const params = parseParams(TaskParams, req);
+  const query = parseQuery(TaskSessionListQuery, req);
+
+  const task = await findTaskOr404(params);
   assertCanInspectProject(task.project, viewer(req));
 
-  const rows = await prisma.workSession.findMany({
-    where: { taskId: task.id },
-    include: WITH_PROJECT_ID,
-    orderBy: SESSION_ORDER,
-  });
-  res.json(rows.map(toSession));
+  const where: Prisma.WorkSessionWhereInput = {
+    AND: [{ taskId: task.id }, ...sessionFilters(query)],
+  };
+  const [rows, total] = await prisma.$transaction([
+    prisma.workSession.findMany({
+      where,
+      include: WITH_PROJECT_ID,
+      orderBy: SESSION_ORDER,
+      ...pageArgs(query),
+    }),
+    prisma.workSession.count({ where }),
+  ]);
+
+  res.json(pageOf(rows.map(toSession), total, query));
 });
 
 /**

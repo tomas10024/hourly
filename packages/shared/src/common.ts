@@ -43,12 +43,29 @@ export const PageQuery = z.object({
 });
 export type PageQuery = z.infer<typeof PageQuery>;
 
-/** Envelope for a paginated list response. */
+/**
+ * Envelope for a paginated list response. `totalPages` spares every client the
+ * same division; a page past the end is not an error, it is simply empty.
+ */
 export function paginated<T extends z.ZodTypeAny>(item: T) {
   return z.object({
     items: z.array(item),
     page: z.number().int(),
     perPage: z.number().int(),
     total: z.number().int(),
+    totalPages: z.number().int(),
   });
 }
+
+/**
+ * A yes/no filter in the query string. Only the literal words are accepted,
+ * so `?running=0` is a 400 rather than a silent `true`.
+ */
+export const BooleanQuery = z
+  .enum(['true', 'false'])
+  .transform((value) => value === 'true');
+
+/** A point in time in the query string: a date (`2026-09-01`) or a full timestamp. */
+export const TimeQuery = z
+  .union([z.iso.date(), z.iso.datetime()])
+  .meta({ example: '2026-09-01' });

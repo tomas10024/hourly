@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
 import { z } from 'zod';
-import { ProjectListQuery } from '@hourly/shared';
+import { ProjectListQuery, SessionListQuery, ShareListQuery } from '@hourly/shared';
 import { HttpError } from '../middleware/error.js';
 import { IdParam, parseBody, parseParams, parseQuery } from './validate.js';
 
@@ -93,5 +93,38 @@ describe('NUL character (PostgreSQL text cannot store it)', () => {
       expect((error as HttpError).status).toBe(400);
       expect((error as HttpError).code).toBe('INVALID_PATH_PARAM');
     }
+  });
+});
+
+describe('list filters', () => {
+  const statusOf = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (error) {
+      return (error as HttpError).status;
+    }
+    return 200;
+  };
+
+  it('accepts a date or a full timestamp for a period', () => {
+    const req = fakeRequest({ query: { from: '2026-09-01', to: '2026-09-08T00:00:00.000Z' } });
+    const query = parseQuery(SessionListQuery, req);
+    expect(query.from).toBe('2026-09-01');
+    expect(query.page).toBe(1);
+  });
+
+  it('rejects a period that ends before it starts with 400', () => {
+    const req = fakeRequest({ query: { from: '2026-09-08', to: '2026-09-01' } });
+    expect(statusOf(() => parseQuery(SessionListQuery, req))).toBe(400);
+  });
+
+  it('takes only the literal words for a yes/no filter', () => {
+    const running = fakeRequest({ query: { running: 'true' } });
+    const inactive = fakeRequest({ query: { active: 'false' } });
+    const numeric = fakeRequest({ query: { running: '1' } });
+
+    expect(parseQuery(SessionListQuery, running).running).toBe(true);
+    expect(parseQuery(ShareListQuery, inactive).active).toBe(false);
+    expect(statusOf(() => parseQuery(SessionListQuery, numeric))).toBe(400);
   });
 });

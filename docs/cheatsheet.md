@@ -139,7 +139,7 @@ apie tai, kas kam leidžiama — tas `if` turi keliauti į `services/`.
 
 Grynos funkcijos: gauna duomenis, arba praleidžia, arba meta klaidą. Jų
 nedomina nei `req`, nei `res`, todėl jas galima ištestuoti be serverio ir be
-duomenų bazės — visi 249 testai bėga per kelias sekundes.
+duomenų bazės — visi 255 testai bėga per kelias sekundes.
 
 ```ts
 // services/projects.ts — projektas negali šokinėti tarp bet kokių būsenų

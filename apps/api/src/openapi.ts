@@ -13,15 +13,20 @@ import {
   LoginInput,
   Project,
   ProjectListQuery,
+  ProjectTaskListQuery,
   ProjectReport,
   Proposal,
-  ProposalStatus,
+  ProposalListQuery,
   PublicProjectView,
   PublicUser,
   RegisterInput,
+  SessionListQuery,
+  ShareListQuery,
   ShareLink,
   ShareLinkCreated,
   Task,
+  TaskListQuery,
+  TaskSessionListQuery,
   UpdateMeInput,
   UpdateProjectInput,
   UpdateProposalInput,
@@ -321,13 +326,11 @@ export const openApiDocument = createDocument({
         summary: 'My tasks across projects',
         description:
           'A personal view, not a second address: tasks of the projects the actor takes ' +
-          'part in; `projectId` narrows it to one. Each task lives at ' +
-          '`/projects/{projectId}/tasks/{taskId}`.',
-        requestParams: {
-          query: z.object({ projectId: z.uuid().optional() }),
-        },
+          'part in; `projectId` narrows it to one, `status` and `q` (title and ' +
+          'description) filter it. Each task lives at `/projects/{projectId}/tasks/{taskId}`.',
+        requestParams: { query: TaskListQuery },
         security: bearer,
-        responses: { '200': json(z.array(Task), 'Task list'), ...errors },
+        responses: { '200': json(paginated(Task), 'Task list'), ...errors },
       },
     },
     '/projects/{projectId}/tasks': {
@@ -336,10 +339,11 @@ export const openApiDocument = createDocument({
         summary: 'Tasks of a given project',
         description:
           'A missing project answers 404, which is not the same as an empty list. The ' +
-          'tasks are as visible as their project.',
-        requestParams: { path: ProjectParams },
+          'tasks are as visible as their project. `status` and `q` (title and ' +
+          'description) filter the list.',
+        requestParams: { path: ProjectParams, query: ProjectTaskListQuery },
         security: optionalBearer,
-        responses: { '200': json(z.array(Task), 'Task list'), ...errors },
+        responses: { '200': json(paginated(Task), 'Task list'), ...errors },
       },
       post: {
         tags: ['Tasks'],
@@ -392,14 +396,13 @@ export const openApiDocument = createDocument({
         tags: ['Work sessions'],
         summary: 'My work log across projects',
         description:
-          'A personal view, not a second address: the sessions of the actor; `taskId` ' +
-          'narrows it to one task. `projectId` and `taskId` of each entry give its ' +
-          'address under `/projects/{projectId}/tasks/{taskId}/sessions`.',
-        requestParams: {
-          query: z.object({ taskId: z.uuid().optional() }),
-        },
+          'A personal view, not a second address: the sessions of the actor. `projectId` ' +
+          'and `taskId` narrow it, `from`/`to` select by start time (`from <= startedAt < ' +
+          'to`), `running=true` finds the timer still going. `projectId` and `taskId` of ' +
+          'each entry give its address under `/projects/{projectId}/tasks/{taskId}/sessions`.',
+        requestParams: { query: SessionListQuery },
         security: bearer,
-        responses: { '200': json(z.array(WorkSession), 'Session list'), ...errors },
+        responses: { '200': json(paginated(WorkSession), 'Session list'), ...errors },
       },
     },
     '/projects/{projectId}/tasks/{taskId}/sessions': {
@@ -409,11 +412,12 @@ export const openApiDocument = createDocument({
         description:
           'The whole hierarchy in one address. A missing project, or a task that does ' +
           'not belong to it, answers 404 - not an empty list. Logged hours are readable ' +
-          'by the parties of the project and the administrator.',
-        requestParams: { path: TaskParams },
+          'by the parties of the project and the administrator. `from`/`to` select by ' +
+          'start time (`from <= startedAt < to`), `running` by whether the timer is going.',
+        requestParams: { path: TaskParams, query: TaskSessionListQuery },
         security: bearer,
         responses: {
-          '200': json(z.array(WorkSession), 'Session list'),
+          '200': json(paginated(WorkSession), 'Session list'),
           ...errors,
           '404': scopedNotFound,
         },
@@ -479,11 +483,9 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Proposals'],
         summary: 'Offers submitted by the actor, with their statuses',
-        requestParams: {
-          query: z.object({ status: ProposalStatus.optional() }),
-        },
+        requestParams: { query: ProposalListQuery },
         security: bearer,
-        responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
+        responses: { '200': json(paginated(Proposal), 'Proposal list'), ...errors },
       },
     },
     '/projects/{projectId}/proposals': {
@@ -492,10 +494,10 @@ export const openApiDocument = createDocument({
         summary: 'Proposals submitted for a project',
         description:
           'Competing bids reveal prices, so the client sees every offer while a ' +
-          'specialist sees only their own.',
-        requestParams: { path: ProjectParams },
+          'specialist sees only their own. `status` filters the list.',
+        requestParams: { path: ProjectParams, query: ProposalListQuery },
         security: bearer,
-        responses: { '200': json(z.array(Proposal), 'Proposal list'), ...errors },
+        responses: { '200': json(paginated(Proposal), 'Proposal list'), ...errors },
       },
       post: {
         tags: ['Proposals'],
@@ -560,10 +562,13 @@ export const openApiDocument = createDocument({
       get: {
         tags: ['Share links'],
         summary: 'Share links of a project',
-        description: 'Answers what exists and until when - never how to get in.',
-        requestParams: { path: ProjectParams },
+        description:
+          'Answers what exists and until when - never how to get in. `active=true` ' +
+          'leaves the links that still open the project, `active=false` the revoked ' +
+          'and expired ones.',
+        requestParams: { path: ProjectParams, query: ShareListQuery },
         security: bearer,
-        responses: { '200': json(z.array(ShareLink), 'Share link list'), ...errors },
+        responses: { '200': json(paginated(ShareLink), 'Share link list'), ...errors },
       },
       post: {
         tags: ['Share links'],

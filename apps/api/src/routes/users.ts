@@ -4,6 +4,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor } from '../lib/actor.js';
 import { noContent } from '../lib/http.js';
+import { pageArgs, pageOf } from '../lib/pagination.js';
 import { toCurrentUser, toPublicUser } from '../lib/serialize.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { requireRole } from '../middleware/auth.js';
@@ -25,7 +26,8 @@ async function findUserOr404(id: string) {
  * which is what moderation needs. `q` searches the name and the e-mail.
  */
 usersRouter.get('/users', requireRole('ADMIN'), async (req, res) => {
-  const { q, role, isBlocked, page, perPage } = parseQuery(UserListQuery, req);
+  const query = parseQuery(UserListQuery, req);
+  const { q, role, isBlocked } = query;
 
   const where: Prisma.UserWhereInput = {
     ...(role ? { role } : {}),
@@ -41,16 +43,11 @@ usersRouter.get('/users', requireRole('ADMIN'), async (req, res) => {
   };
 
   const [rows, total] = await prisma.$transaction([
-    prisma.user.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
+    prisma.user.findMany({ where, orderBy: { createdAt: 'desc' }, ...pageArgs(query) }),
     prisma.user.count({ where }),
   ]);
 
-  res.json({ items: rows.map(toCurrentUser), page, perPage, total });
+  res.json(pageOf(rows.map(toCurrentUser), total, query));
 });
 
 /**

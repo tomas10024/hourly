@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CreateShareLinkInput } from '@hourly/shared';
+import { CreateShareLinkInput, ShareListQuery } from '@hourly/shared';
+import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
 import { iso, money, toShareLink } from '../lib/serialize.js';
+import { pageArgs, pageOf } from '../lib/pagination.js';
 import { ProjectParams, ShareParams, findProjectOr404, findShareOr404 } from '../lib/scope.js';
-import { parseBody, parseParams } from '../lib/validate.js';
+import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
 import { HttpError } from '../middleware/error.js';
 import { env } from '../env.js';
 import { assertCanManageProject } from '../services/access.js';
@@ -59,16 +61,28 @@ sharesRouter.post('/projects/:projectId/shares', async (req, res) => {
 sharesRouter.get('/projects/:projectId/shares', async (req, res) => {
   const params = parseParams(ProjectParams, req);
   const auth = requireAuth(req);
+  const query = parseQuery(ShareListQuery, req);
 
   const project = await findProjectOr404(params);
   assertCanManageProject(project, auth);
 
-  const rows = await prisma.shareLink.findMany({
-    where: { projectId: project.id },
-    orderBy: { createdAt: 'desc' },
-  });
+  // "Active" is the same condition `isShareUsable` checks for a single link.
+  const now = new Date();
+  const usable: Prisma.ShareLinkWhereInput = { revokedAt: null, expiresAt: { gt: now } };
+  const where: Prisma.ShareLinkWhereInput = {
+    AND: [
+      { projectId: project.id },
+      ...(query.active === true ? [usable] : []),
+      ...(query.active === false ? [{ NOT: usable }] : []),
+    ],
+  };
 
-  res.json(rows.map(toShareLink));
+  const [rows, total] = await prisma.$transaction([
+    prisma.shareLink.findMany({ where, orderBy: { createdAt: 'desc' }, ...pageArgs(query) }),
+    prisma.shareLink.count({ where }),
+  ]);
+
+  res.json(pageOf(rows.map(toShareLink), total, query));
 });
 
 /**

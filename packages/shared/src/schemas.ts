@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import { DateTime, Email, Id, Money, MoneyInput, PageQuery } from './common.js';
+import {
+  BooleanQuery,
+  DateTime,
+  Email,
+  Id,
+  Money,
+  MoneyInput,
+  PageQuery,
+  TimeQuery,
+} from './common.js';
 import {
   ProjectOrigin,
   ProjectScope,
@@ -67,19 +76,11 @@ export const UpdateMeInput = z
   );
 export type UpdateMeInput = z.infer<typeof UpdateMeInput>;
 
-/**
- * The administrator's user list (`GET /users`).
- *
- * `isBlocked` arrives as text in the query string; only the literal words are
- * accepted, so `?isBlocked=0` is a 400 rather than a silent `true`.
- */
+/** The administrator's user list (`GET /users`). */
 export const UserListQuery = PageQuery.extend({
   q: z.string().max(150).optional(),
   role: Role.optional(),
-  isBlocked: z
-    .enum(['true', 'false'])
-    .transform((value) => value === 'true')
-    .optional(),
+  isBlocked: BooleanQuery.optional(),
 });
 export type UserListQuery = z.infer<typeof UserListQuery>;
 
@@ -160,6 +161,7 @@ export const ProjectListQuery = PageQuery.extend({
   scope: ProjectScope.default('marketplace'),
   q: z.string().max(150).optional(),
   status: ProjectStatus.optional(),
+  origin: ProjectOrigin.optional(),
 });
 export type ProjectListQuery = z.infer<typeof ProjectListQuery>;
 
@@ -202,6 +204,19 @@ export const UpdateTaskInput = CreateTaskInput.partial().extend({
   approved: z.boolean().optional(),
 });
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInput>;
+
+/** `GET /projects/{projectId}/tasks`: `q` searches the title and the description. */
+export const ProjectTaskListQuery = PageQuery.extend({
+  status: TaskStatus.optional(),
+  q: z.string().max(150).optional(),
+});
+export type ProjectTaskListQuery = z.infer<typeof ProjectTaskListQuery>;
+
+/** `GET /tasks` - my tasks across projects, optionally narrowed to one. */
+export const TaskListQuery = ProjectTaskListQuery.extend({
+  projectId: Id.optional(),
+});
+export type TaskListQuery = z.infer<typeof TaskListQuery>;
 
 /* -------------------------------------------------------------------------- */
 /* Work session                                                               */
@@ -247,6 +262,35 @@ export const UpdateWorkSessionInput = z.object({
 });
 export type UpdateWorkSessionInput = z.infer<typeof UpdateWorkSessionInput>;
 
+/**
+ * `GET /projects/{projectId}/tasks/{taskId}/sessions`.
+ *
+ * `from` and `to` select by the start time as a half-open interval
+ * `from <= startedAt < to`, so consecutive ranges (`to` of one week being
+ * `from` of the next) never count a session twice. `running=true` leaves only
+ * the session that is still being timed.
+ */
+const orderedRange = (v: { from?: string; to?: string }) =>
+  v.from === undefined || v.to === undefined || new Date(v.from) < new Date(v.to);
+const RANGE_ERROR = { message: '`from` must be earlier than `to`', path: ['from'] };
+
+export const TaskSessionListQuery = PageQuery.extend({
+  from: TimeQuery.optional(),
+  to: TimeQuery.optional(),
+  running: BooleanQuery.optional(),
+}).refine(orderedRange, RANGE_ERROR);
+export type TaskSessionListQuery = z.infer<typeof TaskSessionListQuery>;
+
+/** `GET /sessions` - my work log across projects, optionally narrowed. */
+export const SessionListQuery = PageQuery.extend({
+  projectId: Id.optional(),
+  taskId: Id.optional(),
+  from: TimeQuery.optional(),
+  to: TimeQuery.optional(),
+  running: BooleanQuery.optional(),
+}).refine(orderedRange, RANGE_ERROR);
+export type SessionListQuery = z.infer<typeof SessionListQuery>;
+
 /* -------------------------------------------------------------------------- */
 /* Proposal                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -282,6 +326,12 @@ export const UpdateProposalInput = z.object({
 });
 export type UpdateProposalInput = z.infer<typeof UpdateProposalInput>;
 
+/** `GET /proposals` and `GET /projects/{projectId}/proposals`. */
+export const ProposalListQuery = PageQuery.extend({
+  status: ProposalStatus.optional(),
+});
+export type ProposalListQuery = z.infer<typeof ProposalListQuery>;
+
 /* -------------------------------------------------------------------------- */
 /* Share link (capability token)                                              */
 /* -------------------------------------------------------------------------- */
@@ -307,6 +357,15 @@ export const CreateShareLinkInput = z.object({
   expiresInDays: z.number().int().min(1).max(365).default(30),
 });
 export type CreateShareLinkInput = z.infer<typeof CreateShareLinkInput>;
+
+/**
+ * `GET /projects/{projectId}/shares`: `active=true` leaves the links that still
+ * open the project (neither revoked nor expired), `active=false` the rest.
+ */
+export const ShareListQuery = PageQuery.extend({
+  active: BooleanQuery.optional(),
+});
+export type ShareListQuery = z.infer<typeof ShareListQuery>;
 
 /* -------------------------------------------------------------------------- */
 /* Report                                                                     */

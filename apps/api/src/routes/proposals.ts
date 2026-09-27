@@ -1,14 +1,10 @@
 import { Router } from 'express';
-import { z } from 'zod';
-import {
-  CreateProposalInput,
-  ProposalStatus,
-  UpdateProposalInput,
-} from '@hourly/shared';
+import { CreateProposalInput, ProposalListQuery, UpdateProposalInput } from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { pageArgs, pageOf } from '../lib/pagination.js';
 import { toProposal } from '../lib/serialize.js';
 import {
   ProjectParams,
@@ -32,8 +28,6 @@ import {
 
 export const proposalsRouter: Router = Router();
 
-const ProposalListQuery = z.object({ status: ProposalStatus.optional() });
-
 /** Newest first - the client reviews the most recent offers. */
 const PROPOSAL_ORDER: Prisma.ProposalOrderByWithRelationInput = { createdAt: 'desc' };
 
@@ -45,14 +39,18 @@ const PROPOSAL_ORDER: Prisma.ProposalOrderByWithRelationInput = { createdAt: 'de
  */
 proposalsRouter.get('/proposals', async (req, res) => {
   const actor = requireActor(req);
-  const { status } = parseQuery(ProposalListQuery, req);
+  const query = parseQuery(ProposalListQuery, req);
 
-  const rows = await prisma.proposal.findMany({
-    where: { specialistId: actor, ...(status ? { status } : {}) },
-    orderBy: PROPOSAL_ORDER,
-  });
+  const where: Prisma.ProposalWhereInput = {
+    specialistId: actor,
+    ...(query.status ? { status: query.status } : {}),
+  };
+  const [rows, total] = await prisma.$transaction([
+    prisma.proposal.findMany({ where, orderBy: PROPOSAL_ORDER, ...pageArgs(query) }),
+    prisma.proposal.count({ where }),
+  ]);
 
-  res.json(rows.map(toProposal));
+  res.json(pageOf(rows.map(toProposal), total, query));
 });
 
 /**
@@ -65,19 +63,22 @@ proposalsRouter.get('/proposals', async (req, res) => {
 proposalsRouter.get('/projects/:projectId/proposals', async (req, res) => {
   const params = parseParams(ProjectParams, req);
   const auth = requireAuth(req);
+  const query = parseQuery(ProposalListQuery, req);
 
   const project = await findProjectOr404(params);
   assertCanViewProject(project, auth);
 
-  const rows = await prisma.proposal.findMany({
-    where: {
-      projectId: project.id,
-      ...(seesAllProposals(project, auth) ? {} : { specialistId: auth.userId }),
-    },
-    orderBy: PROPOSAL_ORDER,
-  });
+  const where: Prisma.ProposalWhereInput = {
+    projectId: project.id,
+    ...(seesAllProposals(project, auth) ? {} : { specialistId: auth.userId }),
+    ...(query.status ? { status: query.status } : {}),
+  };
+  const [rows, total] = await prisma.$transaction([
+    prisma.proposal.findMany({ where, orderBy: PROPOSAL_ORDER, ...pageArgs(query) }),
+    prisma.proposal.count({ where }),
+  ]);
 
-  res.json(rows.map(toProposal));
+  res.json(pageOf(rows.map(toProposal), total, query));
 });
 
 /**

@@ -1,10 +1,15 @@
 import { Router } from 'express';
-import { z } from 'zod';
-import { CreateTaskInput, UpdateTaskInput } from '@hourly/shared';
+import {
+  CreateTaskInput,
+  ProjectTaskListQuery,
+  TaskListQuery,
+  UpdateTaskInput,
+} from '@hourly/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { pageArgs, pageOf } from '../lib/pagination.js';
 import { toTask } from '../lib/serialize.js';
 import { ProjectParams, TaskParams, findProjectOr404, findTaskOr404 } from '../lib/scope.js';
 import { parseBody, parseParams, parseQuery } from '../lib/validate.js';
@@ -17,13 +22,26 @@ import {
 
 export const tasksRouter: Router = Router();
 
-const TaskListQuery = z.object({ projectId: z.uuid().optional() });
-
 /** Tasks are always read in the order the author arranged them. */
 const TASK_ORDER: Prisma.TaskOrderByWithRelationInput[] = [
   { position: 'asc' },
   { createdAt: 'asc' },
 ];
+
+/** The filters both task lists share: `status` and a text search. */
+function taskFilters({ status, q }: ProjectTaskListQuery): Prisma.TaskWhereInput[] {
+  const filters: Prisma.TaskWhereInput[] = [];
+  if (status) filters.push({ status });
+  if (q) {
+    filters.push({
+      OR: [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+      ],
+    });
+  }
+  return filters;
+}
 
 /** The next free slot in the project's task list. */
 async function nextPosition(projectId: string): Promise<number> {
@@ -39,23 +57,32 @@ async function nextPosition(projectId: string): Promise<number> {
  *
  * Not a second address of the tasks but a personal view across the hierarchy:
  * without a filter it answers "my tasks", `?projectId=` narrows it down to one
- * project. Each task keeps its one address under its project. Tasks of
- * strangers' projects are never included, so the list cannot be used to
- * browse other people's work.
+ * project, `status` and `q` work as in the project's own list. Each task keeps
+ * its one address under its project. Tasks of strangers' projects are never
+ * included, so the list cannot be used to browse other people's work.
  */
 tasksRouter.get('/tasks', async (req, res) => {
   const actor = requireActor(req);
-  const { projectId } = parseQuery(TaskListQuery, req);
+  const query = parseQuery(TaskListQuery, req);
 
-  const rows = await prisma.task.findMany({
-    where: {
-      ...(projectId ? { projectId } : {}),
-      project: { OR: [{ clientId: actor }, { specialistId: actor }] },
-    },
-    orderBy: [{ projectId: 'asc' }, ...TASK_ORDER],
-  });
+  const where: Prisma.TaskWhereInput = {
+    AND: [
+      { project: { OR: [{ clientId: actor }, { specialistId: actor }] } },
+      ...(query.projectId ? [{ projectId: query.projectId }] : []),
+      ...taskFilters(query),
+    ],
+  };
 
-  res.json(rows.map(toTask));
+  const [rows, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ projectId: 'asc' }, ...TASK_ORDER],
+      ...pageArgs(query),
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  res.json(pageOf(rows.map(toTask), total, query));
 });
 
 /**
@@ -67,14 +94,21 @@ tasksRouter.get('/tasks', async (req, res) => {
  * planned work to prospective bidders.
  */
 tasksRouter.get('/projects/:projectId/tasks', async (req, res) => {
-  const project = await findProjectOr404(parseParams(ProjectParams, req));
+  const params = parseParams(ProjectParams, req);
+  const query = parseQuery(ProjectTaskListQuery, req);
+
+  const project = await findProjectOr404(params);
   assertCanViewProject(project, viewer(req));
 
-  const rows = await prisma.task.findMany({
-    where: { projectId: project.id },
-    orderBy: TASK_ORDER,
-  });
-  res.json(rows.map(toTask));
+  const where: Prisma.TaskWhereInput = {
+    AND: [{ projectId: project.id }, ...taskFilters(query)],
+  };
+  const [rows, total] = await prisma.$transaction([
+    prisma.task.findMany({ where, orderBy: TASK_ORDER, ...pageArgs(query) }),
+    prisma.task.count({ where }),
+  ]);
+
+  res.json(pageOf(rows.map(toTask), total, query));
 });
 
 /**

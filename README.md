@@ -201,8 +201,8 @@ sudaromas jo vienintelis adresas.
 
 | Metodas | Paskirtis | Sėkmė | Klaidos |
 |---|---|---|---|
-| `GET /tasks` | Naudotojo projektų užduotys (`?projectId=`) | 200 | 400, 401 |
-| `GET /sessions` | Naudotojo darbo žurnalas (`?taskId=`) | 200 | 400, 401 |
+| `GET /tasks` | Naudotojo projektų užduotys | 200 | 400, 401 |
+| `GET /sessions` | Naudotojo darbo žurnalas | 200 | 400, 401 |
 
 Žinomu adresu naudojant nepalaikomą metodą (pvz., `PUT /projects/{id}`)
 grąžinama **405** su `Allow` antrašte, išvardijančia palaikomus metodus. Sąrašas
@@ -213,8 +213,35 @@ aibės prašoma: `GET /projects?scope=marketplace` grąžina viešai paskelbtus,
 `scope=owned` – naudotojo sukurtus, `scope=assigned` – jo vykdomus, o
 `scope=all` – visus sistemos projektus (tik administratoriui). Toks
 sprendimas pasirinktas vietoj atskirų adresų (pvz., `/my-projects`), nes
-resursas išlieka tas pats, o keičiasi tik jo atrankos kriterijus. Papildomai
-priimami `q` (paieška), `status`, `page` ir `perPage`.
+resursas išlieka tas pats, o keičiasi tik jo atrankos kriterijus.
+
+**Puslapiavimas ir filtravimas.** Visi sąrašai grąžinami vienodu voku ir
+priima `page` (nuo 1) bei `perPage` (1–100, numatytasis 20):
+
+```json
+{ "items": [ ... ], "page": 2, "perPage": 20, "total": 47, "totalPages": 3 }
+```
+
+`total` ir elementai skaičiuojami vienoje transakcijoje, todėl negali
+prieštarauti vienas kitam. Puslapis už sąrašo pabaigos grąžina 200 su tuščiu
+`items`, o ne 404 – kolekcija egzistuoja, tik tiek elementų neturi.
+
+| Sąrašas | Filtrai |
+|---|---|
+| `GET /projects` | `scope`, `q` (pavadinimas, aprašymas), `status`, `origin` |
+| `GET /projects/{projectId}/tasks` | `status`, `q` |
+| `GET /tasks` | `projectId`, `status`, `q` |
+| `GET …/tasks/{taskId}/sessions` | `from`, `to`, `running` |
+| `GET /sessions` | `projectId`, `taskId`, `from`, `to`, `running` |
+| `GET /proposals`, `GET /projects/{projectId}/proposals` | `status` |
+| `GET /projects/{projectId}/shares` | `active` (neatšauktos ir nepasibaigusios) |
+| `GET /users` | `q` (vardas, el. paštas), `role`, `isBlocked` |
+
+`from` ir `to` priima datą (`2026-09-01`) arba laiko žymą ir atrenka pagal
+pradžios laiką pusiau atviru intervalu `from <= startedAt < to`, todėl
+gretimi laikotarpiai (vienos savaitės `to` – kitos `from`) sesijos neskaičiuoja
+dukart. Loginiai filtrai priima tik žodžius `true` ir `false`. Netinkama
+reikšmė arba `from`, einantis po `to`, grąžina 400.
 
 **Pasiūlymų valdymo metodai:**
 
@@ -705,7 +732,7 @@ Kolekciją sudaro šešios dalys:
 | Dalis | Turinys |
 |---|---|
 | 0. Autentifikacija | Registracija, žetono rotacija, pakartotinio panaudojimo aptikimas, atsijungimas, 409 / 422 / 401 / 403 atvejai, JWT turinio patikra ir prisijungimas keturiomis paskyromis |
-| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda |
+| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda; puslapiavimas ir filtrai |
 | 2. Klaidų apdorojimas | Kodai 400, 401, 404, 405, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas ir vaikas ne savo tėvo adresu |
 | 3. Rolės ir teisės | 5.3 skyriaus lentelė: kas mato, kas gali kurti, redaguoti ir šalinti; 403 ir 404 skirtumas |
 | 4. Administratorius | Naudotojų sąrašas, viešas profilis, blokavimas (žetonas atmetamas iš karto), atblokavimas, šalinimas, netinkamo projekto pašalinimas |
@@ -716,7 +743,7 @@ demonstracijos metu užregistruotą paskyrą, – todėl demonstraciją galima k
 nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
 
 ```
-requests 95 | assertions 215 | failed 0 | total run duration: ~11s
+requests 101 | assertions 228 | failed 0 | total run duration: ~11s
 ```
 
 Kadangi laikai užklausose fiksuoti, testai tikrina ne „kažkokį skaičių“, o
@@ -724,7 +751,7 @@ konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekt
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 249 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 255 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
 skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
 suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių

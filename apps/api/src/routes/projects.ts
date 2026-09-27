@@ -9,6 +9,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import { requireActor, requireAuth, requireRoleOf, viewer } from '../lib/actor.js';
 import { created, noContent } from '../lib/http.js';
+import { pageArgs, pageOf } from '../lib/pagination.js';
 import { money, toProject } from '../lib/serialize.js';
 import { UTF8_BOM, toCsv } from '../lib/csv.js';
 import { IdParam, parseBody, parseParams, parseQuery } from '../lib/validate.js';
@@ -45,7 +46,8 @@ async function findProjectOr404(id: string) {
  * that a narrowing `status` cannot silently overwrite the scope filter.
  */
 projectsRouter.get('/projects', async (req, res) => {
-  const { scope, q, status, page, perPage } = parseQuery(ProjectListQuery, req);
+  const query = parseQuery(ProjectListQuery, req);
+  const { scope, q, status, origin } = query;
 
   const filters: Prisma.ProjectWhereInput[] = [];
 
@@ -62,6 +64,7 @@ projectsRouter.get('/projects', async (req, res) => {
   }
 
   if (status) filters.push({ status });
+  if (origin) filters.push({ origin });
 
   if (q) {
     filters.push({
@@ -77,16 +80,11 @@ projectsRouter.get('/projects', async (req, res) => {
   // One round trip for both the page and the total, so the count cannot be
   // taken from a different state of the data than the rows.
   const [rows, total] = await prisma.$transaction([
-    prisma.project.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * perPage,
-      take: perPage,
-    }),
+    prisma.project.findMany({ where, orderBy: { createdAt: 'desc' }, ...pageArgs(query) }),
     prisma.project.count({ where }),
   ]);
 
-  res.json({ items: rows.map(toProject), page, perPage, total });
+  res.json(pageOf(rows.map(toProject), total, query));
 });
 
 /**

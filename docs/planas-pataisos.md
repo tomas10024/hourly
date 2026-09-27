@@ -133,6 +133,8 @@ kodėl vieni vaikai įdėti, o kiti ne.
 
 ## 3. Etapas C – puslapiavimas ir filtrai visiems sąrašams
 
+**Būsena:** atlikta (2026-09-27). Vietoj bendro `paginate()` – du maži pagalbininkai `pageArgs` / `pageOf` (`lib/pagination.ts`), nes Prisma modelių tipai bendrai funkcijai nepatogūs. Papildomai: `ShareListQuery.active`. Visos sąrašų užklausų schemos – `@hourly/shared`.
+
 - **C1.** `lib/pagination.ts`: `paginate({ model, where, orderBy, page, perPage })` per `$transaction([findMany, count])` (kaip dabar `projects.ts`). Vokas papildomas `totalPages`.
 - **C2.** `paginated()` vokas visiems sąrašams: `GET /tasks`, `/projects/{id}/tasks`, `/sessions`, `/projects/{id}/tasks/{id}/sessions`, `/proposals`, `/projects/{id}/proposals`, `/projects/{id}/shares`.
 - **C3. Filtrai:**
