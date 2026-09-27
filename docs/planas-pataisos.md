@@ -192,6 +192,8 @@ maršruto):
 
 ## 6. Etapas F – Postman
 
+**Būsena:** atlikta (2026-09-27). Nauji aplankai / užklausos: trūkstami 4 metodai, konkuruojantis pasiūlymas (atmetamas priėmus kitą, autorius jį ištrina), `SESSION_REVOKED` po atsijungimo, `PATCH /auth/me` su `role: ADMIN`, „2. / Ribiniai atvejai (niekada 500)“, „6. Bandymų ribojimas“ (ciklas per `setNextRequest`). Rasta ir pataisyta: pasiūlymo autorius nematė savo pasiūlymo, kai projektas atiteko kitam. CI: `npm run postman:coverage`. Demo trukmė ~18 s.
+
 - **F1.** Trūkstami metodai: `GET /proposals`, `DELETE /proposals/{id}`, `PATCH /auth/me`, `GET /health/ready`.
 - **F2.** Perrašyti į įdėtinius URL (B).
 - **F3. Nauji aplankai:**

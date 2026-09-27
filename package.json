@@ -21,6 +21,7 @@
     "test": "npm run test --workspaces --if-present",
     "demo": "node --no-deprecation node_modules/newman/bin/newman.js run docs/postman/hourly.postman_collection.json -e docs/postman/hourly.local.postman_environment.json --reporters cli --reporter-cli-no-banner",
     "openapi:export": "npm run openapi:export --workspace apps/api",
+    "postman:coverage": "npm run postman:coverage --workspace apps/api",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate --workspace apps/api",

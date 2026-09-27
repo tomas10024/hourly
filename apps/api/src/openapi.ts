@@ -172,6 +172,26 @@ export const openApiDocument = createDocument({
       },
     },
 
+    '/health/ready': {
+      get: {
+        tags: ['Operations'],
+        summary: 'Readiness probe: the service and its database',
+        description:
+          'Answers 503 when the database cannot be reached, so a load balancer or a ' +
+          'deployment slot swap can wait for it.',
+        responses: {
+          '200': json(
+            z.object({ status: z.literal('ok'), database: z.literal('up') }),
+            'Ready to serve',
+          ),
+          '503': json(
+            z.object({ status: z.literal('degraded'), database: z.literal('down') }),
+            'The database is unreachable',
+          ),
+        },
+      },
+    },
+
     /* ------------------------------- Authentication ------------------------------ */
     '/auth/register': {
       post: {
@@ -573,7 +593,8 @@ export const openApiDocument = createDocument({
         summary: 'Proposal details',
         description:
           'Visible to the client of the project, the administrator and the specialist ' +
-          'who submitted it; for anyone else it answers 404, as it is absent from their list.',
+          'who submitted it - to the author also after the project went to someone else. ' +
+          'For anyone else it answers 404, as it is absent from their list.',
         requestParams: { path: ProposalParams },
         security: bearer,
         responses: { '200': json(LinkedProposal, 'Proposal'), ...errors, '404': scopedNotFound },

@@ -62,6 +62,10 @@ jobs:
           npm run openapi:export
           git diff --exit-code docs/openapi.json
 
+      # Every documented endpoint must have a request in the Postman collection.
+      - name: Check the Postman collection covers every endpoint
+        run: npm run postman:coverage
+
       - name: Build
         run: |
           npm run build --workspace apps/api

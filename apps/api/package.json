@@ -17,6 +17,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "openapi:export": "tsx src/tools/export-openapi.ts",
+    "postman:coverage": "tsx src/tools/check-postman-coverage.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

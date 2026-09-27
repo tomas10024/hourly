@@ -139,7 +139,7 @@ apie tai, kas kam leidžiama — tas `if` turi keliauti į `services/`.
 
 Grynos funkcijos: gauna duomenis, arba praleidžia, arba meta klaidą. Jų
 nedomina nei `req`, nei `res`, todėl jas galima ištestuoti be serverio ir be
-duomenų bazės — visi 283 testai bėga per kelias sekundes.
+duomenų bazės — visi 286 testai bėga per kelias sekundes.
 
 ```ts
 // services/projects.ts — projektas negali šokinėti tarp bet kokių būsenų
@@ -279,7 +279,8 @@ Atsiuntus `{"status":"PUBLISHED"}` biudžetas nedingsta, o atsiuntus
 | `npm run db:seed` | Įrašo demonstracinius duomenis (pakartojama) |
 | `npm run dev` | Paleidžia viską: bendrus tipus, API ir internetinę aplikaciją |
 | `npm run dev:api` | Tik API (`localhost:4000`) |
-| `npm run demo` | Postman demonstracija per Newman (~11 s, reikia `db:seed`) |
+| `npm run demo` | Postman demonstracija per Newman (~18 s, reikia `db:seed`) |
+| `npm run postman:coverage` | Ar kolekcija kviečia visus OpenAPI metodus |
 | `npm run test` | 233 vienetiniai testai |
 | `npm run lint` | Statinė analizė |
 | `npm run openapi:export` | Atnaujina `docs/openapi.json` |

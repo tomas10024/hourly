@@ -278,6 +278,192 @@
           ]
         },
         {
+          "name": "Prieigos žetonas po atsijungimo (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{newUserToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('kodas SESSION_REVOKED', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('SESSION_REVOKED'));",
+                  "pm.test('žetonas atmestas, nors jo exp dar nepraėjo', () =>",
+                  "  pm.expect(pm.response.headers.get('WWW-Authenticate')).to.include('invalid_token'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login — vėl prisijungti (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('newUserToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /auth/me — keisti vardą ir aprašymą (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{newUserToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Demonstracinė paskyra\",\n  \"bio\": \"Sukurta ir ištrinama demonstracijos metu.\",\n  \"role\": \"ADMIN\",\n  \"isBlocked\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const me = pm.response.json();",
+                  "pm.test('vardas ir aprašymas pakeisti', () => {",
+                  "  pm.expect(me.displayName).to.eql('Demonstracinė paskyra');",
+                  "  pm.expect(me.bio).to.eql('Sukurta ir ištrinama demonstracijos metu.');",
+                  "});",
+                  "pm.test('rolė iš kūno ignoruojama (masinis priskyrimas)', () =>",
+                  "  pm.expect(me.role).to.not.eql('ADMIN'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /auth/me — neteisingas dabartinis slaptažodis (422)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{newUserToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"naujasSlaptazodis1\",\n  \"currentPassword\": \"neteisingas\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                  "pm.test('kodas INVALID_PASSWORD', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('INVALID_PASSWORD'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /auth/register — užimtas el. paštas (409)",
           "request": {
             "method": "POST",
@@ -729,6 +915,38 @@
           ]
         },
         {
+          "name": "GET /health/ready — duomenų bazė pasiekiama (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('duomenų bazė veikia', () => pm.expect(pm.response.json().database).to.eql('up'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST /projects — sukurti projektą (201)",
           "request": {
             "method": "POST",
@@ -965,6 +1183,55 @@
           ]
         },
         {
+          "name": "POST /projects/{projectId}/proposals — konkuruojantis pasiūlymas (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{outsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 1500,\n  \"estimatedDays\": 14,\n  \"message\": \"Galiu atlikti per dvi savaites.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('otherProposalId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "GET /projects/{projectId}/proposals — užsakovas mato pasiūlymus (200)",
           "request": {
             "method": "GET",
@@ -998,7 +1265,55 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 OK', () => pm.response.to.have.status(200));",
-                  "pm.test('sąraše yra vienas pasiūlymas', () => pm.expect(pm.response.json().items).to.have.lengthOf(1));"
+                  "pm.test('užsakovas mato abu pasiūlymus', () => pm.expect(pm.response.json().items).to.have.lengthOf(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /proposals — specialistas mato savo pasiūlymus (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proposals?status=PENDING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proposals"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{specialistToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const items = pm.response.json().items;",
+                  "pm.test('tarp jų – ką tik pateiktas', () =>",
+                  "  pm.expect(items.map((p) => p.id)).to.include(pm.collectionVariables.get('proposalId')));",
+                  "pm.test('tik savi – konkurento nėra', () =>",
+                  "  pm.expect(items.map((p) => p.id)).to.not.include(pm.collectionVariables.get('otherProposalId')));"
                 ]
               }
             }
@@ -1092,6 +1407,132 @@
                 "exec": [
                   "pm.test('200 OK', () => pm.response.to.have.status(200));",
                   "pm.test('pasiūlymas priimtas', () => pm.expect(pm.response.json().status).to.eql('ACCEPTED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Konkuruojantis pasiūlymas atmestas kartu (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals/{{otherProposalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals",
+                "{{otherProposalId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{outsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('atmestas toje pačioje transakcijoje', () =>",
+                  "  pm.expect(pm.response.json().status).to.eql('REJECTED'));",
+                  "pm.test('autoriui siūloma jį ištrinti', () =>",
+                  "  pm.expect(pm.response.json()._links.delete.method).to.eql('DELETE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /projects/{projectId}/proposals/{proposalId} — priimto šalinti negalima (422)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals",
+                "{{proposalId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{specialistToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                  "pm.test('kodas PROPOSAL_ACCEPTED', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('PROPOSAL_ACCEPTED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /projects/{projectId}/proposals/{proposalId} — šalinti savo atmestą (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/proposals/{{otherProposalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}",
+                "proposals",
+                "{{otherProposalId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{outsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
                 ]
               }
             }
@@ -3338,6 +3779,361 @@
               ]
             }
           ]
+        },
+        {
+          "name": "Ribiniai atvejai (niekada 500)",
+          "item": [
+            {
+              "name": "NUL simbolis paieškoje (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects?q=%00",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "%00"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                      "pm.test('kodas INVALID_QUERY', () =>",
+                      "  pm.expect(pm.response.json().error.code).to.eql('INVALID_QUERY'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Neiškoduojamas adresas (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/%E0%A4%A",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "%E0%A4%A"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                      "pm.test('kodas MALFORMED_URL', () =>",
+                      "  pm.expect(pm.response.json().error.code).to.eql('MALFORMED_URL'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "NUL simbolis pavadinime (422)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Projektas \\u0000 su NUL\",\n  \"description\": \"Aprašymas, kuris pakankamai ilgas\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                      "pm.test('kodas VALIDATION_ERROR', () =>",
+                      "  pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Suma netelpa į stulpelį (422)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Per brangus projektas\",\n  \"description\": \"Aprašymas, kuris pakankamai ilgas\",\n  \"budgetMin\": 99999999999999\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                      "pm.test('klaida nurodo lauką budgetMin', () =>",
+                      "  pm.expect(pm.response.json().error.details.properties).to.have.property('budgetMin'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Pozicija už int ribų (422)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects/{{inProgressProjectId}}/tasks",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{inProgressProjectId}}",
+                    "tasks"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Užduotis toli sąraše\",\n  \"position\": 2147483648\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                      "pm.test('kodas VALIDATION_ERROR', () =>",
+                      "  pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Kūnas – masyvas, ne objektas (422)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "[]"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                      "pm.test('kodas VALIDATION_ERROR', () =>",
+                      "  pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Kūnas – null (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/projects",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{clientToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "null"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                      "pm.test('kodas MALFORMED_JSON', () =>",
+                      "  pm.expect(pm.response.json().error.code).to.eql('MALFORMED_JSON'));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Labai tolimas puslapis (200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/projects?page=99999999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "99999999999"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                      "pm.test('tuščias puslapis', () => pm.expect(pm.response.json().items).to.be.empty);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
         }
       ],
       "description": "Kodai 400, 403, 404, 406 ir 422 — kiekvienas su savo priežastimi."
@@ -4791,6 +5587,113 @@
         }
       ],
       "description": "Ištrina viską, ką scenarijus sukūrė, ir patikrina 204 bei 404 atsakymus."
+    },
+    {
+      "name": "6. Bandymų ribojimas",
+      "item": [
+        {
+          "name": "Nesėkmingi prisijungimai (10 × 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{limitEmail}}\",\n  \"password\": \"spejamas-slaptazodis\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// A fresh e-mail per run, so earlier runs do not count against this one.",
+                  "if (!pm.collectionVariables.get('limitAttempts')) {",
+                  "  pm.collectionVariables.set('limitEmail', 'spejikas-' + Date.now() + '@example.lt');",
+                  "  pm.collectionVariables.set('limitAttempts', 0);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "const attempts = Number(pm.collectionVariables.get('limitAttempts')) + 1;",
+                  "pm.collectionVariables.set('limitAttempts', attempts);",
+                  "// The same request again until the limit is used up.",
+                  "if (attempts < 10) postman.setNextRequest(pm.info.requestName);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vienuoliktas bandymas (429)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{limitEmail}}\",\n  \"password\": \"spejamas-slaptazodis\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('429 Too Many Requests', () => pm.response.to.have.status(429));",
+                  "pm.test('kodas TOO_MANY_REQUESTS', () =>",
+                  "  pm.expect(pm.response.json().error.code).to.eql('TOO_MANY_REQUESTS'));",
+                  "pm.test('Retry-After nurodo, kada bandyti vėl', () =>",
+                  "  pm.expect(Number(pm.response.headers.get('Retry-After'))).to.be.above(0));",
+                  "pm.collectionVariables.set('limitAttempts', '');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -4880,6 +5783,18 @@
     },
     {
       "key": "followUrl",
+      "value": ""
+    },
+    {
+      "key": "otherProposalId",
+      "value": ""
+    },
+    {
+      "key": "limitEmail",
+      "value": ""
+    },
+    {
+      "key": "limitAttempts",
       "value": ""
     }
   ]

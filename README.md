@@ -787,31 +787,36 @@ Kolekciją taip pat galima importuoti į Postman
 [aplinka](docs/postman/hourly.local.postman_environment.json)) ir paleisti
 mygtuku „Run collection“.
 
-Kolekciją sudaro šešios dalys:
+Kolekciją sudaro septynios dalys:
 
 | Dalis | Turinys |
 |---|---|
-| 0. Autentifikacija | Registracija, žetono rotacija, pakartotinio panaudojimo aptikimas, atsijungimas, 409 / 422 / 401 / 403 atvejai, JWT turinio patikra ir prisijungimas keturiomis paskyromis |
-| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, pasiūlymai, ataskaita (JSON ir CSV), peržiūros nuoroda; puslapiavimas ir filtrai; hypermedia – užklausos, sekančios `_links` |
-| 2. Klaidų apdorojimas | Kodai 400, 401, 404, 405, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas ir vaikas ne savo tėvo adresu |
+| 0. Autentifikacija | Registracija, žetono rotacija, pakartotinio panaudojimo aptikimas, atsijungimas (prieigos žetonas atmetamas iš karto – `SESSION_REVOKED`), savo paskyros redagavimas (rolė iš kūno ignoruojama), 409 / 422 / 401 / 403 atvejai, JWT turinio patikra ir prisijungimas keturiomis paskyromis |
+| 1. Darbo eiga | Pilnas gyvavimo ciklas: visi 15 pagrindinių metodų, hierarchiniai metodai, du konkuruojantys pasiūlymai (priėmus vieną, kitas atmetamas), ataskaita (JSON ir CSV), peržiūros nuoroda; puslapiavimas ir filtrai; hypermedia – užklausos, sekančios `_links` |
+| 2. Klaidų apdorojimas | Kodai 400, 401, 404, 405, 406 ir 422 su skirtingomis priežastimis, tarp jų – suklastotas žetonas, vaikas ne savo tėvo adresu ir ribiniai atvejai, kurie anksčiau grąžindavo 500 (NUL simbolis, neiškoduojamas adresas, per didelė suma) |
 | 3. Rolės ir teisės | 5.3 skyriaus lentelė: kas mato, kas gali kurti, redaguoti ir šalinti; 403 ir 404 skirtumas |
 | 4. Administratorius | Naudotojų sąrašas, viešas profilis, blokavimas (žetonas atmetamas iš karto), atblokavimas, šalinimas, netinkamo projekto pašalinimas |
 | 5. Valymas | Sukurtų duomenų šalinimas ir 204 bei 404 atsakymų patikra |
+| 6. Bandymų ribojimas | Dešimt nesėkmingų prisijungimų (401), vienuoliktas – 429 su `Retry-After`. El. paštas kiekvienam paleidimui naujas, todėl ankstesni paleidimai neišnaudoja limito |
 
 Scenarijus sukuria viską, ko jam reikia, ir pabaigoje ištrina – taip pat ir
 demonstracijos metu užregistruotą paskyrą, – todėl demonstraciją galima kartoti
 nepaleidžiant pradinių duomenų iš naujo. Rezultatas:
 
 ```
-requests 109 | assertions 245 | failed 0 | total run duration: ~11s
+requests 138 | assertions 295 | failed 0 | total run duration: ~18s
 ```
+
+Kolekcija kviečia **visus** dokumentuotus metodus. Tai tikrina CI:
+`npm run postman:coverage` palygina `docs/openapi.json` operacijas su kolekcijos
+užklausomis ir nepavyksta, jei kuriam nors metodui užklausos nėra.
 
 Kadangi laikai užklausose fiksuoti, testai tikrina ne „kažkokį skaičių“, o
 konkrečias reikšmes: serverio apskaičiuotą 90 minučių trukmę, iš projekto
 paveldėtą 40 EUR/val. įkainį bei 210 minučių ir 140 EUR suvestinę – tą pačią
 tiek ataskaitoje, tiek viešoje peržiūroje.
 
-**3. Vienetiniai testai** – `npm run test` paleidžia 283 testus, tikrinančius
+**3. Vienetiniai testai** – `npm run test` paleidžia 286 testus, tikrinančius
 dalykines taisykles (būsenų perėjimus, įkainio paveldėjimą, trukmės
 skaičiavimą, klaidų kodų politiką), žetonų pasirašymą ir tikrinimą (tarp jų –
 suklastotus ir pasibaigusius žetonus), atnaujinimo žetonų rotaciją, visą rolių

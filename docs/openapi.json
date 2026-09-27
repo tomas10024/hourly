@@ -137,6 +137,67 @@
         }
       }
     },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Operations"
+        ],
+        "summary": "Readiness probe: the service and its database",
+        "description": "Answers 503 when the database cannot be reached, so a load balancer or a deployment slot swap can wait for it.",
+        "responses": {
+          "200": {
+            "description": "Ready to serve",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "database": {
+                      "type": "string",
+                      "const": "up"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "database"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database is unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "degraded"
+                    },
+                    "database": {
+                      "type": "string",
+                      "const": "down"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "database"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/register": {
       "post": {
         "tags": [
@@ -9461,7 +9522,7 @@
           "Proposals"
         ],
         "summary": "Proposal details",
-        "description": "Visible to the client of the project, the administrator and the specialist who submitted it; for anyone else it answers 404, as it is absent from their list.",
+        "description": "Visible to the client of the project, the administrator and the specialist who submitted it - to the author also after the project went to someone else. For anyone else it answers 404, as it is absent from their list.",
         "security": [
           {
             "bearerAuth": []

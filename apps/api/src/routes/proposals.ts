@@ -95,15 +95,18 @@ proposalsRouter.get('/projects/:projectId/proposals', async (req, res) => {
 });
 
 /**
- * GET /projects/{projectId}/proposals/{proposalId} - a single offer, visible
- * to the same people who see it in the project's list.
+ * GET /projects/{projectId}/proposals/{proposalId} - a single offer.
+ *
+ * Visible to the client of the project and the administrator, and always to
+ * the specialist who made it - also after the project went to someone else
+ * and is no longer visible to them, just as it stays in their `GET /proposals`.
  */
 proposalsRouter.get('/projects/:projectId/proposals/:proposalId', async (req, res) => {
   const params = parseParams(ProposalParams, req);
   const auth = requireAuth(req);
 
   const proposal = await findProposalOr404(params);
-  assertCanViewProject(proposal.project, auth);
+  if (proposal.specialistId !== auth.userId) assertCanViewProject(proposal.project, auth);
   assertCanSeeProposal(proposal, proposal.project, auth);
 
   res.json(present(proposal, proposal.project, req));
