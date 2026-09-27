@@ -38,6 +38,16 @@ describe('API foundation', () => {
     expect(res.headers['www-authenticate']).toBe('Bearer realm="hourly"');
   });
 
+  it('answers a malformed percent-encoding in the path with 400, not 500', async () => {
+    const res = await request(app).get('/api/projects/%E0%A4%A').expect(400);
+    expect(res.body.error.code).toBe('MALFORMED_URL');
+  });
+
+  it('answers a NUL character in the search text with 400, not 500', async () => {
+    const res = await request(app).get('/api/projects?q=%00').expect(400);
+    expect(res.body.error.code).toBe('INVALID_QUERY');
+  });
+
   it('no longer accepts the lab 1 X-Actor-Id header as an identity', async () => {
     const res = await request(app)
       .post('/api/projects')

@@ -75,6 +75,17 @@ function isBodyParserError(err: unknown): err is BodyParserError {
 }
 
 /**
+ * Errors that Express and its libraries (router, body-parser, `http-errors`)
+ * raise for a faulty request: they carry a 4xx `status` or `statusCode`.
+ */
+function clientErrorStatus(err: unknown): number | null {
+  if (typeof err !== 'object' || err === null) return null;
+  const { status, statusCode } = err as { status?: unknown; statusCode?: unknown };
+  const code = typeof status === 'number' ? status : statusCode;
+  return typeof code === 'number' && code >= 400 && code < 500 ? code : null;
+}
+
+/**
  * Prisma failures.
  *
  * Recognised by shape (`name` + `code`) rather than `instanceof`, so that this
@@ -119,6 +130,11 @@ function fromPrisma(err: PrismaKnownError): HttpError | null {
         column: err.meta?.column_name,
       });
 
+    // A number outside the column's range (e.g. above `Decimal(10,2)`). The
+    // schemas set limits of their own; this is the safety net behind them.
+    case 'P2020':
+      return new HttpError(422, 'VALUE_OUT_OF_RANGE', 'Field value is out of range');
+
     default:
       return null;
   }
@@ -141,7 +157,7 @@ function fromPrisma(err: PrismaKnownError): HttpError | null {
  *   404 - resource not found
  *   409 - domain conflict (unique constraint violation)
  *   422 - well-formed request with unacceptable content
- *   500 - server fault (the reason is withheld in production)
+ *   500 - server fault (the reason is never sent to the client)
  */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // 1. Zod validation: `details` is a tree of field errors so the client can
@@ -193,15 +209,28 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     }
   }
 
-  // 5. Anything else is our own fault. In production the reason is withheld so
-  //    we do not leak internal details.
-  const message = err instanceof Error ? err.message : String(err);
+  // 5. A client error raised by Express or one of its libraries: a path that
+  //    cannot be percent-decoded (URIError with status 400), an unsupported
+  //    body encoding (415) and the like. They carry their status already;
+  //    only the message is replaced, since it is not written for API clients.
+  const clientStatus = clientErrorStatus(err);
+  if (clientStatus !== null) {
+    const malformedUrl = err instanceof URIError;
+    res.status(clientStatus).json({
+      error: {
+        code: malformedUrl ? 'MALFORMED_URL' : 'BAD_REQUEST',
+        message: malformedUrl ? 'Request URL is not correctly percent-encoded' : 'Bad request',
+      },
+    });
+    return;
+  }
+
+  // 6. Anything else is our own fault. The reason is never sent - not even in
+  //    development, where the defence is shown - because a Prisma message
+  //    reveals the query and the file layout of the server.
   if (!isProduction) console.error(err);
 
   res.status(500).json({
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: isProduction ? 'Internal server error' : message,
-    },
+    error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
   });
 };

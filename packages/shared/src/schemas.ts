@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DateTime, Email, Id, Money, PageQuery } from './common.js';
+import { DateTime, Email, Id, Money, MoneyInput, PageQuery } from './common.js';
 import {
   ProjectOrigin,
   ProjectScope,
@@ -129,9 +129,9 @@ export const CreateProjectInput = z
     description: z.string().min(10).max(10_000),
     origin: ProjectOrigin.default('MARKETPLACE'),
     taskAuthoring: TaskAuthoring.default('CLIENT'),
-    budgetMin: Money.nullish(),
-    budgetMax: Money.nullish(),
-    hourlyRate: Money.nullish(),
+    budgetMin: MoneyInput.nullish(),
+    budgetMax: MoneyInput.nullish(),
+    hourlyRate: MoneyInput.nullish(),
     deadline: DateTime.nullish(),
     externalClientName: z.string().min(2).max(150).nullish(),
   })
@@ -149,9 +149,9 @@ export const UpdateProjectInput = z.object({
   title: z.string().min(3).max(150).optional(),
   description: z.string().min(10).max(10_000).optional(),
   status: ProjectStatus.optional(),
-  budgetMin: Money.nullish(),
-  budgetMax: Money.nullish(),
-  hourlyRate: Money.nullish(),
+  budgetMin: MoneyInput.nullish(),
+  budgetMax: MoneyInput.nullish(),
+  hourlyRate: MoneyInput.nullish(),
   deadline: DateTime.nullish(),
 });
 export type UpdateProjectInput = z.infer<typeof UpdateProjectInput>;
@@ -187,9 +187,9 @@ export const CreateTaskInput = z.object({
   projectId: Id,
   title: z.string().min(3).max(150),
   description: z.string().max(5000).nullish(),
-  hourlyRate: Money.nullish(),
+  hourlyRate: MoneyInput.nullish(),
   estimatedHours: z.number().nonnegative().max(10_000).nullish(),
-  position: z.number().int().min(0).optional(),
+  position: z.number().int().min(0).max(100_000).optional(),
 });
 export type CreateTaskInput = z.infer<typeof CreateTaskInput>;
 
@@ -264,8 +264,8 @@ export type Proposal = z.infer<typeof Proposal>;
 
 export const CreateProposalInput = z
   .object({
-    price: Money.nullish(),
-    hourlyRate: Money.nullish(),
+    price: MoneyInput.nullish(),
+    hourlyRate: MoneyInput.nullish(),
     estimatedDays: z.number().int().positive().max(3650).nullish(),
     message: z.string().max(5000).nullish(),
   })

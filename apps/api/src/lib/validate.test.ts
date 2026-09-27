@@ -60,3 +60,38 @@ describe('parseBody', () => {
     expect(() => parseBody(Body, req)).toThrowError(z.ZodError);
   });
 });
+
+describe('NUL character (PostgreSQL text cannot store it)', () => {
+  it('is rejected in the body as a validation error pointing at the field', () => {
+    const req = fakeRequest({ body: { title: 'Projektas', tags: ['ok', 'a\u0000b'] } });
+    try {
+      parseBody(z.object({ title: z.string() }).loose(), req);
+      expect.unreachable('should have thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(z.ZodError);
+      expect((error as z.ZodError).issues[0]?.path).toEqual(['tags', '1']);
+    }
+  });
+
+  it('is rejected in the query with 400', () => {
+    const req = fakeRequest({ query: { q: '\u0000' } });
+    try {
+      parseQuery(ProjectListQuery, req);
+      expect.unreachable('should have thrown');
+    } catch (error) {
+      expect((error as HttpError).status).toBe(400);
+      expect((error as HttpError).code).toBe('INVALID_QUERY');
+    }
+  });
+
+  it('is rejected in a path parameter with 400', () => {
+    const req = fakeRequest({ params: { token: 'abc\u0000' } });
+    try {
+      parseParams(z.object({ token: z.string() }), req);
+      expect.unreachable('should have thrown');
+    } catch (error) {
+      expect((error as HttpError).status).toBe(400);
+      expect((error as HttpError).code).toBe('INVALID_PATH_PARAM');
+    }
+  });
+});

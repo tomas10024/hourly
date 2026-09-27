@@ -16,6 +16,16 @@ export const DateTime = z.iso.datetime().meta({ example: '2026-09-24T09:00:00.00
 /** A monetary amount in euros, kept to two decimal places. */
 export const Money = z.number().nonnegative().multipleOf(0.01);
 
+/**
+ * A monetary amount accepted from a client.
+ *
+ * Money columns are `Decimal(10,2)`, so the largest storable amount is
+ * 99 999 999.99. Checking it here turns an oversized value into a 422 with
+ * the offending field instead of a database error. Response schemas keep the
+ * unbounded `Money`, because computed totals may legitimately exceed it.
+ */
+export const MoneyInput = Money.max(99_999_999.99);
+
 /** The error envelope shared by every API endpoint. */
 export const ApiError = z.object({
   error: z.object({

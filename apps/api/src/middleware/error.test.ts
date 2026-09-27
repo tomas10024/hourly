@@ -88,12 +88,40 @@ describe('errorHandler', () => {
     expect(res.body.error.code).toBe('INVALID_REFERENCE');
   });
 
-  it('maps an unknown error to 500', async () => {
-    const res = await request(appThatThrows(new Error('unexpected')))
+  it('maps Prisma P2020 (value out of range) to 422', async () => {
+    const prismaError = Object.assign(new Error('Value out of range for the type'), {
+      name: 'PrismaClientKnownRequestError',
+      code: 'P2020',
+    });
+    const res = await request(appThatThrows(prismaError)).post('/test').send({}).expect(422);
+    expect(res.body.error.code).toBe('VALUE_OUT_OF_RANGE');
+  });
+
+  it('maps an unknown error to 500 without revealing its message', async () => {
+    const res = await request(appThatThrows(new Error('Invalid `prisma.project.create()`')))
       .post('/test')
       .send({})
       .expect(500);
     expect(res.body.error.code).toBe('INTERNAL_ERROR');
+    expect(res.body.error.message).toBe('Internal server error');
+  });
+
+  it('maps a path that cannot be percent-decoded to 400 rather than 500', async () => {
+    const app = express();
+    app.get('/test/:id', (_req, res) => res.json({ ok: true }));
+    app.use(errorHandler);
+
+    const res = await request(app).get('/test/%E0%A4%A').expect(400);
+    expect(res.body.error.code).toBe('MALFORMED_URL');
+  });
+
+  it('keeps the 4xx status of a library error it has no special case for', async () => {
+    const unsupported = Object.assign(new Error('unsupported content encoding "br"'), {
+      status: 415,
+      type: 'encoding.unsupported',
+    });
+    const res = await request(appThatThrows(unsupported)).post('/test').send({}).expect(415);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
   });
 
   it('sends the headers an HttpError carries', async () => {
