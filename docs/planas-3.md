@@ -1,368 +1,425 @@
 # Darbų planas: 3 laboratorinis (naudotojo sąsaja ir diegimas)
 
 Dokumentas skirtas darbo eigai, ne ataskaitai. Ataskaita yra [README.md](../README.md),
-ankstesni planai – [planas.md](planas.md), [planas-2.md](planas-2.md).
+ankstesni planai – [planas.md](planas.md), [planas-2.md](planas-2.md),
+[planas-pataisos.md](planas-pataisos.md).
 
-**Tikslas:** Next.js klientas, kuris naudoja visus 38 sąsajos metodus, atrodo
-kaip [Resend](https://resend.com) (tamsi, minimalistinė, „developer tool“
-estetika), tenkina 3 lab. naudotojo sąsajos reikalavimus ir yra įdiegtas Azure.
+**Tikslas:** Next.js klientas, kuriuo galima panaudoti **visus 41** API
+metodus, kuris tenkina oficialius 3 lab. kriterijus (10 balų), yra įdiegtas
+Azure (ir API, ir klientas) ir kurį galima apginti.
 
-Sprendimai, priimti prieš pradedant:
+**Versija 2 (2026-09-27).** Planas perrašytas po 1–2 lab. pataisų ir gavus
+oficialius 3 lab. kriterijus. Kas pasikeitė – 0 skyriuje.
+
+---
+
+## 0. Kas pasikeitė nuo pirmos plano versijos
+
+### API (pataisų pasekmės klientui)
+
+| Pokytis | Ką tai reiškia klientui |
+|---|---|
+| Įdėtiniai URL: `/projects/{p}/tasks/{t}/sessions/{s}`, `/projects/{p}/proposals/{id}`, `/projects/{p}/shares/{id}` | Užklausų kabliai statomi ant naujų adresų; plokščių `/tasks/{id}`, `/sessions/{id}` nebėra |
+| 41 operacija (buvo 37) | Nauji: `GET /api`, `GET /health/ready`, `GET …/proposals/{id}`, `POST /projects/{p}/tasks` |
+| Visi sąrašai – vokas `{ items, page, perPage, total, totalPages, _links }` + filtrai | Viena `Pagination` komponentė, filtrai URL parametruose |
+| `_links` su veiksmais pagal rolę ir būseną | **Mygtukai rodomi pagal nuorodas** – klientas nekartoja teisių logikos; veiksmas vykdomas per `follow(link)` |
+| Sesija turi `projectId` | Laikmatį galima sustabdyti iš „mano žurnalo“ be papildomos užklausos (`_links.stop`) |
+| 401 `SESSION_REVOKED` | Kitas kodas nei `TOKEN_EXPIRED`: ne atnaujinti, o išmesti į `/login` |
+| 429 su `Retry-After` | Prisijungimo formoje – pranešimas „bandykite po N min.“ |
+| `Cache-Control: private, no-cache` + `ETag` | Tarpinis maršrutas turi persiųsti `If-None-Match` / `ETag`; naršyklė pati gaus 304 |
+| Bandymų ribojimas pagal IP | **Už Next tarpinio maršruto ir Azure visi naudotojai atrodys kaip vienas IP** – reikia `X-Forwarded-For` ir `TRUST_PROXY` (B6) |
+
+### Oficialūs kriterijai prieš seną planą
+
+| Kriterijus | Senas planas | Dabar |
+|---|---|---|
+| Paveiksliukai, kurių dydis kinta su langu | Sąmoningai **atsisakyta** („be iliustracijų“) | **Reikia** – F etapas |
+| Modaliniai langai kūrimo / redagavimo / šalinimo formoms | Dalis formų – atskiri puslapiai (`/app/projects/new`) | Visos 3 objektų kūrimo ir redagavimo formos bei visi šalinimai – modaluose |
+| Ikonėlės meniu punktuose | Tik „SVG ikonos“ bendrai | Kiekvienas meniu punktas (šoninė juosta, hamburger, naudotojo meniu) – su ikona |
+| Header ir footer | Programos makete footer'io nebuvo | Plona poraštė ir programos makete |
+| Grįžtamasis ryšys be `alert` | `Toast` buvo, bet ne kaip reikalavimas | Aiški politika (G2) |
+| Sąsaja naudoja **visus** metodus | 37 metodų lentelė | 41 operacijos lentelė (E5) |
+| Duomenys JSON, ne HTML | – | Visi duomenys gaunami naršyklėje per JSON API (sprendimas žemiau) |
+| Publikavimas: backend ir frontend po balą | Buvo | Diegiama **anksti** (H etapas eina po B, ne pabaigoje) |
+
+Ankstesnės užduoties reikalavimai (wireframe'ai, `768px` lūžio taškas, Google
+Fonts, įvairūs įvedimo elementai, skirtingi Header / Content / Footer stiliai)
+lieka – jie neprieštarauja oficialiems kriterijams.
+
+---
+
+## 1. Kriterijai → sprendimas
+
+| Kriterijus (balai) | Kaip tenkinsime | Etapas |
+|---|---|---|
+| **Sąsaja leidžia panaudoti visus API metodus (2)** | | |
+| ↳ CRUD 3 objektams per sąsają | Projektas, užduotis, darbo sesija: sąrašas, peržiūra, kūrimas, redagavimas, šalinimas | E |
+| ↳ registracija, prisijungimas, žetonų atnaujinimas | `AuthProvider`; tylus `/auth/refresh` perkrovus puslapį ir gavus `TOKEN_EXPIRED` | B |
+| ↳ ≥ 4 skirtingi įvedimo elementai | `text`, `email`, `password`, `textarea`, `number`, `date`, `datetime-local`, `search`, `select`, `radio` kortelės, `checkbox`, jungiklis (switch) | C, E |
+| ↳ duomenys JSON, ne HTML | API grąžina tik JSON (ir CSV ataskaitą); klientas duomenis gauna naršyklėje per `fetch` → JSON | B |
+| ↳ visi metodai | 41 operacija → langas (E5 lentelė); `npm run ui:coverage` (J) | E, J |
+| **Paveiksliukai, SVG ikonos, header / footer, modalai (2)** | | |
+| ↳ paveiksliukai, kurių dydis kinta | `next/image` su `fill` + `sizes`, konteineris su `aspect-ratio` | F |
+| ↳ ikonėlės meniu | `lucide-react` (įterptinis SVG) visuose meniu | C, D |
+| ↳ modalai formoms | `Dialog` (natūralus `<dialog>`): kūrimas, redagavimas, šalinimo patvirtinimas | C, E |
+| ↳ header ir footer | Keturi maketai su skirtingais header / footer | D |
+| **Animacijos (1)** | Krovimo skeletai ir sukutis, `hover` perėjimai, modalo / stalčiaus / pranešimo animacijos – visos `@keyframes` viename faile | G |
+| **Vientisa sąsaja ir CSS (2)** | | |
+| ↳ vientisa paletė ir stilistika | Dizaino žetonai (CSS kintamieji) `globals.css` `@theme` | C |
+| ↳ logiškas išdėstymas | Wireframe'ai prieš kodą; vienodas puslapio karkasas (antraštė → veiksmai → turinys) | A, D |
+| ↳ nestandartinis šriftas | Instrument Serif, Inter, Geist Mono per `next/font/google` (`latin-ext` – lietuviškos raidės) | C |
+| ↳ grįžtamasis ryšys be `alert` | Pranešimai (toast), klaidos prie laukų, mygtukų būsenos, patvirtinimo modalai; `alert()` / `confirm()` draudžiami lint taisykle | G |
+| **Responsive (1)** | Lūžio taškas `md` = `48rem` (768px), apibrėžtas **vienoje vietoje** `@theme`; hamburger + stalčius mobiliajame | C, D |
+| **Publikavimas (2)** | API ir klientas – Azure App Service, DB – PostgreSQL Flexible Server; CI/CD iš GitHub | H |
+
+---
+
+## 2. Sprendimai
 
 | Klausimas | Sprendimas | Kodėl |
 |---|---|---|
-| Vizualinis stilius | Resend vizualinė kalba: juodas fonas, serifinės antraštės, ploni rėmeliai, balti „piliulės“ mygtukai, monospace skaičiams | Patinka; aiški, nuosekli dizaino sistema, kurią lengva perkelti į žetonus (C skyrius) |
-| Ką **nekopijuojame** | Resend logotipo, pavadinimo, iliustracijų / 3D paveikslėlių ir licencijuotų šriftų (Domaine, ABC Favorit) | Šriftai komerciniai, o užduotis vis tiek reikalauja Google Fonts; logotipas ir paveikslėliai – prekės ženklas. Išdėstymą, spalvas ir komponentų formą kopijuoti galima |
-| Tema | **Tik tamsi** | Resend taip pat tamsus; dvi temos padvigubintų vizualinį testavimą |
-| Wireframe'ai | Žemos detalės **SVG** failai `docs/wireframes/` | Versijuojami kartu su kodu, rodomi tiesiai README |
-| Titulinis puslapis | **Trumpas:** hero, funkcijos, rolės, CTA | Pakanka reikalavimams; ilgas puslapis be realaus turinio atrodytų tuščias |
-| Kalba | Sąsaja lietuviškai, kodas ir komentarai angliškai | Kaip ir iki šiol |
-| Stilių priemonė | Tailwind CSS v4 (jau įdiegtas) + CSS kintamieji dizaino žetonams | Nereikia naujos priklausomybės; žetonai viename faile |
-| Komponentai | Savi `src/components/ui/*`, be shadcn / Radix | Mažiau priklausomybių; modalą darome su natūraliu `<dialog>` (prieinamumas, `Esc`, fokusas – nemokamai) |
-| Ikonos | `lucide-react` (įterptinis SVG) | Užduoties reikalavimas „SVG ikonos“; stilius artimas Resend ikonoms |
-| Formos | Natūralūs `<form>` + `zod` schemos iš `@hourly/shared` | Tos pačios schemos kaip API – klaidos kliente ir serveryje sutampa; 422 `details` rodomi prie laukų |
-| Užklausų būsena | TanStack Query (jau įdiegta) | Podėlis, invalidacija po mutacijų, `refetchInterval` laikmačiui |
-| Prieigos žetonas | Tik atmintyje; perkrovus puslapį atkuriamas per `/auth/refresh` | Taip suplanuota 2 lab. (14 skyrius); XSS negali pavogti žetono iš `localStorage` |
-| Maršrutų apsauga | Next.js 16 `proxy.ts` (buvęs `middleware.ts`) tikrina, ar yra `hourly_refresh` slapukas; tikra patikra – API | Greitas nukreipimas į `/login` be mirgėjimo; saugumas nepriklauso nuo kliento |
-| Diegimas | API ir web – **Azure App Service** (Linux, Node 22, vienas planas) | Static Web Apps rezervuoja `/api` kelią (G skyrius) |
-| Duomenų bazė | Lokaliai – Docker (kaip dabar); Azure – **PostgreSQL Flexible Server**, ne Docker konteineris | Žr. G skyriaus pastabą „Kodėl ne DB Docker'yje“ |
-
-**Užduoties reikalavimai** (patvirtinta – kitų nėra): wireframe'ai prieš kodą,
-`768px` lūžio taškas, hamburger meniu, modalinis langas, SVG ikonos, Google
-Fonts, perėjimai / animacijos, skirtingi Header / Content / Footer stiliai,
-įvairūs įvedimo elementai, diegimas debesyje. Papildomi, šiam projektui
-prasmingi dalykai – [J skyriuje](#10-etapas-j--papildomi-dalykai-ne-reikalavimai).
+| Karkasas | **Next.js 16** (App Router, React 19) – jau projekte | Vienas TypeScript projektas su API ir `@hourly/shared`; maketai, maršrutai, `next/font`, `next/image` iš dėžės; tarpinis maršrutas leidžia `httpOnly` slapuką laikyti toje pačioje kilmėje. Alternatyvos gynimui – 11 skyriuje |
+| Kur gaunami duomenys | **Naršyklėje** (Client Components + TanStack Query) iš JSON API | Kriterijus „JSON, ne HTML“; prieigos žetonas yra tik naršyklės atmintyje, tad serveris jo ir neturi. Server Components – tik statiniam karkasui ir tituliniam puslapiui |
+| Būsena | Serverio duomenys – TanStack Query podėlis; sesija – `AuthProvider` (React Context); filtrai ir puslapis – URL parametrai; formos – vietinė būsena | Kiekviena būsena ten, kur jai vieta; URL būsena išlieka perkrovus ir dalinantis nuoroda |
+| Vizualinis stilius | Resend įkvėpta tamsi tema (kaip anksčiau sutarta) | Nuosekli sistema, lengvai perkeliama į žetonus |
+| Ko nekopijuojame | Resend logotipo, pavadinimo, iliustracijų, licencijuotų šriftų | Prekės ženklas ir licencijos |
+| Paveiksliukai | **Mūsų pačių programos ekrano nuotraukos** (WebP) tituliniame, funkcijų ir prisijungimo puslapiuose; tuščių būsenų ir 404 iliustracijos – SVG | Autentiški, be licencijų klausimų; *patvirtinti – 12 sk.* |
+| Ikonos | `lucide-react` | Įterptinis SVG, `currentColor`, vienodas stilius |
+| Šriftai | `next/font/google`: Instrument Serif (antraštės), Inter (tekstas), Geist Mono (skaičiai, laikmatis) | Parsisiunčiami kompiliuojant ir tiekiami iš savo domeno – be užklausų į Google, be „šokinėjimo“ |
+| Stiliai | Tailwind CSS v4 + CSS kintamieji; animacijos – `src/styles/animations.css` | Viena vieta žetonams, lūžio taškui ir animacijoms – lengva parodyti ir pakeisti gynime |
+| Komponentai | Savi `src/components/ui/*`, be shadcn / Radix | Mažiau priklausomybių; `<dialog>` duoda `Esc`, fokusą ir `::backdrop` |
+| Formos | Natūralūs `<form>` + Zod schemos iš `@hourly/shared`; 422 `details` → klaida prie lauko | Tos pačios taisyklės kliente ir serveryje |
+| Veiksmai | Pagal `_links`: mygtukas rodomas tik jei yra nuoroda, vykdomas per `follow(link, body)` | HATEOAS klientas; nėra antros teisių kopijos |
+| Maršrutų apsauga | `src/proxy.ts` (Next 16 pavadinimas): `/app/**` be `hourly_refresh` slapuko → `/login?next=…` | Greitas nukreipimas; tikra patikra – API |
+| Diegimas | Azure App Service (Linux, Node 22) – du app'ai viename plane; PostgreSQL Flexible Server | Studento kreditas; Static Web Apps rezervuoja `/api` – konfliktas su tarpiniu maršrutu |
+| Kada diegti | **Anksti** – po B etapo „vaikščiojantis skeletas“ | Diegimo problemos (slapukai, IP, migracijos) paaiškėja, kol dar yra laiko |
 
 ---
 
-## 0. Išeities taškas
+## 3. Etapas A – wireframe'ai (prieš kodą)
 
-**Jau paruošta:**
-
-- `apps/web` – Next.js 16.3, React 19, Tailwind v4, TanStack Query, Geist šriftai per `next/font/google`;
-- `src/app/api/[...path]/route.ts` – tarpinis maršrutas į API (tos pačios kilmės slapukai);
-- `src/lib/api.ts` – `apiFetch` ir `ApiRequestError` (statusas + mašininis kodas);
-- `@hourly/shared` – visos Zod schemos ir tipai (įvesties ir atsakymų);
-- API: 38 metodai (įdėtiniai URL – [planas-pataisos.md](planas-pataisos.md) B etapas), CORS iš `WEB_ORIGIN`, slapuko nustatymai per `env.ts`, visos paslaptys – aplinkos kintamieji.
-
-**Spragos, kurias reikia užtaisyti:**
-
-| # | Spraga | Kur | Pasekmė |
-|---|---|---|---|
-| 1 | Tarpinis maršrutas nepersiunčia `www-authenticate`, `location`, `content-disposition` | `route.ts` `FORWARD_RESPONSE_HEADERS` | CSV ataskaita nepasisiūlys parsisiųsti |
-| 2 | `apiFetch` nesiunčia prieigos žetono ir neatnaujina jo gavus 401 | `lib/api.ts` | Jokia apsaugota užklausa neveiks |
-| 3 | `apiFetch` visada bando `response.json()` | `lib/api.ts` | CSV atsakymas „sugadinamas“ |
-| 4 | Nuoroda į `http://localhost:4000/api/docs` įrašyta kode | `page.tsx` | Įdiegus rodys į niekur |
-| 5 | Nėra `output: "standalone"` | `next.config.ts` | Diegimo paketas su visu `node_modules` |
-| 6 | Specialisto statistikos metodo nėra | API | „Uždarbis“ skaičiuojamas kliente iš `GET /sessions` (arba pridedam `GET /sessions/summary` – *spręsim B etape*) |
-
----
-
-## 1. Etapas A – wireframe'ai (prieš kodą)
-
-`docs/wireframes/` – po vieną failą kiekvienam langui, **dviem pločiais**
-(≥ 768px ir 375px), kad lūžio taškas matytųsi jau projekte.
+`docs/wireframes/*.svg`, žema detalė, kiekvienas langas **dviem pločiais**
+(≥ 768px ir 375px), kad lūžio taškas matytųsi projekte.
 
 | # | Langas | Pastabos |
 |---|---|---|
-| W1 | Titulinis `/` | Hero, funkcijos, rolių kortelės, CTA, poraštė (4 sekcijos) |
-| W2 | Prisijungimas / registracija | Centruota kortelė; registracijoje – rolės radio |
-| W3 | Aikštelė `/projects` | Paieška, filtrai, kortelių sąrašas, puslapiavimas |
-| W4 | Viešas projektas `/projects/[id]` + pasiūlymo modalas | |
-| W5 | Valdymo skydelis `/app` | Šoninė juosta; mobiliajame – hamburger stalčius |
-| W6 | Projekto darbo aplinka `/app/projects/[id]` | Skirtukai: užduotys, sesijos, pasiūlymai, nuorodos, ataskaita, nustatymai |
-| W7 | Darbo žurnalas `/app/sessions` + laikmatis | Resend „Emails“ lentelės analogas |
-| W8 | Vieša peržiūra `/p/[token]` | |
-| W9 | Administratoriaus sritis | Naudotojų lentelė, blokavimo patvirtinimo modalas |
+| W1 | Titulinis `/` | Header, hero su ekrano nuotrauka, 3 funkcijos su nuotraukomis, rolės, CTA, footer |
+| W2 | Prisijungimas / registracija | Kortelė + nuotrauka šone (mobiliajame paslepiama) |
+| W3 | Aikštelė `/projects` | Paieška, filtrai, kortelės, puslapiavimas |
+| W4 | Viešas projektas + pasiūlymo modalas | |
+| W5 | Programos karkasas `/app` | Šoninė juosta su ikonomis; mobiliajame – hamburger stalčius |
+| W6 | Projekto darbo aplinka | Skirtukai: užduotys, pasiūlymai, nuorodos, ataskaita, nustatymai |
+| W7 | Užduoties šoninis skydelis + sesijų sąrašas | |
+| W8 | Darbo žurnalas + laikmatis + rankinio įvedimo modalas | |
+| W9 | Administratoriaus sritis | Naudotojų lentelė, blokavimo modalas |
+| W10 | Modalai | Kūrimo / redagavimo forma, šalinimo patvirtinimas, „nuoroda rodoma tik kartą“ |
 
-Ataskaitoje (README 9 sk.) kiekvienas wireframe'as dedamas šalia realizacijos
-ekrano nuotraukos.
+README bus rodomi šalia realizacijos nuotraukų.
 
 ---
 
-## 2. Etapas B – duomenų sluoksnis ir autentifikacija
+## 4. Etapas B – duomenų sluoksnis ir autentifikacija
 
-### B1. `route.ts` – spraga 1
+### B1. Tarpinis maršrutas `src/app/api/[...path]/route.ts`
 
-`FORWARD_RESPONSE_HEADERS` papildyti `www-authenticate`, `location`,
-`content-disposition`, `cache-control`.
+| Kryptis | Persiunčiamos antraštės |
+|---|---|
+| Į API | `authorization`, `content-type`, `cookie`, `accept`, `if-none-match`, **`x-forwarded-for`** (papildyta kliento IP) |
+| Į naršyklę | `content-type`, `set-cookie`, `x-robots-tag`, **`location`, `content-disposition`, `cache-control`, `etag`, `www-authenticate`, `retry-after`, `allow`, `ratelimit`, `ratelimit-policy`** |
+
+Taip pat `HEAD`, 304 be kūno, `API_URL` iš aplinkos.
 
 ### B2. `src/lib/auth.tsx` – `AuthProvider`
 
-- būsena: `accessToken` (atmintyje), `user` (`CurrentUser`), `status: loading | authenticated | guest`;
-- įkeliant – vienas `POST /auth/refresh`; sėkmė → `GET /auth/me`, nesėkmė → `guest`;
-- `login`, `register`, `logout` – kviečia `/auth/*` ir atnaujina būseną, `logout` išvalo Query podėlį.
+- būsena: `accessToken` (tik atmintyje), `user`, `status: loading | authenticated | guest`;
+- įkeliant – `POST /auth/refresh` → `GET /auth/me`; nesėkmė → `guest`;
+- `login`, `register`, `logout`; `logout` išvalo Query podėlį;
+- nukreipimas į `/login?next=…` gavus `SESSION_REVOKED`, `REFRESH_TOKEN_REUSED`, `INVALID_REFRESH_TOKEN`.
 
-### B3. `src/lib/api.ts` – spragos 2 ir 3
+### B3. `src/lib/api.ts`
 
-- `Authorization: Bearer` iš `AuthProvider` (per modulio lygio „getter“, kad `apiFetch` liktų funkcija);
-- gavus 401 `TOKEN_EXPIRED` – **vienas** bendras `/auth/refresh` (lygiagrečios užklausos laukia to paties pažado) ir užklausos pakartojimas; antras 401 → `guest` ir nukreipimas į `/login?next=…`;
-- `apiDownload(path)` – `Accept: text/csv`, `blob`, failo vardas iš `Content-Disposition`.
+- `Authorization: Bearer` iš `AuthProvider` (modulio „getter“);
+- 401 `TOKEN_EXPIRED` → **vienas** bendras `/auth/refresh` (lygiagrečios užklausos laukia to paties pažado) ir pakartojimas;
+- 401 `SESSION_REVOKED` → `guest` + pranešimas „Prisijungimas baigėsi“;
+- 429 → `ApiRequestError` su `retryAfter` sekundėmis;
+- 204 ir ne-JSON atsakymai; `apiDownload()` CSV ataskaitai (vardas iš `Content-Disposition`);
+- `follow(link, body?)` – vykdo `_links` veiksmą (`href` be `/api`, `method`).
 
-### B4. `src/lib/queries/*` – po failą resursui
+### B4. `src/lib/queries/*`
 
-`projects.ts`, `tasks.ts`, `sessions.ts`, `proposals.ts`, `shares.ts`,
-`users.ts`, `auth.ts`: užklausų raktai, `useXxx` ir `useXxxMutation` kabliai,
-invalidacija po mutacijų (pvz., priėmus pasiūlymą – `projects`, `proposals`).
+Po failą resursui (`projects`, `tasks`, `sessions`, `proposals`, `shares`, `users`,
+`auth`, `root`): užklausų raktų gamyklos, `useXxx` / `useXxxMutation`,
+invalidacija po mutacijų. Bendri tipai `Page<T>`, `Links` iš `@hourly/shared`.
 
-### B5. `proxy.ts` – maršrutų apsauga
+### B5. `src/proxy.ts` – maršrutų apsauga
 
-`/app/**` be `hourly_refresh` slapuko → `/login?next=…`; `/login`, `/register`
-su slapuku → `/app`. **Prieš rašant – perskaityti**
-`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`
-(Next 16 pakeitimai).
+`/app/**` be `hourly_refresh` → `/login?next=…`; `/login`, `/register` su
+slapuku → `/app`. **Prieš rašant perskaityti**
+`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`.
 
----
+### B6. API pakeitimai diegimui
 
-## 3. Etapas C – dizaino sistema („Resend“ žetonai)
-
-Išmatuota iš resend.com (2026-09-24):
-
-| Žetonas | Reikšmė | Resend originalas |
-|---|---|---|
-| `--bg` | `#000000` | `rgb(0,0,0)` |
-| `--fg` | `#f0f0f0` | `rgb(240,240,240)` |
-| `--muted` | `#a1a4a5` | pastraipų spalva |
-| `--surface` | `rgba(255,255,255,0.03)` | kortelių fonas |
-| `--border` | `rgba(255,255,255,0.08)`, hover `0.14` | ploni rėmeliai |
-| `--radius-button` | `16px` (piliulė ~36px aukščio) | `16px` |
-| `--radius-card` | `16–20px` | |
-| Antraštė H1 | serifas, 400, ~96px (mob. ~48px), `letter-spacing: -0.01em`, gradientas baltas → pilkas | Domaine, 96px, 400 |
-| Tekstas | Inter 14–16px | Inter |
-| Skaičiai, kodas, laikmatis | monospace | Commit Mono |
-
-**Google Fonts pakaitalai** (visi su `latin-ext`, t. y. ąčęėįšųūž):
-
-| Paskirtis | Šriftas |
-|---|---|
-| Antraštės | **Instrument Serif** (artimiausias Domaine; alternatyva – Newsreader) |
-| Tekstas | **Inter** |
-| Monospace | **Geist Mono** (jau naudojamas) |
-
-**Būsenų ženkleliai** (Resend „Delivered / Bounced“ stilius – spalvotas fonas
-10 %, rėmelis 20 %, tekstas 100 %):
-
-| Būsena | Spalva |
-|---|---|
-| `DRAFT`, `TODO` | pilka |
-| `PUBLISHED`, `PENDING` | mėlyna |
-| `IN_PROGRESS`, vykdoma sesija | gintarinė (su pulsuojančiu tašku) |
-| `COMPLETED`, `ACCEPTED`, `DONE` | žalia |
-| `REJECTED`, `WITHDRAWN`, užblokuotas | raudona |
-
-**UI komponentai** `src/components/ui/`: `Button` (primary – baltas fonas, juodas
-tekstas; secondary – rėmelis; ghost), `Input`, `Textarea`, `Select`, `Checkbox`,
-`Radio`, `Badge`, `Card`, `Table`, `Tabs`, `Dialog`, `Drawer`, `DropdownMenu`,
-`Toast`, `EmptyState`, `Skeleton`, `Kbd`, `CopyField` (peržiūros nuorodai).
+- `TRUST_PROXY` (šuolių skaičius) `env.ts` vietoj `app.set('trust proxy', 1)`: naršyklė → Azure (web) → Next → Azure (API) → API. Kitaip bandymų ribojimas visus naudotojus laikys vienu IP.
+- Testas: `X-Forwarded-For` su dviem adresais → `req.ip` yra kliento.
 
 ---
 
-## 4. Etapas D – maketai (Header / Content / Footer)
+## 5. Etapas C – dizaino sistema
+
+### C1. Žetonai (`src/app/globals.css`, `@theme`)
+
+| Žetonas | Reikšmė |
+|---|---|
+| `--color-bg` / `--color-fg` | `#000000` / `#f0f0f0` |
+| `--color-muted` | `#a1a4a5` (kontrastas su juodu 8.4:1) |
+| `--color-surface`, `--color-border` | `rgba(255,255,255,.03)`, `rgba(255,255,255,.08)` → hover `.14` |
+| Būsenų spalvos | pilka (juodraštis, TODO), mėlyna (paskelbtas, laukia), gintarinė (vykdoma), žalia (atlikta, priimta), raudona (atmesta, užblokuota) |
+| `--radius-button` / `--radius-card` | `16px` / `20px` |
+| **`--breakpoint-md`** | **`48rem`** – vienintelis lūžio taškas, keičiamas čia |
+
+### C2. Šriftai (`src/app/fonts.ts`)
+
+`next/font/google`: Instrument Serif, Inter, Geist Mono; `subsets: ['latin', 'latin-ext']`,
+`display: 'swap'`, CSS kintamieji → `@theme` `--font-serif`, `--font-sans`, `--font-mono`.
+
+### C3. Komponentai `src/components/ui/`
+
+`Button` (primary / secondary / ghost / danger, `loading` būsena su sukučiu),
+`Field` (etiketė + klaida iš 422), `Input`, `Textarea`, `Select`, `Checkbox`,
+`Switch`, `RadioCards`, `Badge`, `Card`, `Table` (mobiliajame → kortelės),
+`Tabs`, **`Dialog`**, **`ConfirmDialog`**, **`Drawer`**, `DropdownMenu`,
+**`Toast`**, `EmptyState`, `Skeleton`, `Spinner`, `Pagination`, `CopyField`,
+`Logo` (savas SVG).
+
+---
+
+## 6. Etapas D – maketai
 
 | Maketas | Kam | Header | Content | Footer |
 |---|---|---|---|---|
-| `(marketing)` | `/`, `/projects`, `/projects/[id]` | Lipni, permatoma su `backdrop-blur`, ploną rėmelį įgyja tik slenkant | Centruotas, `max-w-6xl`, didelės sekcijų paraštės | Stulpeliais (Produktas, Ištekliai, Paskyra), pilkas smulkus tekstas, `/api/docs` nuoroda |
-| `(auth)` | `/login`, `/register` | Tik logotipas | Centruota kortelė | Viena eilutė |
-| `app` | `/app/**` | Viršutinė juosta: puslapio pavadinimas, veikiantis laikmatis, naudotojo meniu | Šoninė juosta 240px + turinys | – (šoninės juostos apačioje – naudotojas) |
+| `(marketing)` | `/`, `/projects`, `/projects/[id]` | Lipni, permatoma su `backdrop-blur`; navigacija su ikonomis; mobiliajame – hamburger | `max-w-6xl`, didelės sekcijų paraštės | Stulpeliai (produktas, ištekliai, paskyra), API būsena (`/health/ready`) |
+| `(auth)` | `/login`, `/register` | Tik logotipas | Kortelė + ekrano nuotrauka šone (≥ md) | Viena eilutė |
+| `app` | `/app/**` | Viršutinė juosta: puslapio pavadinimas, veikiantis laikmatis, naudotojo meniu (ikonos) | Šoninė juosta 240px (ikonos) + turinys | Plona: versija, API būsena, nuoroda į `/api/docs` |
 | `public-share` | `/p/[token]` | „Tik skaitymui“ juosta, galiojimo laikas | Suvestinė + užduotys | „Sukurta su Hourly“ |
 
-**Lūžio taškas `768px` (Tailwind `md:`):** žemiau – šoninė juosta tampa
-hamburger stalčiumi (`Drawer`, išslysta iš kairės), marketingo navigacija –
-išskleidžiamu meniu, lentelės – kortelėmis, skirtukai – horizontaliai slenkami.
+**< 768px:** šoninė juosta → hamburger + `Drawer`; marketingo navigacija →
+išskleidžiamas meniu; lentelės → kortelės; skirtukai – horizontaliai slenkami.
 
 ---
 
-## 5. Etapas E – puslapiai
+## 7. Etapas E – puslapiai ir visi metodai
 
-### E1. Vieši
+### E1. Vieši puslapiai
 
-| Kelias | Turinys | API |
-|---|---|---|
-| `/` | Trumpas, 4 sekcijos: **hero** („Laikas, kurį galima parodyti“ + gyvo laikmačio / ataskaitos pavyzdžio kortelė vietoj Resend kodo bloko), **funkcijos** (3–4 kortelės: aikštelė, laikmatis, ataskaita, peržiūros nuoroda), **rolės** (užsakovas, specialistas, tiesioginis darbas), **CTA** | `GET /health` (būsenos taškas poraštėje) |
-| `/projects` | Paieška (`type="search"`), būsenos filtras, puslapiavimas | `GET /projects?scope=marketplace` |
-| `/projects/[id]` | Aprašymas, biudžetas, terminas; specialistui – **„Pateikti pasiūlymą“ modalas** | `GET /projects/{id}`, `POST /projects/{id}/proposals` |
-| `/p/[token]` | Užduotys, valandos, suma; `noindex` | `GET /public/projects/{token}` |
-| `/login`, `/register` | Rolės pasirinkimas radio kortelėmis | `POST /auth/login`, `POST /auth/register` |
+| Kelias | Turinys |
+|---|---|
+| `/` | Hero + ekrano nuotrauka, 3 funkcijos su nuotraukomis, rolės, CTA |
+| `/projects` | Aikštelė: paieška (`search`), būsena ir kilmė (`select`), puslapiavimas |
+| `/projects/[id]` | Projektas ir užduotys; specialistui – **„Pateikti pasiūlymą“ modalas** (jei yra `_links['submit-proposal']`) |
+| `/p/[token]` | Vieša peržiūra; `noindex`, `Referrer-Policy: no-referrer` |
+| `/login`, `/register` | Registracijoje rolė – `RadioCards`; 429 → „bandykite po N min.“ |
 
-### E2. Valdymo skydelis (`/app`)
+### E2. Programa (`/app`)
 
-Šoninė juosta (Resend: Emails, Broadcasts, Audience… → mūsų):
-**Apžvalga · Projektai · Aikštelė · Pasiūlymai · Darbo žurnalas · Paskyra**,
-administratoriui – **Naudotojai · Visi projektai**.
+Šoninė juosta (ikonos): **Apžvalga · Projektai · Aikštelė · Pasiūlymai ·
+Darbo žurnalas · Paskyra**; administratoriui – **Naudotojai · Visi projektai**.
+Punktai sudaromi iš `GET /api` `_links` (įėjimo taškas).
 
-| Kelias | Turinys | API |
-|---|---|---|
-| `/app` | Apžvalga: veikianti sesija, savaitės valandos, uždarbis, naujausios užduotys | `GET /sessions`, `GET /tasks`, `GET /projects?scope=owned\|assigned` |
-| `/app/projects` | Skirtukai „Sukurti“ / „Vykdomi“ | `GET /projects?scope=owned\|assigned` |
-| `/app/projects/new` | Forma: pavadinimas, aprašymas, biudžeto rėžiai (`number`), terminas (`date`), užduočių režimas (radio), tiesioginiam darbui – užsakovo vardas, įkainis | `POST /projects` |
-| `/app/projects/[id]` | Skirtukai (žr. žemiau) | `GET /projects/{id}` |
-| ↳ Užduotys | Sąrašas, būsenos keitimas, perrikiavimas, patvirtinimas | `GET/POST /projects/{id}/tasks`, `PATCH/DELETE /projects/{id}/tasks/{taskId}` |
-| ↳ Užduoties šoninis skydelis | Užduoties duomenys ir jos sesijos | `GET /projects/{id}/tasks/{taskId}`, `GET /projects/{id}/tasks/{taskId}/sessions` |
-| ↳ Pasiūlymai | Priimti / atmesti (patvirtinimo modalas) | `GET /projects/{id}/proposals`, `GET/PATCH /projects/{id}/proposals/{proposalId}` |
-| ↳ Peržiūros nuorodos | Sugeneruoti → **modalas „Nuoroda rodoma tik kartą“** (kaip Resend API rakto sukūrimas), atšaukti | `GET/POST /projects/{id}/shares`, `DELETE /projects/{id}/shares/{shareId}` |
-| ↳ Ataskaita | Lentelė pagal užduotis + „Parsisiųsti CSV“ | `GET /projects/{id}/report` (JSON ir CSV) |
-| ↳ Nustatymai | Redaguoti, paskelbti, užbaigti, šalinti („pavojaus zona“ kaip Resend) | `PATCH/DELETE /projects/{id}` |
-| `/app/sessions` | Darbo žurnalas (Resend „Emails“ lentelė), laikmatis, **rankinio įvedimo modalas** (`datetime-local`) | `GET /sessions`, `POST /projects/{id}/tasks/{taskId}/sessions`, `PATCH/DELETE …/sessions/{sessionId}` |
-| `/app/sessions/[id]` | Sesijos detalės (Resend el. laiško detalės puslapio analogas) | `GET /projects/{id}/tasks/{taskId}/sessions/{sessionId}` |
-| `/app/proposals` | Savo pasiūlymai, atšaukti, šalinti | `GET /proposals`, `PATCH/DELETE /projects/{id}/proposals/{proposalId}` |
-| `/app/settings` | Vardas, aprašymas, slaptažodžio keitimas, atsijungti | `GET/PATCH /auth/me`, `POST /auth/logout` |
-| `/app/users/[id]` | Viešas profilis | `GET /users/{id}` |
-| `/app/admin/users` | Lentelė, blokuoti / atblokuoti, šalinti | `GET /users`, `PATCH/DELETE /users/{id}` |
-| `/app/admin/projects` | Visi projektai, šalinti | `GET /projects?scope=all`, `DELETE /projects/{id}` |
-
-**Rezultatas:** naudojami visi 38 metodai (`GET /health/ready` – tik diegimo
-patikrai). Ši lentelė pereis į README kaip „metodas → langas“ atitiktis.
+| Kelias | Turinys |
+|---|---|
+| `/app` | Apžvalga: veikianti sesija, savaitės valandos ir uždarbis (`GET /sessions?from=…`), naujausios užduotys |
+| `/app/projects` | Skirtukai „Mano“ / „Vykdomi“; **„Naujas projektas“ – modalas** |
+| `/app/projects/[id]` | Skirtukai: Užduotys · Pasiūlymai · Nuorodos · Ataskaita · Nustatymai |
+| ↳ Užduotys | Sąrašas su filtrais; **kūrimo ir redagavimo modalai**; būsenos keitimas; patvirtinimas; šalinimo patvirtinimas |
+| ↳ Užduoties skydelis (`Drawer`) | Užduotis ir jos sesijos (3 lygių adresas); **sesijos kūrimo / redagavimo modalas**; šalinimas |
+| ↳ Pasiūlymai | Priimti / atmesti (patvirtinimo modalas); pasiūlymo detalės |
+| ↳ Nuorodos | **Sugeneruoti → modalas „nuoroda rodoma tik kartą“**; filtras aktyvios / neaktyvios; atšaukti |
+| ↳ Ataskaita | Lentelė pagal užduotis; „Parsisiųsti CSV“ |
+| ↳ Nustatymai | **Redagavimo modalas**; paskelbti, užbaigti, atšaukti (pagal `_links`); „pavojaus zona“ – šalinimas |
+| `/app/sessions` | Darbo žurnalas: laikotarpis (`date`), „tik vykdomos“ (`Switch`); **rankinio įvedimo modalas** (`datetime-local`) |
+| `/app/sessions/[projectId]/[taskId]/[sessionId]` | Sesijos detalės |
+| `/app/proposals` | Savo pasiūlymai, būsenos filtras; atsiimti, šalinti |
+| `/app/settings` | Vardas, aprašymas, slaptažodžio keitimas (modalas); atsijungti |
+| `/app/users/[id]` | Viešas profilis |
+| `/app/admin/users` | Lentelė, paieška, rolės ir blokavimo filtrai; blokuoti / atblokuoti, šalinti (modalai) |
+| `/app/admin/projects` | Visi projektai (`scope=all`); šalinti |
 
 ### E3. Laikmatis
 
-Viršutinėje juostoje – veikianti sesija (`mm:ss` monospace, pulsuojantis
-gintarinis taškas). „Pradėti“ → užduoties pasirinkimas iš `GET /tasks` →
-`POST /projects/{id}/tasks/{taskId}/sessions`; „Sustabdyti“ → `PATCH …/sessions/{sessionId}`
-(adresas sudaromas iš sesijos `projectId` ir `taskId`). Laikas skaičiuojamas iš
-`startedAt` kliente (`requestAnimationFrame` / 1 s intervalas), ne apklausiant API.
-409 (jau yra neužbaigta sesija) → pranešimas su nuoroda į ją.
+Viršutinėje juostoje – veikianti sesija (`GET /sessions?running=true`), `mm:ss`
+monospace, pulsuojantis taškas. „Pradėti“ → užduoties pasirinkimas (`GET /tasks`,
+`select`) → `POST …/tasks/{t}/sessions`; „Sustabdyti“ → `follow(_links.stop, { endedAt })`.
+409 → pranešimas su nuoroda į veikiančią sesiją.
 
-### E4. Klaidų ir tuščių būsenų politika
+### E4. Klaidos ir tuščios būsenos
 
 | Atsakymas | Rodymas |
 |---|---|
-| 422 su `details` | Klaida prie konkretaus lauko |
-| 409 | `Toast` su paaiškinimu |
-| 403 | „Neturite teisės“ puslapis / pranešimas |
-| 404 | Next `not-found.tsx` Resend stiliumi |
-| 502 `API_UNREACHABLE` | Juosta viršuje „Serveris nepasiekiamas“ |
-| Tuščias sąrašas | `EmptyState` su ikona ir veiksmo mygtuku |
-| Kraunama | `Skeleton`, ne sukutis |
+| 422 | Klaida prie lauko |
+| 409 | Pranešimas su paaiškinimu |
+| 403 / 404 | `not-found.tsx` / „Neturite teisės“ puslapis |
+| 401 `SESSION_REVOKED` | Į `/login` su pranešimu |
+| 429 | „Per daug bandymų, bandykite po N min.“ |
+| 502 `API_UNREACHABLE` | Juosta viršuje |
+| Tuščias sąrašas | `EmptyState` su SVG iliustracija ir veiksmu |
+| Kraunama | `Skeleton` |
+
+### E5. Visų 41 operacijos panaudojimas
+
+| Operacija | Kur |
+|---|---|
+| `GET /` | Šoninės juostos punktai (`_links`) |
+| `GET /health`, `GET /health/ready` | Poraštės API būsenos taškas |
+| `POST /auth/register`, `/login`, `/refresh`, `/logout` | Registracija, prisijungimas, tylus atnaujinimas, atsijungimas |
+| `GET`, `PATCH /auth/me` | Paskyra |
+| `GET /projects` (`marketplace`, `owned`, `assigned`, `all`) | Aikštelė, „Mano projektai“, administratorius |
+| `POST /projects`; `GET`, `PATCH`, `DELETE /projects/{id}` | Naujo projekto modalas; projekto puslapis; nustatymai |
+| `GET /projects/{id}/report` (JSON ir CSV) | Ataskaitos skirtukas |
+| `GET /tasks` | Apžvalga, laikmačio užduoties pasirinkimas |
+| `GET`, `POST /projects/{p}/tasks`; `GET`, `PATCH`, `DELETE …/tasks/{t}` | Užduočių skirtukas ir skydelis |
+| `GET /sessions` | Darbo žurnalas, apžvalga, laikmatis |
+| `GET`, `POST …/tasks/{t}/sessions`; `GET`, `PATCH`, `DELETE …/sessions/{s}` | Užduoties skydelis, sesijos detalės, laikmatis |
+| `GET /proposals` | „Mano pasiūlymai“ |
+| `GET`, `POST /projects/{p}/proposals`; `GET`, `PATCH`, `DELETE …/proposals/{id}` | Projekto puslapis (modalas), pasiūlymų skirtukas |
+| `GET`, `POST /projects/{p}/shares`; `DELETE …/shares/{id}` | Nuorodų skirtukas |
+| `GET /public/projects/{token}` | `/p/[token]` |
+| `GET /users`; `GET`, `PATCH`, `DELETE /users/{id}` | Administratorius; viešas profilis |
+
+### E6. Įvedimo elementai
+
+`text`, `email`, `password`, `textarea`, `number` (biudžetas, įkainis,
+valandos, galiojimo dienos), `date` (terminas, laikotarpis), `datetime-local`
+(sesija), `search`, `select` (būsena, užduotis), `RadioCards` (rolė, projekto
+kilmė, užduočių autorius), `checkbox` (sutikimas), `Switch` („tik vykdomos“).
 
 ---
 
-## 6. Etapas F – animacijos ir perėjimai
+## 8. Etapas F – paveiksliukai
 
-Visos – CSS (`transition`, `@keyframes`), be bibliotekos; `prefers-reduced-motion`
-jas išjungia.
+| Vieta | Paveiksliukas | Dydžio kitimas |
+|---|---|---|
+| Titulinio hero | Programos darbo aplinkos ekrano nuotrauka | `fill`, `sizes="(max-width: 768px) 100vw, 60vw"`, `aspect-ratio: 16/10` |
+| Funkcijų sekcija | 3 nuotraukos (laikmatis, ataskaita, peržiūros nuoroda) | 1 stulpelis mobiliajame → 3 plačiame |
+| Prisijungimas / registracija | Nuotrauka šone | Paslepiama < 768px |
+| Tuščios būsenos, 404 | SVG iliustracijos | Vektorinės – mastelis be kokybės praradimo |
 
-- hero antraštė ir sekcijos – `fade-up` atsiradimas (`IntersectionObserver`);
-- modalas – `opacity` + `scale(0.96 → 1)`, fonas – `backdrop-blur`;
-- stalčius – `translateX(-100% → 0)`;
-- mygtukai, eilutės, kortelės – `hover` rėmelio ir fono perėjimai (150 ms);
-- skirtukų indikatorius slenka tarp skirtukų;
-- veikiančios sesijos taškas – pulsavimas;
-- `Toast` – įslydimas iš apačios.
+- Nuotraukos daromos iš **mūsų pačių** programos (1440px ir 390px pločiais), `public/images/*.webp`.
+- `next/image` pats sugeneruoja `srcset` ir WebP / AVIF; `alt` tekstai lietuviškai.
+- Kadangi nuotraukoms reikia gatavų langų, etapas vykdomas po E; iki tol – laikini pakaitalai.
+- README – paveiksliukų šaltiniai.
 
 ---
 
-## 7. Etapas G – diegimas Azure
+## 9. Etapas G – animacijos ir grįžtamasis ryšys
+
+### G1. Animacijos (`src/styles/animations.css` – visos `@keyframes` vienoje vietoje)
+
+| Kada | Animacija |
+|---|---|
+| Duomenys kraunami | `Skeleton` blizgesys (`shimmer`), sukutis mygtuke |
+| Užvedus pelę | Mygtukų, eilučių, kortelių, meniu punktų rėmelio ir fono perėjimai (150 ms); ikonos poslinkis |
+| Modalas | `opacity` + `scale(.96 → 1)`, fonas `backdrop-blur` |
+| Stalčius | `translateX(-100% → 0)` |
+| Pranešimas | Įslydimas iš apačios, išnykimas |
+| Veikianti sesija | Pulsuojantis taškas |
+| Titulinis | Sekcijų `fade-up` (`IntersectionObserver`) |
+
+`prefers-reduced-motion` jas išjungia.
+
+### G2. Grįžtamasis ryšys
+
+- Kiekviena mutacija: sėkmė → pranešimas; klaida → pranešimas arba klaida prie lauko;
+- mygtukas vykdant – `disabled` + sukutis; optimistiniai atnaujinimai būsenoms ir laikmačiui;
+- šalinimas – tik per `ConfirmDialog`;
+- `alert`, `confirm`, `prompt` – draudžiami ESLint taisykle `no-alert`.
+
+---
+
+## 10. Etapas H – diegimas (anksti)
 
 | Dalis | Paslauga | Pastabos |
 |---|---|---|
-| DB | Azure Database for PostgreSQL Flexible Server, Burstable B1ms | TLS, užkarda – tik Azure paslaugoms |
-| API | App Service (Linux, Node 22) | `npm run db:deploy` prieš paleidimą; `COOKIE_SECURE=true`, `WEB_ORIGIN` = web adresas |
-| Web | App Service (tas pats planas) | `output: "standalone"`, `API_URL` = API vidinis adresas |
+| DB | Azure Database for PostgreSQL Flexible Server, Burstable B1ms | TLS; užkarda – tik Azure paslaugoms |
+| API | App Service (Linux, Node 22) | `db:deploy` prieš paleidimą; `COOKIE_SECURE=true`; `TRUST_PROXY`; sveikatos patikra `/api/health/ready` |
+| Web | App Service (tas pats planas) | `output: "standalone"`; `API_URL` – API adresas |
 | CI/CD | `.github/workflows/deploy.yml` | Po sėkmingo `ci.yml` į `main`: migracijos → API → web |
 
-**Kodėl ne Static Web Apps:** Next.js „hybrid“ palaikymas ten vis dar ribotas, o
-`/api` kelias SWA rezervuotas jo paties funkcijoms – konfliktuoja su mūsų
-tarpiniu maršrutu `/api/[...path]`. Pasirinkus App Service reikės atnaujinti
-README 2 skyrių ir `docs/deployment-diagram.jpg`.
+1. **Po B etapo:** diegiamas skeletas (titulinis + prisijungimas) – patikrinama, ar veikia slapukas, `/auth/refresh`, bandymų ribojimas su tikru IP.
+2. `db:seed` produkcijoje vieną kartą.
+3. **Pabaigoje:** galutinis diegimas, patikra: `/api/health/ready`, prisijungimas, CSV, `Secure` slapukas, 429 per tikrą kelią.
+4. README 2 skyrius ir diegimo diagrama – App Service vietoj Static Web Apps.
 
-**Kodėl ne DB Docker'yje (Azure).** Docker lieka lokaliam darbui ir CI – ten jis
-tinka. Debesyje jis būtų prastesnis pasirinkimas:
-
-- App Service ir Container Apps konteineriai neturi nuolatinio disko – perkrovus konteinerį duomenų bazė dingsta;
-- prijungiamas Azure Files tomas veikia per SMB, o PostgreSQL su juo turi žinomų `fsync` ir failų teisių problemų;
-- vienintelis tvarkingas variantas – virtuali mašina su `docker compose`, bet tada patiems reikia prižiūrėti OS, TLS ir atsargines kopijas, o App Service tampa nereikalingas.
-
-Flexible Server – valdoma paslauga (atsarginės kopijos, TLS, užkarda), jau
-aprašyta README 2 skyriuje. Burstable B1ms su 32 GB turėtų įeiti į Azure 12 mėn.
-nemokamų paslaugų paketą (750 val./mėn.) – **patikrinsim kuriant resursą**; jei
-ne, kaina ~12–15 €/mėn. iš studento kredito.
-
-Diegimo etapai:
-
-1. `next.config.ts` – `output: "standalone"`; `apps/api` – build į `dist` jau yra;
-2. Azure resursai (rankiniu būdu portale arba `az` komandomis – užrašome į README);
-3. `deploy.yml` su `azure/webapps-deploy`, paslaptys – GitHub Secrets;
-4. `db:seed` produkcijoje **vieną kartą**, kad gynimo metu būtų duomenų;
-5. patikra: `/health/ready`, prisijungimas, CSV parsisiuntimas, slapukas `Secure`.
+Alternatyvos (gynimui): Render / Railway (paprasčiau, bet nemokamas planas
+„užmiega“), Vercel (Next.js, bet API ir DB – kitur), DigitalOcean App Platform.
 
 ---
 
-## 8. Etapas H – kokybė
+## 11. Etapas I – ataskaita ir gynimas
 
-- `npm run lint` ir `typecheck` web daliai CI jau paleidžiami per `--workspaces`;
-- rankinis patikrinimas 375px, 768px, 1280px pločiais kiekvienam langui;
-- prieinamumas: klaviatūra (`Tab` per meniu ir modalą), `aria-label` ikonų mygtukams, kontrastas ≥ 4.5:1 (pilkas `#a1a4a5` ant juodo – 8.4:1, tinka).
+**README:**
 
----
+- **Naudotojo sąsajos projektas:** wireframe'ai šalia realizacijos nuotraukų;
+- **Dizaino sistema:** paletė, šriftai, komponentai;
+- **Karkasas ir architektūra:** kodėl Next.js; alternatyvos – Vite + React (SPA, reikėtų atskiro maršrutizatoriaus ir tarpinio serverio slapukui), Angular (sunkesnis, savo ekosistema), Vue / Nuxt, SvelteKit; App Router, Server ir Client Components, maketai, route handler kaip tarpinis sluoksnis;
+- **Būsena:** TanStack Query (serverio duomenys), Context (sesija), URL (filtrai), vietinė (formos); kodėl žetonas atmintyje;
+- **Diegimas:** Azure resursai, CI/CD, aplinkos kintamieji;
+- **8.3 3 lab.** – kriterijų lentelė su balais.
 
-## 9. Etapas I – ataskaita
+**Cheatsheet „Gynimui – 3 lab.“:** konkretūs failai ir eilutės:
 
-README papildymai:
-
-- **9. Naudotojo sąsajos projektas** – wireframe'ai šalia realizacijos nuotraukų, dizaino sistema (spalvos, šriftai), „įkvėpta Resend“ paminėjimas;
-- **10. Diegimas** – atnaujinta diagrama, Azure resursai, CI/CD;
-- **8.3. 3 laboratorinis darbas** – reikalavimų lentelė (12 skyrius žemiau);
-- **Išvados**;
-- `docs/cheatsheet.md` – gynimo scenarijus sąsajoje.
-
----
-
-## 10. Etapas J – papildomi dalykai (ne reikalavimai)
-
-Užduotis jų neprašo, bet šiam projektui jie prasmingi – dalis išplaukia iš
-paties README, dalis palengvina gynimą.
-
-| # | Kas | Kodėl būtent šiam projektui | Prioritetas |
-|---|---|---|---|
-| J1 | **Gyva darbo eiga:** projekto puslapis ir `/p/[token]` atsinaujina kas 15 s (`refetchInterval`, tik kai kortelė matoma) | README 1.1 žada, kad užsakovas „realiu laiku matys darbo eigą“ – be to pažadas neįvykdytas | būtina |
-| J2 | **`Referrer-Policy: no-referrer`** ir `noindex` puslapiui `/p/[token]` | Žetonas yra adrese – paspaudus išorinę nuorodą jis nutekėtų per `Referer` antraštę. API jau duoda `X-Robots-Tag`, bet pats puslapis – Next.js | būtina |
-| J3 | **Lietuviškas formatavimas** per `Intl`: `1 234,50 €`, `2 val. 15 min.`, datos `2026-09-24`; `datetime-local` ↔ UTC konvertavimas vienoje vietoje (`lib/format.ts`) | Pinigai ir laikas – sistemos esmė; neteisinga laiko juosta = neteisinga ataskaita | būtina |
-| J4 | **Klaidų ir krovimo puslapiai:** `not-found.tsx`, `error.tsx`, `loading.tsx` Resend stiliumi | Gynimo metu parodyti 404 / 403 per UI, ne tik per Postman | būtina |
-| J5 | **Demonstracinio prisijungimo mygtukai** prisijungimo lange (užsakovas, specialistas, administratorius, užblokuotas), rodomi tik su `NEXT_PUBLIC_DEMO_MODE=true` | Gynimo metu rolės perjungiamos vienu paspaudimu, be slaptažodžių rinkimo | verta |
-| J6 | **Optimistiniai atnaujinimai** keičiant užduoties būseną ir stabdant laikmatį | Sąsaja atrodo greita net su lėtu Azure B1 planu | verta |
-| J7 | **Savas SVG logotipas ir `favicon`**, puslapių `<title>` / `description` | Resend logotipo nenaudojame, o `favicon.ico` dabar – Next.js numatytasis | verta |
-| J8 | **Playwright „dūmų“ testai** CI: prisijungimas → projektas → sesija → ataskaita | Web dalis dabar CI tikrinama tik `lint` / `typecheck` | verta |
-| J9 | **Lighthouse ≥ 90** (prieinamumas, gera praktika), rezultatų nuotrauka README | Objektyvus sąsajos kokybės įrodymas ataskaitoje | jei liks laiko |
-| J10 | **⌘K komandų paletė** (paieška po projektus, „Pradėti laikmatį“) | Firminis Resend elementas; gražu, bet ne būtina | jei liks laiko |
-
----
-
-## 11. Darbų eiliškumas
-
-| # | Darbas | Rezultatas | Commit'as |
-|---|---|---|---|
-| 1 | A | Wireframe'ai (SVG) | *Add UI wireframes* |
-| 2 | B1–B5, J3 | Autentifikacija, `apiFetch`, užklausų kabliai, `lib/format.ts` | *Add client auth and API data layer* |
-| 3 | C, J7 | Žetonai, šriftai, UI komponentai, logotipas | *Add Resend-inspired design system* |
-| 4 | D, J4 | Maketai, hamburger stalčius, klaidų puslapiai | *Add marketing, auth and app layouts* |
-| 5 | E1, J2, J5 | Vieši puslapiai, demonstracinis prisijungimas | *Add public pages and auth screens* |
-| 6 | E2 (projektai, užduotys), J1, J6 | Projekto darbo aplinka | *Add project workspace* |
-| 7 | E2–E3 (sesijos, laikmatis) | Darbo žurnalas | *Add work log and session timer* |
-| 8 | E2 (pasiūlymai, nuorodos, ataskaita) | | *Add proposals, share links and reports* |
-| 9 | E2 (paskyra, administratorius) | | *Add account settings and admin area* |
-| 10 | F | Animacijos | *Polish transitions and motion* |
-| 11 | J8 | Playwright CI | *Add end-to-end smoke tests* |
-| 12 | G | Diegimas | *Deploy to Azure App Service* |
-| 13 | I, J9 | Ataskaita | *Document UI and deployment* |
-| – | J10 | Jei liks laiko | *Add command palette* |
-
-Commit'us darai tu – aš tik paruošiu pakeitimus ir pasiūlysiu pranešimą.
-
----
-
-## 12. Reikalavimų atitikties lentelė (3 lab.)
-
-| Reikalavimas | Kur tenkinamas |
+| Klausimas | Kur |
 |---|---|
-| Wireframe'ai prieš realizaciją | `docs/wireframes/` (A), README 9 sk. |
-| Adaptyvumas, `768px` lūžio taškas | Tailwind `md:`, maketai (D) |
-| Hamburger meniu | Valdymo skydelio stalčius, marketingo navigacija (D) |
-| Modalinis langas | Pasiūlymas, rankinė sesija, peržiūros nuoroda, patvirtinimai (`<dialog>`) |
-| SVG ikonos | `lucide-react` |
-| Google Fonts | Instrument Serif, Inter, Geist Mono per `next/font/google` |
-| Perėjimai / animacijos | F etapas |
-| Skirtingi Header / Content / Footer stiliai | D etapo lentelė |
-| Įvairūs įvedimo elementai | `text`, `email`, `password`, `number`, `date`, `datetime-local`, `search`, `textarea`, `select`, `radio`, `checkbox` |
-| Sąsaja naudoja API | Visi 38 metodai (E2 lentelė) |
-| Autentifikacija kliente | Žetonas atmintyje, automatinis atnaujinimas (B) |
-| Diegimas debesyje | Azure App Service + PostgreSQL Flexible Server (G) |
+| Kaip įtraukiami šriftai? | `src/app/fonts.ts` → `layout.tsx` → `@theme` |
+| Kur animacijų kodas? | `src/styles/animations.css` |
+| Kaip realizuotas lūžio taškas? Pakeisti | `@theme --breakpoint-md` → Tailwind `md:` sugeneruoja `@media (width >= 48rem)` |
+| Kodėl SVG, kur jie? | `lucide-react` (npm, įterpiami į JSX), `Logo.tsx`, `public/illustrations/*.svg` |
+| Kur būsena? | `lib/auth.tsx`, `lib/queries/*`, `useSearchParams` |
+
+---
+
+## 12. Etapas J – kokybė
+
+- `lint`, `typecheck` web daliai (CI jau paleidžia per `--workspaces`);
+- **`npm run ui:coverage`** – kaip `postman:coverage`, tik tikrina, ar kiekviena OpenAPI operacija minima `src/lib/queries/*` (pagal `method` + adreso šabloną);
+- Playwright „dūmų“ testas CI: registracija → projektas → užduotis → sesija → ataskaita;
+- rankinis patikrinimas 375 / 768 / 1280px; klaviatūra (`Tab`, `Esc` modale), `aria-label` ikonų mygtukams.
+
+**Neprivaloma, jei liks laiko:** demonstraciniai prisijungimo mygtukai
+(`NEXT_PUBLIC_DEMO_MODE`), gyva darbo eiga (`refetchInterval` 15 s projekto ir
+`/p/[token]` puslapiuose), ⌘K komandų paletė, Lighthouse ≥ 90.
+
+---
+
+## 13. Eiliškumas
+
+| # | Darbas | Commit'as |
+|---|---|---|
+| 1 | A – wireframe'ai | *Add UI wireframes* |
+| 2 | B1–B5 – duomenų sluoksnis, autentifikacija | *Add client auth and API data layer* |
+| 3 | B6 – `TRUST_PROXY` API | *Resolve client IP behind proxies* |
+| 4 | C – žetonai, šriftai, UI komponentai, logotipas | *Add design system and UI components* |
+| 5 | D – maketai, hamburger, klaidų puslapiai | *Add marketing, auth and app layouts* |
+| 6 | H1 – skeleto diegimas | *Deploy API and web to Azure App Service* |
+| 7 | E1 – vieši puslapiai, prisijungimas | *Add public pages and auth screens* |
+| 8 | E2 – projektai, užduotys (modalai) | *Add project workspace* |
+| 9 | E2–E3 – sesijos, laikmatis | *Add work log and session timer* |
+| 10 | E2 – pasiūlymai, nuorodos, ataskaita | *Add proposals, share links and reports* |
+| 11 | E2 – paskyra, administratorius | *Add account settings and admin area* |
+| 12 | F – paveiksliukai | *Add responsive product images* |
+| 13 | G – animacijos, grįžtamasis ryšys | *Polish motion and feedback* |
+| 14 | J – `ui:coverage`, Playwright | *Add UI coverage check and smoke test* |
+| 15 | H3 – galutinis diegimas | *Finalize deployment* |
+| 16 | I – ataskaita, cheatsheet | *Document UI, architecture and deployment* |
+
+Commit'us darai tu – aš paruošiu pakeitimus ir pasiūlysiu pranešimą.
+
+---
+
+## 14. Sprendimai, kuriuos reikia patvirtinti
+
+| Klausimas | Rekomendacija |
+|---|---|
+| Paveiksliukų šaltinis | Mūsų programos ekrano nuotraukos (alternatyva – nemokamos Unsplash nuotraukos su licencija) |
+| Wireframe'ai | Palikti (buvo ankstesnės užduoties sąraše, ataskaitai naudinga), bet žemos detalės |
+| Diegti anksti (skeletas po B) | Taip |
+| Playwright CI | Taip, vienas „dūmų“ scenarijus |
