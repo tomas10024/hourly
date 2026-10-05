@@ -138,6 +138,61 @@
   }
 }
 
+/* The same tear, once every three seconds - only on the 404 code, a page that is itself an "event". */
+@keyframes glitch-loop-a {
+  0%,
+  88% {
+    opacity: 0;
+  }
+  89% {
+    opacity: 0.9;
+    clip-path: inset(8% 0 62% 0);
+    transform: translate(-4px, -1px);
+  }
+  92% {
+    clip-path: inset(68% 0 6% 0);
+    transform: translate(4px, 1px);
+  }
+  95% {
+    clip-path: inset(32% 0 40% 0);
+    transform: translate(-3px, 0);
+  }
+  98% {
+    clip-path: inset(84% 0 2% 0);
+    transform: translate(3px, -1px);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes glitch-loop-b {
+  0%,
+  88% {
+    opacity: 0;
+  }
+  89% {
+    opacity: 0.9;
+    clip-path: inset(58% 0 12% 0);
+    transform: translate(4px, 1px);
+  }
+  92% {
+    clip-path: inset(4% 0 78% 0);
+    transform: translate(-4px, 0);
+  }
+  95% {
+    clip-path: inset(44% 0 30% 0);
+    transform: translate(3px, 1px);
+  }
+  98% {
+    clip-path: inset(18% 0 64% 0);
+    transform: translate(-3px, -1px);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Effects used by components                                                 */
 /* -------------------------------------------------------------------------- */
@@ -211,6 +266,12 @@
   }
   :is(.glitch:hover, :hover > .glitch, .glitch-run)::after {
     animation: glitch-b 0.34s steps(1) both;
+  }
+  .glitch-loop::before {
+    animation: glitch-loop-a 3s steps(1) infinite;
+  }
+  .glitch-loop::after {
+    animation: glitch-loop-b 3s steps(1) infinite;
   }
 
   /*

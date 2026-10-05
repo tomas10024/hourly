@@ -365,6 +365,36 @@ kas prieštarauja C0 taisyklėms ar kriterijams (pvz., `localStorage` žetonui,
 
 ## 6. Etapas D – maketai
 
+**Būsena:** atlikta (2026-10-05). Patikrinta 1280px ir 390px pločiais
+(prisijungus specialiste, užsakovu ir administratoriumi): šoninė juosta ir
+mobilusis stalčius, naudotojo meniu, laikmačio piliulė, marketingo hamburger
+skydelis, 404 programos rėmelyje, atsijungimas → `/`, `/p/*` antraštės.
+
+| Failas | Turinys |
+|---|---|
+| `app/(marketing)/layout.tsx` + `components/layout/marketing-*` | Lipni permatoma antraštė (rėmelis atsiranda slenkant), meniu su ikonomis, < 768px – išslenkantis skydelis; poraštė su stulpeliais ir API būsena |
+| `app/(auth)/layout.tsx` + `login`, `register` | Tik logotipas; forma + vaizdas šone (≥ md); viena eilutė apačioje |
+| `app/app/layout.tsx` + `components/layout/app-shell.tsx` | Šoninė juosta 240px, viršutinė juosta (skilties pavadinimas, laikmatis, naudotojo meniu), plona poraštė; < 768px – hamburger + `Drawer` iš kairės; apsauga kliente |
+| `components/layout/app-nav.ts` | Meniu punktai **iš `GET /api` `_links`** – klientas nekartoja rolių taisyklių |
+| `app/p/[token]/layout.tsx` | „Tik skaitymui“ juosta, „Sukurta su Hourly“; `noindex` ir `Referrer-Policy: no-referrer` (meta + HTTP antraštės, J2) |
+| `app/not-found.tsx`, `app/error.tsx`, `app/app/not-found.tsx`, `app/app/error.tsx`, `app/app/[...rest]` | 404 „Signalas prarastas“ (programoje – su meniu), klaidos ekranas su „Bandyti dar kartą“ (Next 16 – `retry`, ne `reset`) |
+| `lib/format.ts` (J3), `lib/use-now.ts`, `lib/next-path.ts` | Lietuviškas formatavimas, `datetime-local` ↔ UTC; laikrodis; saugus `?next=` |
+| `components/layout/states.tsx` | `PageHeader`, `LoadingState`, `ErrorState` – E etapo puslapiams |
+
+**Nukrypimai nuo plano:**
+
+- **Prisijungimo ir registracijos formos padarytos D etape** (plane – E1): be jų
+  nebuvo kaip patikrinti programos maketo. Su `NEXT_PUBLIC_DEMO_MODE=true` –
+  demonstracinių paskyrų mygtukai (J5).
+- **Viršutinės juostos pavadinimas – aktyvaus meniu punkto** („Projektai“), o
+  konkretaus įrašo pavadinimas – puslapio antraštėje (kaip W6 wireframe'e).
+- **„Aikštelė“ programoje – `/app/marketplace`** (viešoji – `/projects`), kad
+  prisijungęs naudotojas neišeitų iš programos rėmelio.
+- **Svečio būsena turi priežastį** (`logout` / `expired`): po atsijungimo –
+  į `/`, pasibaigus sesijai – į `/login?reason=…`.
+- 404 kodas mirga kas 3 s (`glitch-loop`) – vienintelė nuolatinė glitch vieta.
+- Laikini puslapiai (bus perrašyti E etape): titulinis, `/app` apžvalga, `/p/[token]`.
+
 | Maketas | Kam | Header | Content | Footer |
 |---|---|---|---|---|
 | `(marketing)` | `/`, `/projects`, `/projects/[id]` | Lipni, permatoma su `backdrop-blur`; navigacija su ikonomis; mobiliajame – hamburger | `max-w-6xl`, didelės sekcijų paraštės | Stulpeliai (produktas, ištekliai, paskyra), API būsena (`/health/ready`) |

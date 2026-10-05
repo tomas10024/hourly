@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/next-path";
 import { SESSION_MARKER } from "@/lib/session-marker";
 
 /**
@@ -21,9 +22,7 @@ export function proxy(request: NextRequest) {
   }
 
   if ((pathname === "/login" || pathname === "/register") && signedIn) {
-    const next = request.nextUrl.searchParams.get("next");
-    // Only same-site paths: `next=//evil.example` must not become an open redirect.
-    const target = next?.startsWith("/") && !next.startsWith("//") ? next : "/app";
+    const target = safeNext(request.nextUrl.searchParams.get("next"));
     return NextResponse.redirect(new URL(target, request.url));
   }
 

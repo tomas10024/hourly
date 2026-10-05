@@ -1,7 +1,7 @@
 "use client";
 
 import { Ellipsis, type LucideIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
 
 export type MenuItem = {
@@ -19,10 +19,18 @@ export type MenuItem = {
 export function DropdownMenu({
   items,
   label = "Veiksmai",
+  trigger,
+  triggerClassName,
+  header,
   className,
 }: {
   items: MenuItem[];
   label?: string;
+  /** What the button shows; the "⋯" icon by default. */
+  trigger?: ReactNode;
+  triggerClassName?: string;
+  /** Non-interactive content above the items (e.g. who is signed in). */
+  header?: ReactNode;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -63,9 +71,12 @@ export function DropdownMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="grid size-8 place-items-center rounded-lg border border-border-strong text-muted transition-colors hover:border-white/30 hover:text-fg"
+        className={
+          triggerClassName ??
+          "grid size-8 place-items-center rounded-lg border border-border-strong text-muted transition-colors hover:border-white/30 hover:text-fg"
+        }
       >
-        <Ellipsis className="size-4" aria-hidden />
+        {trigger ?? <Ellipsis className="size-4" aria-hidden />}
       </button>
       {open && (
         <div
@@ -79,6 +90,7 @@ export function DropdownMenu({
           }}
           className="fade-up absolute top-full right-0 z-30 mt-1.5 grid min-w-44 gap-0.5 rounded-xl border border-border-strong bg-surface-2 p-1.5 shadow-pop [animation-duration:0.15s]"
         >
+          {header && <div className="border-b border-border px-2.5 pt-1.5 pb-2.5 mb-1">{header}</div>}
           {items.map(({ label: itemLabel, icon: Icon, onSelect, danger }) => (
             <button
               key={itemLabel}

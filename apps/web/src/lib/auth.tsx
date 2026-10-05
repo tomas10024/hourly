@@ -15,6 +15,11 @@ import {
 import { apiFetch, onSessionEnd, restoreSession, setAccessToken } from "./api";
 
 /**
+ * `guest.reason` says how the user became a guest, so the app knows where to
+ * send them: after `logout` to the front page, after `expired` (the API ended
+ * the sign-in) the provider itself goes to the login page with the reason;
+ * without a reason there simply was no sign-in.
+ *
  * `unavailable`: the API could not be asked, so it is unknown whether there is
  * a sign-in. Pages show an error rather than sending the user to the login
  * page, which would bounce them straight back (the session marker is still set).
@@ -22,7 +27,7 @@ import { apiFetch, onSessionEnd, restoreSession, setAccessToken } from "./api";
 type AuthState =
   | { status: "loading"; user: null }
   | { status: "authenticated"; user: CurrentUser }
-  | { status: "guest"; user: null }
+  | { status: "guest"; user: null; reason?: "logout" | "expired" }
   | { status: "unavailable"; user: null };
 
 type AuthContextValue = AuthState & {
@@ -68,11 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
-  const signedOut = useCallback(() => {
-    setAccessToken(null);
-    queryClient.clear();
-    setState({ status: "guest", user: null });
-  }, [queryClient]);
+  const signedOut = useCallback(
+    (reason?: "logout" | "expired") => {
+      setAccessToken(null);
+      queryClient.clear();
+      setState({ status: "guest", user: null, reason });
+    },
+    [queryClient],
+  );
 
   // Restore the session once. Strict Mode mounts twice in development; the
   // shared refresh promise in `api.ts` keeps that to a single request.
@@ -99,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(
     () =>
       onSessionEnd((code) => {
-        signedOut();
+        signedOut("expired");
         void fetch("/api/auth/logout", { method: "POST" })
           .catch(() => undefined)
           .finally(() => {
@@ -125,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiFetch<void>("/auth/logout", { method: "POST" });
     } finally {
-      signedOut();
+      signedOut("logout");
     }
   }, [signedOut]);
 

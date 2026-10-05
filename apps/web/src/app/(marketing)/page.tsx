@@ -1,3 +1,4 @@
+// TEMPORARY: the front page is rebuilt in stage E1.
 import { ApiStatus } from "@/components/api-status";
 
 const roles = [
@@ -17,12 +18,12 @@ const roles = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 px-6 py-16">
+    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 px-6 py-16">
       <header className="flex flex-col gap-4">
         <p className="font-mono text-xs uppercase tracking-widest opacity-60">
           T120B165 · Saityno taikomųjų programų projektavimas
         </p>
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
           Hourly
         </h1>
         <p className="max-w-2xl text-lg opacity-80">
@@ -31,7 +32,7 @@ export default function Home() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section id="kaip-veikia" className="grid scroll-mt-20 gap-4 md:grid-cols-3">
         {roles.map((role) => (
           <article
             key={role.title}
@@ -60,6 +61,6 @@ export default function Home() {
           </a>
         </p>
       </section>
-    </main>
+    </div>
   );
 }
