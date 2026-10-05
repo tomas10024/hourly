@@ -534,6 +534,29 @@ kilmė, užduočių autorius), `checkbox` (sutikimas), `Switch` („tik vykdomos
 
 ## 8. Etapas F – paveiksliukai
 
+**Būsena:** atlikta (2026-10-05). 5 tikros programos ekrano nuotraukos
+(`apps/web/src/assets/screens/*.webp`, iš viso ~210 KB), padarytos iš
+produkcinio build su demonstraciniais duomenimis (2× raiška, tikras Chrome per
+DevTools protokolą), konvertuotos į WebP.
+
+| Failas | Kur | Kaip kinta su langu |
+|---|---|---|
+| `workspace.webp` (1600×1000) + `workspace-mobile.webp` (780×1688) | Titulinio hero | **Art direction:** `<picture>` + `getImageProps` – ≥ 768px plati nuotrauka 16:10, siauresniame – telefono nuotrauka 4:5; atsisiunčiama tik pasirinkta |
+| `timer.webp`, `report.webp`, `share.webp` (1200×750) | Funkcijų kortelės | `fill` + `sizes="(min-width: 64rem) 340px, (min-width: 48rem) 33vw, 100vw"`, rėmelis `aspect-[16/10]` |
+| `workspace-mobile.webp` | Prisijungimas / registracija | Telefono rėmelyje, `h-[min(520px,68dvh)]`; < 768px paslėpta |
+
+- **Statinis importas** – Next.js žino matmenis (jokio išdėstymo šokinėjimo),
+  rodo sulietą vietos rezervavimą (`placeholder="blur"`), tiekia per
+  `/_next/image` keliais pločiais (`srcset`).
+- Hero – `fetchPriority="high"`, `loading="eager"` (LCP paveiksliukas; Next 16
+  `priority` nebenaudojamas).
+- Watch Dogs apdorojimas – CSS sluoksnis virš paveiksliuko (skenavimo linijos,
+  spalvų perdanga), failai švarūs – tinka ataskaitai.
+- `ProductShot` (CSS pakaitalai) pašalintas; komponentai –
+  `components/marketing/product-image.tsx`.
+- Kad laikmatis nuotraukose atrodytų natūraliai, specialistui laikinai sukurta
+  vykdoma sesija (pradėta prieš 1 val. 23 min.), po nuotraukų ištrinta.
+
 | Vieta | Paveiksliukas | Dydžio kitimas |
 |---|---|---|
 | Titulinio hero | Programos darbo aplinkos ekrano nuotrauka | `fill`, `sizes="(max-width: 768px) 100vw, 60vw"`, `aspect-ratio: 16/10` |

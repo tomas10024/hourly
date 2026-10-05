@@ -1,5 +1,5 @@
 import { ArrowRight, Briefcase, UserPlus } from "lucide-react";
-import { ProductShot } from "@/components/marketing/product-shot";
+import { HeroImage, ProductImage } from "@/components/marketing/product-image";
 import { RoleSticker } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,7 +65,7 @@ export default function HomePage() {
             </ButtonLink>
           </div>
         </div>
-        <ProductShot variant="workspace" className="fade-up [animation-delay:120ms]" />
+        <HeroImage className="fade-up [animation-delay:120ms]" />
       </section>
 
       <section id="kaip-veikia" className={`${section} grid scroll-mt-20 gap-8 border-t border-border py-20`}>
@@ -76,7 +76,7 @@ export default function HomePage() {
         <div className="grid gap-4 md:grid-cols-3">
           {FEATURES.map((feature) => (
             <Card key={feature.title} hud className="grid content-start gap-4 p-4">
-              <ProductShot variant={feature.shot} />
+              <ProductImage shot={feature.shot} sizes="(min-width: 64rem) 340px, (min-width: 48rem) 33vw, 100vw" />
               <div className="grid gap-1.5 px-1 pb-1">
                 <h3 className="font-semibold">{feature.title}</h3>
                 <p className="text-sm text-muted">{feature.text}</p>

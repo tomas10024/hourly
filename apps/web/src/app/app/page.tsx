@@ -57,10 +57,9 @@ function Section({ title, href, children }: { title: string; href?: string; chil
 /** The first screen after signing in, different for each role. */
 export default function OverviewPage() {
   const { user } = useAuth();
-  const first = user?.displayName.split(" ")[0] ?? "";
   return (
     <div className="grid gap-9">
-      <PageHeader label="apžvalga" title={`Sveiki, ${first}`} />
+      <PageHeader label="apžvalga" title={`Sveiki, ${user?.displayName ?? ""}`} />
       {user?.role === "SPECIALIST" && <SpecialistOverview />}
       {user?.role === "CLIENT" && <ClientOverview />}
       {user?.role === "ADMIN" && <AdminOverview />}
