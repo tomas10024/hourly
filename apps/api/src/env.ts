@@ -52,6 +52,15 @@ const EnvSchema = z
     // Brute-force limits on login, registration and refresh (`lib/rate-limit.ts`).
     // On by default; switching them off is meant for load tests only.
     AUTH_RATE_LIMIT: booleanFlag.optional(),
+
+    // How many proxies stand between the browser and the API, counted from the
+    // API side. Express takes the client address that many hops back in
+    // `X-Forwarded-For`, and the rate limits key on it. Locally the browser
+    // reaches the API through the Next.js server only (1). On Azure the chain
+    // is browser -> Azure front end -> Next.js -> Azure front end -> API (2).
+    // Too low and every user shares one address; too high and a client can
+    // pick its own address by sending a forged header.
+    TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(1),
   })
   .transform(({ COOKIE_SECURE, AUTH_RATE_LIMIT, ...rest }) => ({
     ...rest,

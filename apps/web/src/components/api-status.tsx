@@ -1,19 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
-
-type Health = { status: string; database: string };
+import { useHealth } from "@/lib/queries/system";
 
 /**
  * Checks whether the API and the database are reachable through the proxy.
  * Useful while setting up the environment: it shows which part is missing.
  */
 export function ApiStatus() {
-  const { data, error, isPending } = useQuery({
-    queryKey: ["health"],
-    queryFn: () => apiFetch<Health>("/health/ready"),
-  });
+  const { data, error, isPending } = useHealth("ready");
 
   if (isPending) return <Badge tone="muted">Tikrinama…</Badge>;
 

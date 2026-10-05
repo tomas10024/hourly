@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1810" height="1278" viewBox="0 0 1810 1278">
+<rect width="1810" height="1278" fill="#f4f4f5"/>
+<text x="40" y="52" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#18181b">W2 · Registracija ir prisijungimas</text>
+<text x="40" y="80" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#71717a">/register, /login · Hourly · žemos detalės wireframe</text>
+<text x="40" y="108" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#71717a">≥ 768 PX (1280)</text>
+<text x="1380" y="108" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#71717a">&lt; 768 PX (390)</text>
+<rect x="40" y="120" width="1280" height="932" rx="10" fill="#ffffff" stroke="#a1a1aa"/>
+<rect x="40" y="120" width="1280" height="32" rx="10" fill="#e4e4e7"/>
+<rect x="40" y="142" width="1280" height="10" fill="#e4e4e7"/>
+<circle cx="58" cy="136" r="5" fill="#a1a1aa"/>
+<circle cx="74" cy="136" r="5" fill="#a1a1aa"/>
+<circle cx="90" cy="136" r="5" fill="#a1a1aa"/>
+<rect x="130" y="127" width="420" height="18" rx="9" fill="#ffffff"/>
+<text x="144" y="140" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#71717a">hourly.lt/register</text>
+<svg x="40" y="120" width="1280" height="932" overflow="hidden"><g transform="translate(-40 -120)">
+<rect x="120" y="191" width="16" height="16" rx="2" fill="#18181b"/>
+<text x="144" y="204" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#18181b" text-anchor="start">hourly</text>
+<rect x="120" y="272" width="520" height="640" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1"/>
+<text x="152" y="336" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="400" fill="#18181b" text-anchor="start">Sukurti paskyrą</text>
+<rect x="152" y="356" width="360" height="8" rx="4" fill="#e4e4e7"/>
+<text x="152" y="402" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Vardas arba įmonės pavadinimas</text>
+<rect x="152" y="410" width="456" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="164" y="433" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Tomas Jankauskas</text>
+<text x="152" y="474" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">El. paštas</text>
+<rect x="152" y="482" width="456" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="164" y="505" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">tomas@frontend.lt</text>
+<text x="152" y="546" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Slaptažodis</text>
+<rect x="152" y="554" width="456" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="164" y="578" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">••••••••</text>
+<text x="152" y="618" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Rolė</text>
+<rect x="152.0" y="626" width="224.0" height="52" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<circle cx="168.0" cy="644" r="5" fill="none" stroke="#71717a" stroke-width="1.5"/>
+<text x="180.0" y="648" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Užsakovas</text>
+<text x="180.0" y="666" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">skelbiu darbus</text>
+<rect x="384.0" y="626" width="224.0" height="52" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+<circle cx="400.0" cy="644" r="5" fill="#18181b" stroke="#71717a" stroke-width="1.5"/>
+<text x="412.0" y="648" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Specialistas</text>
+<text x="412.0" y="666" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">atlieku darbus</text>
+<rect x="152" y="702" width="16" height="16" rx="3" fill="#18181b" stroke="#a1a1aa" stroke-width="1"/>
+<text x="160" y="715" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">✓</text>
+<text x="178" y="715" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#18181b" text-anchor="start">Sutinku su naudojimo taisyklėmis</text>
+<rect x="152" y="742" width="456" height="36" rx="18.0" fill="#18181b"/>
+<text x="380.0" y="765.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Registruotis</text>
+<text x="380" y="806" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle">Jau turi paskyrą? Prisijungti</text>
+<rect x="700" y="272" width="540" height="640" rx="8" fill="#e4e4e7" stroke="#a1a1aa" stroke-width="1"/>
+<line x1="700" y1="272" x2="1240" y2="912" stroke="#d4d4d8" stroke-width="1"/>
+<line x1="1240" y1="272" x2="700" y2="912" stroke="#d4d4d8" stroke-width="1"/>
+<rect x="866.4" y="578.0" width="207.20000000000002" height="28" rx="4" fill="#ffffff"/>
+<text x="970.0" y="597.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle">Programos ekrano nuotrauka</text>
+<line x1="40" y1="972" x2="1320" y2="972" stroke="#d4d4d8" stroke-width="1"/>
+<text x="120" y="1004" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#71717a" text-anchor="start">© Hourly · KTU T120B165</text>
+</g></svg>
+<rect x="1370" y="110" width="410" height="724" rx="44" fill="#27272a"/>
+<rect x="1380" y="120" width="390" height="704" rx="34" fill="#ffffff"/>
+<text x="1408" y="142" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#18181b">9:41</text>
+<rect x="1525.0" y="128" width="100" height="20" rx="10" fill="#27272a"/>
+<svg x="1380" y="120" width="390" height="704" overflow="hidden"><g transform="translate(-1380 -120)">
+<rect x="1404" y="183" width="16" height="16" rx="2" fill="#18181b"/>
+<text x="1428" y="196" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#18181b" text-anchor="start">hourly</text>
+<text x="1404" y="262" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="400" fill="#18181b" text-anchor="start">Sukurti paskyrą</text>
+<rect x="1404" y="282" width="300" height="8" rx="4" fill="#e4e4e7"/>
+<text x="1404" y="324" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Vardas arba įmonės pavadinimas</text>
+<rect x="1404" y="332" width="342" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="355" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Tomas Jankauskas</text>
+<text x="1404" y="394" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">El. paštas</text>
+<rect x="1404" y="402" width="342" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="425" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">tomas@frontend.lt</text>
+<text x="1404" y="464" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Slaptažodis</text>
+<rect x="1404" y="472" width="342" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="496" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">••••••••</text>
+<text x="1404" y="534" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Rolė</text>
+<rect x="1404.0" y="542" width="167.0" height="52" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<circle cx="1420.0" cy="560" r="5" fill="none" stroke="#71717a" stroke-width="1.5"/>
+<text x="1432.0" y="564" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Užsakovas</text>
+<text x="1432.0" y="582" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">skelbiu</text>
+<rect x="1579.0" y="542" width="167.0" height="52" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+<circle cx="1595.0" cy="560" r="5" fill="#18181b" stroke="#71717a" stroke-width="1.5"/>
+<text x="1607.0" y="564" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Specialistas</text>
+<text x="1607.0" y="582" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">atlieku</text>
+<rect x="1404" y="616" width="16" height="16" rx="3" fill="#18181b" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1412" y="629" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">✓</text>
+<text x="1430" y="629" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#18181b" text-anchor="start">Sutinku su taisyklėmis</text>
+<rect x="1404" y="654" width="342" height="36" rx="18.0" fill="#18181b"/>
+<text x="1575.0" y="677.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Registruotis</text>
+<text x="1575" y="718" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle">Jau turi paskyrą? Prisijungti</text>
+<line x1="1380" y1="754" x2="1770" y2="754" stroke="#d4d4d8" stroke-width="1"/>
+<text x="1404" y="784" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#71717a" text-anchor="start">© Hourly</text>
+</g></svg>
+<text x="40" y="1112" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#2563eb">PASTABOS</text>
+<text x="40" y="1138" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">1. Prisijungimas – tas pats maketas, tik el. paštas ir slaptažodis.</text>
+<text x="40" y="1162" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">2. Nuotrauka šone matoma tik ≥ 768px.</text>
+<text x="40" y="1186" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">3. Įvedimo elementai: text, email, password, radio kortelės, checkbox.</text>
+<text x="40" y="1210" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">4. Klaidos (422, 409 „el. paštas užimtas“, 429 „bandykite po N min.“) – prie lauko arba virš mygtuko.</text>
+</svg>

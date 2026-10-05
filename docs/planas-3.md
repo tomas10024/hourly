@@ -8,6 +8,10 @@ ankstesni planai – [planas.md](planas.md), [planas-2.md](planas-2.md),
 metodus, kuris tenkina oficialius 3 lab. kriterijus (10 balų), yra įdiegtas
 Azure (ir API, ir klientas) ir kurį galima apginti.
 
+**Versija 3 (2026-10-05).** Pridėta: vizualinė kryptis „Resend × Watch Dogs“
+(5 skyrius), ataskaitos (inžinerinio projekto) kriterijai (1 ir 11 skyriai),
+vieta UI „skill'ams“. API po 2 versijos nesikeitė – vis dar 41 operacija.
+
 **Versija 2 (2026-09-27).** Planas perrašytas po 1–2 lab. pataisų ir gavus
 oficialius 3 lab. kriterijus. Kas pasikeitė – 0 skyriuje.
 
@@ -72,6 +76,27 @@ lieka – jie neprieštarauja oficialiems kriterijams.
 | **Responsive (1)** | Lūžio taškas `md` = `48rem` (768px), apibrėžtas **vienoje vietoje** `@theme`; hamburger + stalčius mobiliajame | C, D |
 | **Publikavimas (2)** | API ir klientas – Azure App Service, DB – PostgreSQL Flexible Server; CI/CD iš GitHub | H |
 
+### Inžinerinis projektas (ataskaita, 10 balų)
+
+| Kriterijus (balai) | Dabar | Ką daryti | Etapas |
+|---|---|---|---|
+| **Struktūra, formatavimas, turinys, be DI šlamšto (3)** | README turi savo struktūrą (paleidimas, auth, klaidos…), ne dėstytojo šabloną | README pertvarkyti pagal šabloną (I1); dabartinius 4–7 skyrius perkelti į priedus arba `docs/`. Tekstą peržiūri ir sutrumpina **tu** – ilgi „LLM stiliaus“ pastraipų blokai yra tiesioginė rizika | I |
+| **Diegimo diagrama, UML, ne PlantUML (2)** | `docs/deployment-diagram.jpg` rodo Static Web Apps | Perpiešti UML įrankiu (Cameo – jį turi; arba draw.io / StarUML): mazgai `<<device>>` naršyklė, `<<executionEnvironment>>` App Service ×2, PostgreSQL Flexible Server; artefaktai; ryšiai su protokolais (HTTPS, TLS) | H, I |
+| **Sąsajos ekranvaizdžiai ir ≥ 3 wireframe'ai „su Figma ar kitu įrankiu“ (2)** | Nėra | 10 wireframe'ų (A) – SVG piešiu aš; „Figma ar kitas įrankis“ dalies **sąmoningai nepaisome** (sprendimas 2026-10-05) + ekranvaizdžiai šalia | A, I |
+| **OpenAPI su pavyzdžiais ir galimais rezultatais, skaitomu formatu (2)** | 41 operacija; užklausos pavyzdžiai – tik 6, atsakymų pavyzdžiai – 32; tik `docs/openapi.json` | Pavyzdžiai **kiekvienai** operacijai (užklausa + kiekvienas statusas); šablonas reikalauja **atskiro `api-spec.yaml`**; `npm run openapi:md` → `docs/api.md` (GitHub jį atvaizduoja) + Swagger UI įdiegtame API | I |
+| **Išvados – sunumeruotos, „kas iš to“ (1)** | Nėra | Aš paruošiu faktų sąrašą (skaičiai, sprendimai, kas pasiteisino / ne), **išvadas rašai tu** | I |
+
+### Gynimo klausimai → kur atsakymas
+
+| Klausimas | Kur parodyti |
+|---|---|
+| Kodėl Next.js, alternatyvos | 2 sk. „Karkasas“, README |
+| Karkaso architektūra, kur būsena | App Router maketai; `lib/auth.tsx`, `lib/queries/*`, URL parametrai |
+| Kaip įtraukti šriftai | `src/app/fonts.ts` → `layout.tsx` → `globals.css` `@theme` |
+| CSS animacija, kur kodas | `src/styles/animations.css` (ir glitch, 5 sk.) |
+| Lūžio taškas, pakeisti | `@theme --breakpoint-md` |
+| Kodėl SVG, šaltinis | `lucide-react` (npm), `components/ui/logo.tsx`, `public/illustrations/*.svg` |
+
 ---
 
 ## 2. Sprendimai
@@ -81,11 +106,11 @@ lieka – jie neprieštarauja oficialiems kriterijams.
 | Karkasas | **Next.js 16** (App Router, React 19) – jau projekte | Vienas TypeScript projektas su API ir `@hourly/shared`; maketai, maršrutai, `next/font`, `next/image` iš dėžės; tarpinis maršrutas leidžia `httpOnly` slapuką laikyti toje pačioje kilmėje. Alternatyvos gynimui – 11 skyriuje |
 | Kur gaunami duomenys | **Naršyklėje** (Client Components + TanStack Query) iš JSON API | Kriterijus „JSON, ne HTML“; prieigos žetonas yra tik naršyklės atmintyje, tad serveris jo ir neturi. Server Components – tik statiniam karkasui ir tituliniam puslapiui |
 | Būsena | Serverio duomenys – TanStack Query podėlis; sesija – `AuthProvider` (React Context); filtrai ir puslapis – URL parametrai; formos – vietinė būsena | Kiekviena būsena ten, kur jai vieta; URL būsena išlieka perkrovus ir dalinantis nuoroda |
-| Vizualinis stilius | Resend įkvėpta tamsi tema (kaip anksčiau sutarta) | Nuosekli sistema, lengvai perkeliama į žetonus |
-| Ko nekopijuojame | Resend logotipo, pavadinimo, iliustracijų, licencijuotų šriftų | Prekės ženklas ir licencijos |
+| Vizualinis stilius | **Resend × Watch Dogs**: Resend – karkasas (juoda, erdvė, tipografikos hierarchija, ploni rėmeliai); Watch Dogs 2 (DedSec) ir 1 (ctOS) – akcentai (neoninės spalvos, glitch, pikselinės etiketės, HUD rėmeliai, terminalo tekstas). Plačiau – 5 skyrius | Resend vienas atrodo „kaip kiekvienas SaaS“; Watch Dogs suteikia charakterį, o Resend neleidžia jam virsti triukšmu |
+| Ko nekopijuojame | Resend logotipo, pavadinimo, iliustracijų, licencijuotų šriftų; Ubisoft / Watch Dogs logotipų, DedSec kaukės ir kaukolės, žaidimo ekrano nuotraukų, šriftų, garsų | Prekės ženklai ir autorių teisės. Imama tik estetika: spalvos, formos, judesys |
 | Paveiksliukai | **Mūsų pačių programos ekrano nuotraukos** (WebP) tituliniame, funkcijų ir prisijungimo puslapiuose; tuščių būsenų ir 404 iliustracijos – SVG | Autentiški, be licencijų klausimų; *patvirtinti – 12 sk.* |
 | Ikonos | `lucide-react` | Įterptinis SVG, `currentColor`, vienodas stilius |
-| Šriftai | `next/font/google`: Instrument Serif (antraštės), Inter (tekstas), Geist Mono (skaičiai, laikmatis) | Parsisiunčiami kompiliuojant ir tiekiami iš savo domeno – be užklausų į Google, be „šokinėjimo“ |
+| Šriftai | `next/font/google`: Instrument Serif (antraštės), Inter (tekstas), Geist Mono (skaičiai, laikmatis, terminalas), **Tiny5** (pikselinės etiketės; Silkscreen atmestas – C etapas) | Parsisiunčiami kompiliuojant ir tiekiami iš savo domeno – be užklausų į Google, be „šokinėjimo“ |
 | Stiliai | Tailwind CSS v4 + CSS kintamieji; animacijos – `src/styles/animations.css` | Viena vieta žetonams, lūžio taškui ir animacijoms – lengva parodyti ir pakeisti gynime |
 | Komponentai | Savi `src/components/ui/*`, be shadcn / Radix | Mažiau priklausomybių; `<dialog>` duoda `Esc`, fokusą ir `::backdrop` |
 | Formos | Natūralūs `<form>` + Zod schemos iš `@hourly/shared`; 422 `details` → klaida prie lauko | Tos pačios taisyklės kliente ir serveryje |
@@ -98,7 +123,13 @@ lieka – jie neprieštarauja oficialiems kriterijams.
 
 ## 3. Etapas A – wireframe'ai (prieš kodą)
 
-`docs/wireframes/*.svg`, žema detalė, kiekvienas langas **dviem pločiais**
+**Būsena:** atlikta (2026-10-05). 10 SVG failų `docs/wireframes/01–10-*.svg`,
+kiekviename – 1280px ir 390px kadrai bei pastabos (API metodai, įvedimo
+elementai, elgsena < 768px). Generuojami `python docs/wireframes/generate.py` –
+pakeitus ką nors langų sąraše, perpiešiami visi.
+
+`docs/wireframes/*.svg` (piešiu aš, tiesiogiai SVG), žema
+detalė, be spalvų ir efektų (Watch Dogs – tik realizacijoje), kiekvienas langas **dviem pločiais**
 (≥ 768px ir 375px), kad lūžio taškas matytųsi projekte.
 
 | # | Langas | Pastabos |
@@ -119,6 +150,41 @@ README bus rodomi šalia realizacijos nuotraukų.
 ---
 
 ## 4. Etapas B – duomenų sluoksnis ir autentifikacija
+
+**Būsena:** atlikta (2026-10-05). Patikrinta gyvai per tarpinį maršrutą
+(`curl` ir naršyklė, API su `ACCESS_TOKEN_TTL=10s`): prisijungimas, sesijos
+atkūrimas perkrovus, 3 lygiagrečios užklausos su pasibaigusiu žetonu → **vienas**
+`/auth/refresh` → 3 pakartojimai, `SESSION_REVOKED`, CSV su `Content-Disposition`,
+304, `HEAD`, 405 su `Allow`, Swagger UI per `/api/docs/`. API: 295 testai.
+
+**Nukrypimai nuo žemiau aprašyto plano:**
+
+- **Sesijos žymė vietoj `hourly_refresh` patikros.** Atnaujinimo slapukas turi
+  `path=/api/auth`, todėl naršyklė jo nesiunčia į `/app/**` – `proxy.ts` jo
+  nemato. Tarpinis maršrutas atkartoja jo galiojimą į `hourly_signed_in=1`
+  (`path=/`, `httpOnly`, be paslapties): nustato išdavus atnaujinimo žetoną,
+  išvalo API jį išvalius (`lib/session-marker.ts`).
+- **`[[...path]]` vietoj `[...path]`** – kad `follow()` pasiektų ir `GET /api`.
+- **`restoreSession()`** – visos užklausos laukia pirmojo atkūrimo po puslapio
+  įkėlimo: vaikų užklausos startuoja anksčiau nei `AuthProvider` efektas ir be
+  šito gaudavo 401.
+- **Web Lock** (`navigator.locks`) atnaujinimui – kelios kortelės dalijasi
+  slapuku; vienu metu atnaujinusios, antroji būtų palaikyta pakartotiniu
+  panaudojimu ir atjungtų visas.
+- **`unavailable` būsena** – API nepasiekiama ≠ svečias (kitaip `/login` ir
+  `proxy.ts` mėtytų naudotoją ratu, nes žymė dar yra).
+- Pasibaigus sesijai (`SESSION_REVOKED`, `ACCOUNT_BLOCKED`) klientas iškviečia
+  `/auth/logout`, kad išsivalytų slapukas ir žymė.
+- **304:** Node `fetch`, gavęs `If-None-Match`, prideda `Cache-Control: no-cache`,
+  o Express tada niekada neatsako 304 – tarpinis maršrutas nustato `max-age=0`.
+- **`skipTrailingSlashRedirect: true`** – Next nuimdavo `/` nuo `/api/docs/`, o
+  Swagger UI uždėdavo atgal (begalinis ratas).
+- **`X-Forwarded-For`** persiunčiamas tik su `FORWARD_CLIENT_IP=true` (Azure);
+  lokaliai klientas galėtų pats pasirinkti adresą. API `TRUST_PROXY`: 1 lokaliai,
+  2 Azure.
+- Dev serveris peržiūros įrankyje: `tsx watch` per `run-p` neužsikuria, API
+  tikrinimui paleistas atskirai (`npx tsx src/server.ts`); `.claude/launch.json`
+  – tik web peržiūrai.
 
 ### B1. Tarpinis maršrutas `src/app/api/[...path]/route.ts`
 
@@ -164,23 +230,127 @@ slapuku → `/app`. **Prieš rašant perskaityti**
 
 ---
 
-## 5. Etapas C – dizaino sistema
+## 5. Etapas C – dizaino sistema („Resend × Watch Dogs“)
+
+**Būsena:** atlikta (2026-10-05). Visi komponentai su visomis būsenomis –
+`/ui` puslapyje (tik kūrimo režime; `?open=dialog|confirm|left|right` atidaro
+modalą). Patikrinta 1280px ir 390px pločiais (CDP ekrano nuotraukos):
+be horizontalaus slinkimo, lentelė < 768px virsta kortelėmis, modalas –
+apatiniu lapu, šoniniai skydeliai per visą aukštį.
+
+| Failas | Turinys |
+|---|---|
+| `src/app/fonts.ts` | 4 šriftai per `next/font/google`, `latin-ext` |
+| `src/app/globals.css` | Žetonai `@theme`: spalvos, spinduliai, šešėlis, lūžio taškai; `.label`, `.heading-display`, `.tabular` |
+| `src/styles/animations.css` | **Visos** animacijos: glitch, HUD kampai, skeletas, blokų juosta, gyvas taškas, dialogų atidarymas / uždarymas (`@starting-style`), pranešimai, `prefers-reduced-motion` |
+| `src/lib/use-scramble.ts` | „Iššifravimas“ (vienintelis efektas su JS) |
+| `src/components/ui/*` | `Button`/`ButtonLink`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `RadioCards`, `Badge` + būsenų ženkleliai, `RoleSticker`, `Card`, `KeyValues`, `DataTable`, `Tabs`, `Dialog`, `Drawer`, `ConfirmDialog`, `DropdownMenu`, `ToastProvider`/`useToast`, `EmptyState`/`PixelArt`, `Spinner`/`Skeleton`/`BlockProgress`, `Pagination`, `CopyField`, `Logo`, `Scramble` |
+| `src/lib/errors.ts` | API klaidos → lietuviški sakiniai (pagal kodą, tada statusą; 429 – „po N min.“) |
+
+**Nukrypimai nuo žemiau aprašyto plano:**
+
+- **Tiny5 vietoj Silkscreen.** Silkscreen deklaruoja `latin-ext`, bet neturi
+  Ą Č Ę Ė Į Ų Ū Ž (tik Š) – etiketės „PALETĖ“, „TUŠČIOS“ buvo surinktos iš
+  dviejų šriftų. Išbandyta 11 pikselinių Google šriftų; pilną abėcėlę turi VT323,
+  Pixelify Sans, Tiny5, Micro 5, Jersey 10, Press Start 2P, Handjet, Doto.
+  Tiny5 – artimiausias Silkscreen stiliui.
+- **Du lūžio taškai:** `md` (48rem) – vienintelis sąsajos lūžio taškas
+  (hamburger, lentelės → kortelės, modalas → apatinis lapas); `lg` (64rem) –
+  tik trečiam kortelių stulpeliui. Kiti Tailwind lūžio taškai išjungti
+  (`--breakpoint-*: initial`).
+- **Dialogų uždarymo animacija** – grynu CSS (`@starting-style`,
+  `transition-behavior: allow-discrete`), be JS laikmačių; atidarius dialogą
+  puslapis po juo neslenka (`body:has(.dialog[open])`).
+- **`DataTable`** – lentelė ir kortelių sąrašas abu atvaizduojami, `md:` parenka
+  vieną (be lango matavimo JS).
+- ESLint `no-alert: error` – `alert/confirm/prompt` draudžiami jau dabar (G2).
+- Nauja priklausomybė: `lucide-react`.
+
+### C0. Kryptis ir dozavimo taisyklės
+
+**Pasirinkta 1 tema** iš [nuotaikos lentos](https://claude.ai/artifact/BWiM1SZvXc3k6DSTyeew9F)
+(2026-10-05). Lentos CSS – atskaitos taškas žetonams, glitch, HUD kampams ir
+scramble realizuoti; „dozės“ perjungiklis į programą **nekeliamas**.
+
+**Pagrindas – Resend, prieskonis – Watch Dogs.** Be taisyklių hibridas virsta
+„geimerišku“ triukšmu, todėl:
+
+1. **~90 % ekrano – Resend:** juodas fonas, pilkas tekstas, ploni rėmeliai, daug erdvės. Akcentinių spalvų – ne daugiau ~5–10 % ploto.
+2. **Viena akcentinė spalva komponente.** Rožinė – veiksmas ir „gyva“ būsena, žydra – informacija ir duomenys, geltona – įspėjimas.
+3. **Glitch – tik kaip įvykis:** užvedus pelę, atidarant / uždarant, kraunant. Niekas nemirga nuolat (išskyrus veikiančios sesijos tašką).
+4. **Skaitomumas svarbiau už stilių:** pagrindinis tekstas, formos ir lentelės – Inter, be efektų. Pikselinis šriftas – tik trumpoms etiketėms didžiosiomis raidėmis.
+5. **`prefers-reduced-motion`** išjungia visus glitch ir scramble efektus.
+
+Kas iš kurios dalies:
+
+| Šaltinis | Ką imame |
+|---|---|
+| Resend | Maketai, tipografikos skalė, serifinė antraštė, kortelės, lentelės, mygtukų forma, tuščios erdvės ritmas |
+| Watch Dogs 2 (DedSec) | Neoninė rožinė / žydra / geltona ant juodos, RGB poslinkio glitch, pikselinės etiketės, „lipdukų“ ženkleliai, ASCII / pikselinės iliustracijos |
+| Watch Dogs 1 (ctOS) | HUD kampų rėmeliai, „Profiler“ informacinės kortelės, ploni duomenų linijų tinkleliai, terminalo eilutės |
 
 ### C1. Žetonai (`src/app/globals.css`, `@theme`)
 
-| Žetonas | Reikšmė |
-|---|---|
-| `--color-bg` / `--color-fg` | `#000000` / `#f0f0f0` |
-| `--color-muted` | `#a1a4a5` (kontrastas su juodu 8.4:1) |
-| `--color-surface`, `--color-border` | `rgba(255,255,255,.03)`, `rgba(255,255,255,.08)` → hover `.14` |
-| Būsenų spalvos | pilka (juodraštis, TODO), mėlyna (paskelbtas, laukia), gintarinė (vykdoma), žalia (atlikta, priimta), raudona (atmesta, užblokuota) |
-| `--radius-button` / `--radius-card` | `16px` / `20px` |
-| **`--breakpoint-md`** | **`48rem`** – vienintelis lūžio taškas, keičiamas čia |
+| Žetonas | Reikšmė | Paskirtis |
+|---|---|---|
+| `--color-bg` / `--color-fg` | `#000000` / `#f0f0f0` | Resend |
+| `--color-muted` | `#a1a4a5` (kontrastas su juodu 8.4:1) | Antrinis tekstas |
+| `--color-surface`, `--color-border` | `rgba(255,255,255,.03)`, `rgba(255,255,255,.08)` → hover `.14` | Kortelės, rėmeliai |
+| **`--color-hack`** | `#ff2e88` (neoninė rožinė) | Pagrindinis veiksmas, fokusas, veikianti sesija, glitch kanalas |
+| **`--color-data`** | `#00e5ff` (žydra) | Nuorodos, skaičiai, HUD rėmeliai, glitch kanalas |
+| **`--color-warn`** | `#f5ff3b` (rūgštinė geltona) | Įspėjimai, 429, baigiasi nuorodos galiojimas |
+| Būsenų spalvos | juodraštis / TODO – pilka; paskelbtas / laukia – žydra; vykdoma – rožinė (pulsuoja); atlikta / priimta – žalia `#3dff9a`; atmesta / užblokuota – raudona `#ff4d4d` | Ženkleliai: 10 % fonas, 30 % rėmelis, 100 % tekstas |
+| `--radius-button` / `--radius-card` | `16px` / `20px`; HUD elementams – `0` | Resend apvalumas + ctOS kampai |
+| **`--breakpoint-md`** | **`48rem`** – vienintelis lūžio taškas, keičiamas čia | |
+
+Kontrastas su juodu fonu: rožinė 6.0:1, raudona 6.4:1, žydra 13.7:1, geltona ir
+žalia > 15:1 – visos tenkina WCAG AA (≥ 4.5:1). Tekstas ant akcentinio fono
+(pvz., rožinis mygtukas) – juodas.
 
 ### C2. Šriftai (`src/app/fonts.ts`)
 
-`next/font/google`: Instrument Serif, Inter, Geist Mono; `subsets: ['latin', 'latin-ext']`,
-`display: 'swap'`, CSS kintamieji → `@theme` `--font-serif`, `--font-sans`, `--font-mono`.
+`next/font/google`, `subsets: ['latin', 'latin-ext']`, `display: 'swap'`, CSS
+kintamieji → `@theme`:
+
+| Kintamasis | Šriftas | Kur |
+|---|---|---|
+| `--font-serif` | Instrument Serif | H1–H2 (Resend) |
+| `--font-sans` | Inter | Visas tekstas, formos, lentelės |
+| `--font-mono` | Geist Mono | Laikmatis, sumos, ID, terminalo eilutės, pranešimai |
+| `--font-pixel` | ~~Silkscreen~~ **Tiny5** | Etiketės (`// PROJEKTAI`), ženkleliai, skirtukai, 404 |
+
+Visi keturi turi `latin-ext` (patikrinta Google Fonts CSS). **Pikseliniams
+šriftams `latin-ext` dar negarantuoja visų glifų** – C etapo pradžioje vizualiai
+patikrinti `ĄČĘĖĮŠŲŪŽ ąčęėįšųūž`; jei Silkscreen trūksta – VT323 arba
+Pixelify Sans (abu `latin-ext`).
+
+### C2a. Watch Dogs elementai
+
+| Elementas | Kur | Kaip (CSS) |
+|---|---|---|
+| **Glitch** (RGB poslinkis) | Logotipas, pagrindiniai mygtukai užvedus pelę, 404 antraštė, modalo atidarymas | `::before` / `::after` su `content: attr(data-text)`, `clip-path: inset()` juostos, `translate` ir `--color-hack` / `--color-data` šešėliai; `@keyframes glitch` 200–300 ms |
+| **Teksto „iššifravimas“** (scramble) | Puslapio antraštė ir skaičiai, kai ateina duomenys | Mažas `useScramble` kablys: simboliai `▓▒░<>/#` per ~400 ms „nusistovi“ į tikrą tekstą. **Animacija duomenų grąžinimo metu** |
+| **HUD kampų rėmeliai** (ctOS) | Užvedus pelę ant kortelės / eilutės; fokusas | Keturi kampai per `background` gradientus (be papildomų elementų), `transition` 150 ms |
+| **Blokų progreso juosta** | Krovimas, ataskaitos generavimas | `▓▓▓▓░░░░` – `steps()` animacija, Geist Mono |
+| **Terminalo pranešimai** | `Toast` | `> projektas_sukurtas [OK]` – mono, kairėje spalvota juosta; tekstas lietuviškai |
+| **„Profiler“ kortelė** (WD1) | Naudotojo profilis, pasiūlymo autorius, administratoriaus lentelės išskleidimas | Mono etiketės: `ROLĖ`, `ĮKAINIS`, `VALANDOS`, `NARYS NUO`; plona žydra linija iki avataro |
+| **Skenavimo linijos** | Ekrano nuotraukos tituliniame ir prisijungime | `repeating-linear-gradient` perdanga + `mix-blend-mode` duotone |
+| **Pikselinės / ASCII iliustracijos** | Tuščios būsenos, 404 („SIGNALAS PRARASTAS“), `/p/[token]` antraštė | Savi SVG (`shape-rendering: crispEdges`) |
+| **„Lipdukų“ ženkleliai** | Rolės (užsakovas / specialistas / admin), projekto kilmė | Pasukti ±2°, pikselinis šriftas, ryški spalva – vienintelė vieta, kur leidžiama „žaismė“ |
+| **Laikmatis kaip HUD** | Viršutinė juosta, darbo žurnalas | Didelis Geist Mono, kampų rėmelis, pulsuojantis rožinis taškas, `REC` etiketė |
+
+Glitch `@keyframes` – kartu su kitomis `src/styles/animations.css`, scramble –
+`src/lib/use-scramble.ts`, kad gynime būtų viena vieta parodyti.
+
+### C2b. UI „skill'ai“
+
+Planas nustato kryptį, žetonus ir taisykles; konkrečią išvaizdą tobulins
+skill'ai, kuriuos pridėsi. Jie naudojami **C etape** (komponentai) ir **po E**
+(peržiūra / „redesign“). Jau įdiegti ir tinkami: `design-taste-frontend`,
+`high-end-visual-design`, `redesign-existing-projects`; iš dalies –
+`industrial-brutalist-ui` (terminalo estetika). Jei skill'as siūlo ką nors,
+kas prieštarauja C0 taisyklėms ar kriterijams (pvz., `localStorage` žetonui,
+`alert`) – pirmenybė planui.
 
 ### C3. Komponentai `src/components/ui/`
 
@@ -304,6 +474,7 @@ kilmė, užduočių autorius), `checkbox` (sutikimas), `Switch` („tik vykdomos
 | Tuščios būsenos, 404 | SVG iliustracijos | Vektorinės – mastelis be kokybės praradimo |
 
 - Nuotraukos daromos iš **mūsų pačių** programos (1440px ir 390px pločiais), `public/images/*.webp`.
+- Watch Dogs apdorojimas – **CSS**, ne paveiksliuke: skenavimo linijų perdanga, duotone (`mix-blend-mode`), HUD kampų rėmelis. Taip ta pati nuotrauka tinka README be efektų.
 - `next/image` pats sugeneruoja `srcset` ir WebP / AVIF; `alt` tekstai lietuviškai.
 - Kadangi nuotraukoms reikia gatavų langų, etapas vykdomas po E; iki tol – laikini pakaitalai.
 - README – paveiksliukų šaltiniai.
@@ -316,9 +487,10 @@ kilmė, užduočių autorius), `checkbox` (sutikimas), `Switch` („tik vykdomos
 
 | Kada | Animacija |
 |---|---|
-| Duomenys kraunami | `Skeleton` blizgesys (`shimmer`), sukutis mygtuke |
-| Užvedus pelę | Mygtukų, eilučių, kortelių, meniu punktų rėmelio ir fono perėjimai (150 ms); ikonos poslinkis |
-| Modalas | `opacity` + `scale(.96 → 1)`, fonas `backdrop-blur` |
+| Duomenys kraunami | `Skeleton` blizgesys (`shimmer`), sukutis mygtuke, blokų progreso juosta (`steps()`) |
+| Duomenys atėjo | Antraštės ir skaičių „iššifravimas“ (scramble, ~400 ms) |
+| Užvedus pelę | Mygtukų, eilučių, kortelių, meniu punktų rėmelio ir fono perėjimai (150 ms); HUD kampai; pagrindinio mygtuko ir logotipo glitch; ikonos poslinkis |
+| Modalas | `opacity` + `scale(.96 → 1)`, fonas `backdrop-blur`, trumpas glitch atidarant |
 | Stalčius | `translateX(-100% → 0)` |
 | Pranešimas | Įslydimas iš apačios, išnykimas |
 | Veikianti sesija | Pulsuojantis taškas |
@@ -356,10 +528,50 @@ Alternatyvos (gynimui): Render / Railway (paprasčiau, bet nemokamas planas
 
 ## 11. Etapas I – ataskaita ir gynimas
 
-**README:**
+### I1. Struktūra
+
+**Ataskaita daroma po sąsajos** (sprendimas 2026-10-05). Šablonas (gautas):
+
+| # | Skyrius | Turinys | Dabar README |
+|---|---|---|---|
+| 1 | Sprendžiamo uždavinio aprašymas | 1.1 Sistemos paskirtis, 1.2 Funkciniai reikalavimai | Yra (1.1, 1.2) |
+| 2 | Sistemos architektūra | Pakanka UML diegimo diagramos | Yra, bet diagrama pasenusi (I2) |
+| 3 | Naudotojo sąsajos projektas | Wireframe'ai ir juos atitinkančios realizacijos iškarpos | Nėra |
+| 4 | API specifikacija | **Atskiras `api-spec.yaml`**; kiekvienam metodui – galimi atsako kodai ir pavyzdžiai (užklausa, atsakymas) | Dalinai (1.4 lentelės be pavyzdžių) |
+| 5 | Išvados | | Nėra |
+
+Pateikiama saugyklos README (jei saugykla privati – dokumentu Moodle).
+Dabartiniai papildomi skyriai (1.3–1.5, technologijos, paleidimas,
+autentifikacija, klaidos, demonstracija, kriterijų atitiktis, DI naudojimas) –
+į priedus po išvadų arba į `docs/`, kad pagrindinė dalis tiksliai atitiktų
+šabloną.
+
+### I2. Diegimo diagrama (UML, ne PlantUML)
+
+Cameo Systems Modeler (turi; jungiasi per `cameo-bridge`) arba draw.io su UML
+biblioteka. Elementai: `<<device>>` naudotojo kompiuteris → `<<executionEnvironment>>`
+naršyklė; `<<device>>` Azure App Service planas su dviem
+`<<executionEnvironment>>` (Node 22: web, API) ir jų `<<artifact>>`;
+`<<device>>` PostgreSQL Flexible Server su `<<executionEnvironment>>` PostgreSQL 17
+ir DB schema; ryšiai su stereotipais `<<HTTPS>>`, `<<TLS>>`. Eksportas – PNG į
+`docs/`, šaltinis – saugykloje.
+
+### I3. OpenAPI
+
+- `openapi.ts`: `example` kiekvienos operacijos užklausai ir **kiekvienam** atsakymo statusui (200/201/204, 400, 401, 403, 404, 409, 422, 429) – imant realius seed duomenis;
+- `npm run openapi:export` papildomai rašo **`api-spec.yaml`** (šaknyje arba `docs/`); CI tikrina, kad jis sutampa su kodu, kaip dabar `openapi.json`;
+- `npm run openapi:md` → `docs/api.md`: kiekvienai operacijai – paskirtis, URL, parametrai, užklausos pavyzdys, galimi atsakymai su pavyzdžiais (skaitomas GitHub'e be Swagger);
+- CI patikra: kiekviena operacija turi bent vieną užklausos (jei turi kūną) ir atsakymo pavyzdį.
+
+### I4. Išvados ir „DI šlamštas“
+
+- Išvados sunumeruotos, kiekviena: **kas padaryta → kas iš to** (pvz., „HATEOAS nuorodos leido klientui nekartoti teisių logikos – mygtukai rodomi pagal `_links`“). Aš paruošiu faktus, rašai tu.
+- Visą README peržiūrėti dėl LLM stiliaus: ilgi sąrašai „dėl visa ko“, tuščios frazės, pasikartojimai. Trumpiau ir savais žodžiais.
+
+### I5. Turinys
 
 - **Naudotojo sąsajos projektas:** wireframe'ai šalia realizacijos nuotraukų;
-- **Dizaino sistema:** paletė, šriftai, komponentai;
+- **Dizaino sistema:** paletė, šriftai, komponentai, „Resend × Watch Dogs“ kryptis (įkvėpimo šaltiniai įvardijami);
 - **Karkasas ir architektūra:** kodėl Next.js; alternatyvos – Vite + React (SPA, reikėtų atskiro maršrutizatoriaus ir tarpinio serverio slapukui), Angular (sunkesnis, savo ekosistema), Vue / Nuxt, SvelteKit; App Router, Server ir Client Components, maketai, route handler kaip tarpinis sluoksnis;
 - **Būsena:** TanStack Query (serverio duomenys), Context (sesija), URL (filtrai), vietinė (formos); kodėl žetonas atmintyje;
 - **Diegimas:** Azure resursai, CI/CD, aplinkos kintamieji;
@@ -397,7 +609,7 @@ Alternatyvos (gynimui): Render / Railway (paprasčiau, bet nemokamas planas
 | 1 | A – wireframe'ai | *Add UI wireframes* |
 | 2 | B1–B5 – duomenų sluoksnis, autentifikacija | *Add client auth and API data layer* |
 | 3 | B6 – `TRUST_PROXY` API | *Resolve client IP behind proxies* |
-| 4 | C – žetonai, šriftai, UI komponentai, logotipas | *Add design system and UI components* |
+| 4 | C – žetonai, šriftai, UI komponentai, glitch / scramble, logotipas | *Add design system and UI components* |
 | 5 | D – maketai, hamburger, klaidų puslapiai | *Add marketing, auth and app layouts* |
 | 6 | H1 – skeleto diegimas | *Deploy API and web to Azure App Service* |
 | 7 | E1 – vieši puslapiai, prisijungimas | *Add public pages and auth screens* |
@@ -409,7 +621,12 @@ Alternatyvos (gynimui): Render / Railway (paprasčiau, bet nemokamas planas
 | 13 | G – animacijos, grįžtamasis ryšys | *Polish motion and feedback* |
 | 14 | J – `ui:coverage`, Playwright | *Add UI coverage check and smoke test* |
 | 15 | H3 – galutinis diegimas | *Finalize deployment* |
-| 16 | I – ataskaita, cheatsheet | *Document UI, architecture and deployment* |
+| 16 | I3 – OpenAPI pavyzdžiai, `docs/api.md` | *Add examples to every OpenAPI operation* |
+| 17 | I2 – UML diegimo diagrama | *Redraw deployment diagram for App Service* |
+| 18 | I1, I4, I5 – README pagal šabloną, išvados, cheatsheet | *Restructure report to course template* |
+
+I3 nepriklauso nuo kliento – jį galima daryti bet kada lygiagrečiai (pvz.,
+laukiant Azure resursų).
 
 Commit'us darai tu – aš paruošiu pakeitimus ir pasiūlysiu pranešimą.
 
@@ -420,6 +637,9 @@ Commit'us darai tu – aš paruošiu pakeitimus ir pasiūlysiu pranešimą.
 | Klausimas | Rekomendacija |
 |---|---|
 | Paveiksliukų šaltinis | Mūsų programos ekrano nuotraukos (alternatyva – nemokamos Unsplash nuotraukos su licencija) |
-| Wireframe'ai | Palikti (buvo ankstesnės užduoties sąraše, ataskaitai naudinga), bet žemos detalės |
+| ~~Wireframe'ai – įrankis~~ | **Nuspręsta:** SVG piešiu aš, „Figma“ kriterijaus nepaisome |
+| ~~Watch Dogs intensyvumas~~ | **Nuspręsta (2026-10-05): 1 tema** – „Resend × WD · planas“ iš [nuotaikos lentos](https://claude.ai/artifact/BWiM1SZvXc3k6DSTyeew9F). Išbandytos ir atmestos: grynas Resend, „daugiau WD“, grynos DedSec ir ctOS temos (per daug) |
+| Diegimo diagramos įrankis | Cameo (jau turi, tikras UML) arba draw.io |
+| ~~Ataskaitos šablonas~~ | **Gautas** (I1); ataskaita – po sąsajos |
 | Diegti anksti (skeletas po B) | Taip |
 | Playwright CI | Taip, vienas „dūmų“ scenarijus |

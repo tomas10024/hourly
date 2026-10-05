@@ -62,4 +62,13 @@ describe('parseEnv', () => {
   it('refuses a COOKIE_SECURE value that is not a boolean', () => {
     expect(parseEnv({ ...base, COOKIE_SECURE: 'yes' }).success).toBe(false);
   });
+
+  it('trusts one proxy (the Next.js server) unless told otherwise', () => {
+    expect(parseEnv(base).data?.TRUST_PROXY).toBe(1);
+    expect(parseEnv({ ...base, TRUST_PROXY: '2' }).data?.TRUST_PROXY).toBe(2);
+  });
+
+  it.each(['-1', '1.5', 'true', '11'])('refuses TRUST_PROXY=%s', (value) => {
+    expect(parseEnv({ ...base, TRUST_PROXY: value }).success).toBe(false);
+  });
 });

@@ -9,8 +9,9 @@ import { loginLimit } from './rate-limit.js';
  * Each test uses its own e-mail, so the shared in-memory counters of the
  * module do not leak from one test into another.
  */
-function loginApp() {
+function loginApp(trustProxy?: number) {
   const app = express();
+  if (trustProxy !== undefined) app.set('trust proxy', trustProxy);
   app.use(express.json());
   app.post('/login', loginLimit, (req, res) => {
     const { password } = req.body as { password: string };
@@ -43,6 +44,34 @@ describe('loginLimit', () => {
   it('does not count successful sign-ins', async () => {
     const app = loginApp();
     for (let i = 0; i < 15; i++) await attempt(app, 'daznas@example.lt', 'teisingas').expect(200);
+  });
+
+  /*
+   * On Azure the API sees: X-Forwarded-For "<browser>, <web server>" from a
+   * front end at the socket. With TRUST_PROXY=2 the browser address is the
+   * key, so two people behind the same web server are counted apart; with 1
+   * they would share the web server's address and lock each other out.
+   */
+  it('tells browsers apart behind two proxies when TRUST_PROXY=2', async () => {
+    const app = loginApp(2);
+    const from = (ip: string) =>
+      attempt(app, 'bendras@example.lt', 'blogas').set('X-Forwarded-For', `${ip}, 10.0.0.5`);
+
+    for (let i = 0; i < 10; i++) await from('203.0.113.1').expect(401);
+    await from('203.0.113.1').expect(429);
+    await from('203.0.113.2').expect(401);
+  });
+
+  it('ignores a forged address in front of the real one', async () => {
+    const app = loginApp(2);
+    const forged = (fake: string) =>
+      attempt(app, 'klastote@example.lt', 'blogas').set(
+        'X-Forwarded-For',
+        `${fake}, 203.0.113.9, 10.0.0.5`,
+      );
+
+    for (let i = 0; i < 10; i++) await forged(`198.51.100.${i}`).expect(401);
+    await forged('198.51.100.99').expect(429);
   });
 
   it('keeps a separate count per e-mail', async () => {

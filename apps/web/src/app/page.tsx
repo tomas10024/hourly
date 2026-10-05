@@ -52,7 +52,7 @@ export default function Home() {
           Sąsajos dokumentacija:{" "}
           <a
             className="underline underline-offset-4"
-            href="http://localhost:4000/api/docs"
+            href="/api/docs/"
             target="_blank"
             rel="noreferrer"
           >

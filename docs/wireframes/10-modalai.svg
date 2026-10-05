@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1810" height="1258" viewBox="0 0 1810 1258">
+<rect width="1810" height="1258" fill="#f4f4f5"/>
+<text x="40" y="52" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#18181b">W10 · Modaliniai langai ir pranešimai</text>
+<text x="40" y="80" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#71717a">/app (visa programa) · Hourly · žemos detalės wireframe</text>
+<text x="40" y="108" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#71717a">≥ 768 PX (1280)</text>
+<text x="1380" y="108" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#71717a">&lt; 768 PX (390)</text>
+<rect x="40" y="120" width="1280" height="812" rx="10" fill="#ffffff" stroke="#a1a1aa"/>
+<rect x="40" y="120" width="1280" height="32" rx="10" fill="#e4e4e7"/>
+<rect x="40" y="142" width="1280" height="10" fill="#e4e4e7"/>
+<circle cx="58" cy="136" r="5" fill="#a1a1aa"/>
+<circle cx="74" cy="136" r="5" fill="#a1a1aa"/>
+<circle cx="90" cy="136" r="5" fill="#a1a1aa"/>
+<rect x="130" y="127" width="420" height="18" rx="9" fill="#ffffff"/>
+<text x="144" y="140" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#71717a">hourly.lt/app</text>
+<svg x="40" y="120" width="1280" height="812" overflow="hidden"><g transform="translate(-40 -120)">
+<rect x="40" y="152" width="1280" height="760" rx="0" fill="#e4e4e7"/>
+<rect x="78" y="202" width="400" height="680" rx="18" fill="#18181b" fill-opacity="0.18"/>
+<rect x="72" y="192" width="400" height="680" rx="18" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="96" y="230" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#18181b" text-anchor="start">Naujas projektas</text>
+<text x="444" y="228" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#71717a" text-anchor="middle">✕</text>
+<line x1="72" y1="252" x2="472" y2="252" stroke="#d4d4d8" stroke-width="1"/>
+<text x="96" y="276" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Pavadinimas</text>
+<rect x="96" y="284" width="352" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="108" y="307" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Kavinės išankstinių užsakymų…</text>
+<text x="96" y="346" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Aprašymas</text>
+<rect x="96" y="354" width="352" height="84" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="108" y="377" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Klientai užsisako kavą iš…</text>
+<text x="96" y="464" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Biudžetas nuo, €</text>
+<rect x="96" y="472" width="166" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="108" y="495" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">1 200</text>
+<text x="246" y="489" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▴</text>
+<text x="246" y="501" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▾</text>
+<text x="282" y="464" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Biudžetas iki, €</text>
+<rect x="282" y="472" width="166" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="294" y="495" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">2 000</text>
+<text x="432" y="489" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▴</text>
+<text x="432" y="501" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▾</text>
+<text x="96" y="534" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Pageidaujamas terminas</text>
+<rect x="96" y="542" width="352" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="108" y="565" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">2026-11-30</text>
+<rect x="420" y="553" width="14" height="14" rx="2" fill="none" stroke="#71717a" stroke-width="1"/>
+<line x1="420" y1="558" x2="434" y2="558" stroke="#71717a" stroke-width="1"/>
+<text x="96" y="604" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Užduotis sudaro</text>
+<rect x="96.0" y="612" width="172.0" height="52" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+<circle cx="112.0" cy="630" r="5" fill="#18181b" stroke="#71717a" stroke-width="1.5"/>
+<text x="124.0" y="634" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Užsakovas</text>
+<text x="124.0" y="652" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">aš</text>
+<rect x="276.0" y="612" width="172.0" height="52" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<circle cx="292.0" cy="630" r="5" fill="none" stroke="#71717a" stroke-width="1.5"/>
+<text x="304.0" y="634" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Specialistas</text>
+<text x="304.0" y="652" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">laimėjęs</text>
+<rect x="96" y="680" width="36" height="20" rx="10" fill="#18181b"/>
+<circle cx="122" cy="690" r="7" fill="#ffffff" stroke="#ffffff" stroke-width="1.5"/>
+<text x="142" y="695" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#18181b" text-anchor="start">Iš karto paskelbti</text>
+<line x1="72" y1="804" x2="472" y2="804" stroke="#d4d4d8" stroke-width="1"/>
+<rect x="318" y="820" width="130" height="36" rx="18.0" fill="#18181b"/>
+<text x="383.0" y="843.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Sukurti</text>
+<text x="258.0" y="843.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle">Atšaukti</text>
+<rect x="502" y="202" width="380" height="270" rx="18" fill="#18181b" fill-opacity="0.18"/>
+<rect x="496" y="192" width="380" height="270" rx="18" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="520" y="230" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#18181b" text-anchor="start">Šalinti užduotį?</text>
+<text x="848" y="228" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#71717a" text-anchor="middle">✕</text>
+<line x1="496" y1="252" x2="876" y2="252" stroke="#d4d4d8" stroke-width="1"/>
+<text x="520" y="282" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#18181b" text-anchor="start">„Automatinis siuntimas“ ir visos jos</text>
+<text x="520" y="304" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#18181b" text-anchor="start">darbo sesijos bus pašalintos negrįžtamai.</text>
+<rect x="520" y="330" width="16" height="16" rx="3" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="546" y="343" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#18181b" text-anchor="start">Suprantu</text>
+<line x1="496" y1="394" x2="876" y2="394" stroke="#d4d4d8" stroke-width="1"/>
+<rect x="732" y="410" width="120" height="36" rx="18.0" fill="#ffffff" stroke="#18181b" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="792.0" y="433.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="middle">Šalinti</text>
+<text x="672.0" y="433.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle">Atšaukti</text>
+<rect x="496" y="512" width="380" height="64" rx="12" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<rect x="496" y="512" width="4" height="64" rx="0" fill="#18181b"/>
+<text x="516" y="538" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#18181b" text-anchor="start">&gt; uzduotis_pasalinta [204]</text>
+<text x="516" y="558" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#71717a" text-anchor="start">Pranešimas (toast) po sėkmingo veiksmo</text>
+<rect x="906" y="202" width="388" height="400" rx="18" fill="#18181b" fill-opacity="0.18"/>
+<rect x="900" y="192" width="388" height="400" rx="18" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="924" y="230" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#18181b" text-anchor="start">Peržiūros nuoroda sukurta</text>
+<text x="1260" y="228" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#71717a" text-anchor="middle">✕</text>
+<line x1="900" y1="252" x2="1288" y2="252" stroke="#d4d4d8" stroke-width="1"/>
+<text x="924" y="280" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Nuoroda rodoma tik kartą – nukopijuokite ją</text>
+<text x="924" y="298" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">dabar. Vėliau ją galėsite tik atšaukti.</text>
+<rect x="924" y="320" width="340" height="40" rx="8" fill="#e4e4e7"/>
+<text x="936" y="345" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#18181b" text-anchor="start">hourly.lt/p/k3Jd9…Qe2</text>
+<rect x="1188" y="326" width="68" height="28" rx="14" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1222" y="345" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="middle">Kopijuoti</text>
+<text x="924" y="400" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Galioja iki</text>
+<text x="1264" y="400" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="end">2026-10-19</text>
+<text x="924" y="426" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Teisės</text>
+<text x="1264" y="426" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="end">tik skaitymas</text>
+<line x1="900" y1="524" x2="1288" y2="524" stroke="#d4d4d8" stroke-width="1"/>
+<rect x="1134" y="540" width="130" height="36" rx="18.0" fill="#18181b"/>
+<text x="1199.0" y="563.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Uždaryti</text>
+<text x="1074.0" y="563.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle"></text>
+<text x="72" y="902" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#71717a" text-anchor="start">1 – kūrimo / redagavimo forma · 2 – šalinimo patvirtinimas + pranešimas · 3 – vienkartinė nuoroda</text>
+</g></svg>
+<rect x="1370" y="110" width="410" height="932" rx="44" fill="#27272a"/>
+<rect x="1380" y="120" width="390" height="912" rx="34" fill="#ffffff"/>
+<text x="1408" y="142" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#18181b">9:41</text>
+<rect x="1525.0" y="128" width="100" height="20" rx="10" fill="#27272a"/>
+<svg x="1380" y="120" width="390" height="912" overflow="hidden"><g transform="translate(-1380 -120)">
+<rect x="1380" y="152" width="390" height="860" rx="0" fill="#e4e4e7"/>
+<rect x="1380" y="192" width="390" height="820" rx="20" fill="#ffffff"/>
+<text x="1404" y="242" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#18181b" text-anchor="start">Naujas projektas</text>
+<text x="1746" y="240" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#71717a" text-anchor="end">✕</text>
+<line x1="1380" y1="264" x2="1770" y2="264" stroke="#d4d4d8" stroke-width="1"/>
+<text x="1404" y="292" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Pavadinimas</text>
+<rect x="1404" y="300" width="342" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="323" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Kavinės išankstinių…</text>
+<text x="1404" y="360" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Aprašymas</text>
+<rect x="1404" y="368" width="342" height="84" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="391" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">Klientai užsisako…</text>
+<text x="1404" y="476" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Nuo, €</text>
+<rect x="1404" y="484" width="165" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="507" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">1 200</text>
+<text x="1553" y="501" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▴</text>
+<text x="1553" y="513" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▾</text>
+<text x="1581" y="476" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Iki, €</text>
+<rect x="1581" y="484" width="165" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1593" y="507" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">2 000</text>
+<text x="1730" y="501" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▴</text>
+<text x="1730" y="513" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#71717a" text-anchor="middle">▾</text>
+<text x="1404" y="544" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Terminas</text>
+<rect x="1404" y="552" width="342" height="36" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<text x="1416" y="575" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="start">2026-11-30</text>
+<rect x="1718" y="563" width="14" height="14" rx="2" fill="none" stroke="#71717a" stroke-width="1"/>
+<line x1="1718" y1="568" x2="1732" y2="568" stroke="#71717a" stroke-width="1"/>
+<text x="1404" y="612" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#18181b" text-anchor="start">Užduotis sudaro</text>
+<rect x="1404.0" y="620" width="167.0" height="52" rx="8" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+<circle cx="1420.0" cy="638" r="5" fill="#18181b" stroke="#71717a" stroke-width="1.5"/>
+<text x="1432.0" y="642" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Užsakovas</text>
+<text x="1432.0" y="660" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">aš</text>
+<rect x="1579.0" y="620" width="167.0" height="52" rx="8" fill="#ffffff" stroke="#a1a1aa" stroke-width="1"/>
+<circle cx="1595.0" cy="638" r="5" fill="none" stroke="#71717a" stroke-width="1.5"/>
+<text x="1607.0" y="642" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#18181b" text-anchor="start">Specialistas</text>
+<text x="1607.0" y="660" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#71717a" text-anchor="start">laimėjęs</text>
+<rect x="1404" y="688" width="36" height="20" rx="10" fill="#18181b"/>
+<circle cx="1430" cy="698" r="7" fill="#ffffff" stroke="#ffffff" stroke-width="1.5"/>
+<text x="1450" y="703" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#18181b" text-anchor="start">Iš karto paskelbti</text>
+<rect x="1404" y="728" width="342" height="36" rx="18.0" fill="#18181b"/>
+<text x="1575.0" y="751.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Sukurti</text>
+<text x="1575.0" y="795.0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#71717a" text-anchor="middle">Atšaukti</text>
+</g></svg>
+<text x="40" y="1092" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#2563eb">PASTABOS</text>
+<text x="40" y="1118" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">1. Visi kūrimo / redagavimo veiksmai 3 objektams (projektas, užduotis, sesija) ir visi šalinimai – modaluose (&lt;dialog&gt;).</text>
+<text x="40" y="1142" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">2. &lt; 768px modalas užima visą ekraną (apatinis lapas).</text>
+<text x="40" y="1166" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">3. Įvedimo elementai: text, textarea, number, date, radio kortelės, switch, checkbox.</text>
+<text x="40" y="1190" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2563eb">4. Sėkmė / klaida – terminalo stiliaus pranešimas (toast); alert() / confirm() nenaudojami.</text>
+</svg>
