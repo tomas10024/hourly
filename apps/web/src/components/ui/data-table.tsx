@@ -80,7 +80,7 @@ export function DataTable<Row>({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={cx("px-3 py-3", column.numeric && "tabular text-right", column.className)}
+                    className={cx("px-3 py-3", column.numeric && "tabular text-right whitespace-nowrap", column.className)}
                   >
                     {column.cell(row)}
                   </td>

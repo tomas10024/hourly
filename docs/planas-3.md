@@ -409,6 +409,44 @@ išskleidžiamas meniu; lentelės → kortelės; skirtukai – horizontaliai sle
 
 ## 7. Etapas E – puslapiai ir visi metodai
 
+**Būsena:** atlikta (2026-10-05) – E1–E6, kartu ir E3 laikmatis. `next build`
+sėkmingas (21 maršrutas), tsc / lint švarūs, API – 295 testai. Patikrinta
+tikrame Chrome (CDP ekrano nuotraukos) su specialisto, užsakovų ir
+administratoriaus paskyromis; per sąsają iki galo išbandyta: projekto
+sukūrimas (modalas) → užduotis → rankinė sesija (`datetime-local` 09:00 →
+grįžta 09:00) → projekto šalinimas; laikmačio paleidimas / sustabdymas;
+peržiūros nuorodos sukūrimas (rodoma kartą); pasiūlymo pateikimas (409 →
+lietuviškas pranešimas modale). Testų sukurti įrašai ištrinti.
+
+| Kelias | Failai |
+|---|---|
+| `/`, `/projects`, `/projects/[id]`, `/p/[token]` | `app/(marketing)/*`, `app/p/[token]/page.tsx`, `components/marketing/product-shot.tsx`, `components/domain/{marketplace,project-card,proposal-dialog,project-tasks-list,user-name}.tsx` |
+| `/app` (pagal rolę), `/app/marketplace`, `/app/projects` | `app/app/page.tsx`, `app/app/{marketplace,projects}/page.tsx`, `components/domain/project-form-dialog.tsx` |
+| `/app/projects/[id]` | `components/workspace/*`: užduočių lentelė + filtrai, užduoties skydelis su sesijomis, pasiūlymai (detalės + sprendimai), nuorodos (vienkartinis rodymas), ataskaita (JSON + CSV), nustatymai (redagavimas, būsenos, šalinimas) |
+| `/app/sessions`, `/app/sessions/[p]/[t]/[s]` | `components/domain/{timer-card,session-list,session-form-dialog}.tsx` |
+| `/app/proposals`, `/app/settings`, `/app/users/[id]`, `/app/admin/{users,projects}` | atitinkami `page.tsx` |
+
+**Nukrypimai nuo plano:**
+
+- **Mygtukai ir skirtukai – tik pagal `_links`.** Projekto skirtukai
+  (Pasiūlymai, Nuorodos, Ataskaita, Nustatymai), užduoties veiksmai
+  (pradėti laikmatį, patvirtinti, redaguoti, šalinti), sesijos (sustabdyti),
+  pasiūlymo (priimti / atmesti / atsiimti / šalinti), nuorodos (atšaukti).
+  Tas pats `/app/projects/[id]` tinka visoms rolėms ir pašaliniui iš aikštelės.
+- **Filtrai, skirtukas, atidaryta užduotis ir pasiūlymas – URL parametruose**
+  (`?tab=proposals&proposal=…`, `?task=…`, `?q=&status=&page=`): išlieka
+  perkrovus, nuoroda veda tiesiai į būseną. `lib/use-url-filters.ts`.
+- **Pavadinimai sąrašuose** (užduoties, projekto sesijų žurnale) – iš dviejų
+  sąrašo užklausų (`GET /tasks?perPage=100`, `GET /projects?perPage=100`), ne po
+  užklausą eilutei; naudotojų vardai – `GET /users/{id}` su podėliu.
+- **API klaidų kodai išversti** (`lib/errors.ts`, 20+ kodų), o 422 lauko
+  klaidos rodomos lietuviškai prie lauko (`formErrors`) – API tekstai angliški.
+- **Paveiksliukai kol kas CSS** (`ProductShot`) – F etape bus pakeisti tikromis
+  ekrano nuotraukomis tame pačiame rėmelyje.
+- `_links` negarantuoja, kad nebus 409 (pvz., pasiūlymas jau pateiktas) – tai
+  aprašyta API; klientas rodo pranešimą.
+- Abi sveikatos operacijos naudojamos: vieša poraštė – `GET /health`, programos – `GET /health/ready`.
+
 ### E1. Vieši puslapiai
 
 | Kelias | Turinys |

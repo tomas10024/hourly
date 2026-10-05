@@ -3,10 +3,13 @@
 import { useHealth } from "@/lib/queries/system";
 import { cx } from "@/lib/cx";
 
-/** A small status line for footers: is the API up, and is its database? (`GET /health/ready`) */
-export function ApiHealth({ className }: { className?: string }) {
-  const { data, isPending, isError } = useHealth("ready");
-  const ok = data?.database === "up";
+/**
+ * A small status line for footers. `live` asks only whether the API process
+ * answers (`GET /health`); `ready` also checks its database (`GET /health/ready`).
+ */
+export function ApiHealth({ kind = "ready", className }: { kind?: "live" | "ready"; className?: string }) {
+  const { data, isPending, isError } = useHealth(kind);
+  const ok = kind === "live" ? data?.status === "ok" : data?.database === "up";
   const [tone, text] = isPending
     ? ["text-muted", "Tikrinama…"]
     : isError

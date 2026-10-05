@@ -37,7 +37,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        "inline-flex h-6 items-center gap-1.5 rounded-[7px] border px-2 text-xs font-medium whitespace-nowrap",
+        "inline-flex h-6 w-fit items-center gap-1.5 rounded-[7px] border px-2 text-xs font-medium whitespace-nowrap",
         "border-[color-mix(in_srgb,var(--b)_30%,transparent)] bg-[color-mix(in_srgb,var(--b)_10%,transparent)] text-(--b)",
         tones[tone],
         className,

@@ -34,6 +34,7 @@ export function formatDuration(minutes: number | null | undefined): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
   if (h === 0) return `${m} min.`;
+  if (m === 0) return `${h} val.`;
   return `${h} val. ${String(m).padStart(2, "0")} min.`;
 }
 
@@ -78,4 +79,10 @@ export function fromLocalInput(value: string): string {
 export function initials(name: string): string {
   const words = name.replace(/[„“"]/g, "").trim().split(/\s+/).filter(Boolean);
   return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? "?").slice(0, 2)).toUpperCase();
+}
+
+/** What a finished session is worth: rate × hours; null while it runs or has no rate. */
+export function sessionAmount(session: { appliedRate: number | null; durationMinutes: number | null }): number | null {
+  if (session.appliedRate == null || session.durationMinutes == null) return null;
+  return Math.round(session.appliedRate * session.durationMinutes * (100 / 60)) / 100;
 }

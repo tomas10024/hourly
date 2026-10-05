@@ -35,7 +35,7 @@ export function MarketingFooter() {
         <div className="grid content-start gap-3">
           <Logo />
           <p className="max-w-[32ch]">Darbų aikštelė ir skaidri atliktų darbų laiko apskaita.</p>
-          <ApiHealth />
+          <ApiHealth kind="live" />
         </div>
         <div className="grid grid-cols-2 gap-8 md:contents">
           {COLUMNS.map((column) => (
