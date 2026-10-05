@@ -3,6 +3,7 @@ import { HeroImage, ProductImage } from "@/components/marketing/product-image";
 import { RoleSticker } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Reveal } from "@/components/ui/reveal";
 
 const FEATURES = [
   {
@@ -69,40 +70,44 @@ export default function HomePage() {
       </section>
 
       <section id="kaip-veikia" className={`${section} grid scroll-mt-20 gap-8 border-t border-border py-20`}>
-        <div className="grid gap-2">
+        <Reveal className="grid gap-2">
           <span className="label">{"// kaip veikia"}</span>
           <h2 className="font-serif text-[clamp(32px,4.5vw,48px)] leading-tight">Nuo pasiūlymo iki ataskaitos</h2>
-        </div>
+        </Reveal>
         <div className="grid gap-4 md:grid-cols-3">
-          {FEATURES.map((feature) => (
-            <Card key={feature.title} hud className="grid content-start gap-4 p-4">
-              <ProductImage shot={feature.shot} sizes="(min-width: 64rem) 340px, (min-width: 48rem) 33vw, 100vw" />
-              <div className="grid gap-1.5 px-1 pb-1">
-                <h3 className="font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted">{feature.text}</p>
-              </div>
-            </Card>
+          {FEATURES.map((feature, index) => (
+            <Reveal key={feature.title} delay={index * 90}>
+              <Card hud className="grid h-full content-start gap-4 p-4">
+                <ProductImage shot={feature.shot} sizes="(min-width: 64rem) 340px, (min-width: 48rem) 33vw, 100vw" />
+                <div className="grid gap-1.5 px-1 pb-1">
+                  <h3 className="font-semibold">{feature.title}</h3>
+                  <p className="text-sm text-muted">{feature.text}</p>
+                </div>
+              </Card>
+            </Reveal>
           ))}
         </div>
       </section>
 
       <section className={`${section} grid gap-8 border-t border-border py-20`}>
-        <div className="grid gap-2">
+        <Reveal className="grid gap-2">
           <span className="label">{"// kam skirta"}</span>
           <h2 className="font-serif text-[clamp(32px,4.5vw,48px)] leading-tight">Trys rolės, viena darbo eiga</h2>
-        </div>
+        </Reveal>
         <div className="grid gap-4 md:grid-cols-3">
-          {ROLES.map((item) => (
-            <Card key={item.role} className="grid content-start gap-3">
-              <RoleSticker role={item.role} className="w-fit" />
-              <h3 className="mt-1 font-semibold">{item.title}</h3>
-              <p className="text-sm text-muted">{item.text}</p>
-            </Card>
+          {ROLES.map((item, index) => (
+            <Reveal key={item.role} delay={index * 90}>
+              <Card className="grid h-full content-start gap-3">
+                <RoleSticker role={item.role} className="w-fit" />
+                <h3 className="mt-1 font-semibold">{item.title}</h3>
+                <p className="text-sm text-muted">{item.text}</p>
+              </Card>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      <section className={`${section} pb-24`}>
+      <Reveal className={`${section} pb-24`}>
         <div className="hud hud-on flex flex-wrap items-center justify-between gap-6 border border-border-strong bg-surface px-8 py-10 [--hud-color:var(--color-hack)]">
           <div className="grid gap-2">
             <h2 className="font-serif text-[clamp(28px,4vw,40px)] leading-tight">Pradėkite registruoti laiką šiandien</h2>
@@ -112,7 +117,7 @@ export default function HomePage() {
             Sukurti paskyrą
           </ButtonLink>
         </div>
-      </section>
+      </Reveal>
     </>
   );
 }

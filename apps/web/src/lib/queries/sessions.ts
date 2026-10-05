@@ -33,7 +33,7 @@ export function useMySessions(filters: Filters<SessionListQuery> = {}, enabled =
 export function useRunningSession() {
   const { user } = useAuth();
   const query = useQuery({
-    queryKey: keys.mySessions({ running: true, perPage: 1 }),
+    queryKey: RUNNING_KEY,
     queryFn: () => apiFetch<Page<WorkSession>>("/sessions?running=true&perPage=1"),
     enabled: user?.role === "SPECIALIST",
     refetchInterval: 60_000,
@@ -94,7 +94,14 @@ export function useUpdateSession() {
   });
 }
 
-/** Stops the running timer through the session's own `stop` link. */
+const RUNNING_KEY = keys.mySessions({ running: true, perPage: 1 });
+
+/**
+ * Stops the running timer through the session's own `stop` link.
+ *
+ * Optimistic: the timer disappears from the top bar and the timer card at
+ * once; if the API refuses, the running session is put back.
+ */
 export function useStopSession() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -103,7 +110,16 @@ export function useStopSession() {
       if (!stop) throw new Error("This session cannot be stopped");
       return follow<Linked<WorkSession>>(stop, { endedAt: new Date().toISOString() });
     },
-    onSuccess: (session) => invalidate(queryClient, session.projectId, "sessions", "tasks"),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: RUNNING_KEY });
+      const running = queryClient.getQueryData<Page<WorkSession>>(RUNNING_KEY);
+      if (running) queryClient.setQueryData(RUNNING_KEY, { ...running, items: [], total: 0 });
+      return { running };
+    },
+    onError: (_error, _session, snapshot) => {
+      if (snapshot?.running) queryClient.setQueryData(RUNNING_KEY, snapshot.running);
+    },
+    onSettled: (_data, _error, session) => invalidate(queryClient, session.projectId, "sessions", "tasks"),
   });
 }
 

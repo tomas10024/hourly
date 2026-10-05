@@ -574,6 +574,40 @@ DevTools protokolą), konvertuotos į WebP.
 
 ## 9. Etapas G – animacijos ir grįžtamasis ryšys
 
+**Būsena:** atlikta (2026-10-05). Didžioji dalis padaryta C–E etapuose; G
+pridėjo slinkimo atsiradimą, puslapių perėjimus ir optimistinius
+atnaujinimus. Patikrinta tikrame Chrome su CDP tinklo delsa (1,5 s):
+
+| Patikra | Rezultatas |
+|---|---|
+| Titulinis: elementai žemiau ekrano | 9 paslėpti įkeliant → paslinkus visi 9 atsirado (`reveal-in`), matomi iš karto – neliečiami |
+| Užduotis → „Pažymėti atlikta“ | Po 250 ms jau „Atlikta“ (API atsako po 1,5 s) |
+| Ta pati, kai užklausa nepavyksta | 250 ms „Atlikta“ → grąžinta „Laukia“ + klaidos pranešimas |
+| „Sustabdyti“ laikmatį | Piliulė viršutinėje juostoje dingsta po 250 ms |
+
+**Kur kas yra (gynimui):**
+
+| Animacija | Kodas |
+|---|---|
+| Visos `@keyframes` ir perėjimų klasės | `src/styles/animations.css` |
+| Glitch (užvedus pelę, atidarant modalą, 404 kas 3 s) | `.glitch`, `.glitch-loop`, `@keyframes glitch-a/b`, `glitch-loop-a/b` |
+| HUD kampai (užvedus pelę / fokusas) | `.hud`, `.hud-on` – `background-size` perėjimas |
+| Krovimas | `.skeleton` (`shimmer`), `.blocks` (`steps()`), `Spinner` (`spin`) |
+| Duomenys atėjo | `src/lib/use-scramble.ts` (vienintelė su JS – keičia simbolius) |
+| Modalai ir stalčiai | `.dialog` + `@starting-style`, `allow-discrete` (atidarymas **ir** uždarymas be JS) |
+| Pranešimai | `.toast-enter` / `.toast-leave` |
+| Vykdoma sesija | `.dot-live` (`pulse-live`) |
+| Puslapio perėjimas | `.page-enter` per `app/app/template.tsx`, `app/(marketing)/template.tsx` |
+| Atsiradimas slenkant | `.reveal-pending` / `.reveal-in` + `src/components/ui/reveal.tsx` (`IntersectionObserver`) |
+| Užvedus pelę (mygtukai, eilutės, meniu, ikonų poslinkis) | Tailwind `transition-*` + `hover:` komponentuose |
+| Skirtukų pabraukimas, jungiklis, mobilusis meniu | `tabs.tsx` (`transition-[left,width]`), `field.tsx` (`after:translate-x`), `marketing-header.tsx` (`grid-template-rows 0fr → 1fr`) |
+| Mažiau judesio | `@media (prefers-reduced-motion: reduce)` animations.css gale + `Reveal`, `useScramble` patikros |
+
+**Optimistiniai atnaujinimai** – `lib/queries/tasks.ts` (`useUpdateTask`:
+būsena, patvirtinimas) ir `lib/queries/sessions.ts` (`useStopSession`):
+`onMutate` – nuotrauka ir pakeitimas podėlyje, `onError` – atstatymas,
+`onSettled` – duomenys perkraunami.
+
 ### G1. Animacijos (`src/styles/animations.css` – visos `@keyframes` vienoje vietoje)
 
 | Kada | Animacija |

@@ -16,8 +16,8 @@ import { cx } from "@/lib/cx";
  * tells the browser how wide the picture will be at each window size, so a
  * phone downloads a small file and a wide screen a large one.
  *
- * The Watch Dogs treatment - scan lines and a colour wash - is a CSS layer on
- * top, not part of the files, so the same screenshots work in the report.
+ * The scan lines are a CSS layer on top, not part of the files, so the same
+ * screenshots work in the report.
  */
 
 const SHOTS = {
@@ -30,11 +30,8 @@ function Overlay() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 mix-blend-hard-light"
-      style={{
-        background:
-          "repeating-linear-gradient(0deg, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px), linear-gradient(135deg, color-mix(in srgb, var(--color-hack) 10%, transparent), color-mix(in srgb, var(--color-data) 8%, transparent))",
-      }}
+      className="pointer-events-none absolute inset-0"
+      style={{ background: "repeating-linear-gradient(0deg, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px)" }}
     />
   );
 }

@@ -238,6 +238,29 @@
   }
 
   /*
+   * Page transition: every page under a `template.tsx` fades up briefly when
+   * it is entered. Short and small, so moving around does not feel slow.
+   */
+  .page-enter {
+    animation: fade-up 0.32s var(--ease-snap) both;
+  }
+
+  /*
+   * Scroll reveal (src/components/ui/reveal.tsx). Content is visible by
+   * default; the script hides only what is still below the fold when the
+   * page loads, and shows it again - with a fade-up - as it scrolls into
+   * view. Without script, or with reduced motion, nothing is ever hidden.
+   */
+  .reveal-pending {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  .reveal-in {
+    animation: fade-up 0.6s var(--ease-snap) both;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+
+  /*
    * Glitch on an element with `data-text` (the same text it shows). It plays
    * on hover - of the element itself or of its parent, so a whole button can
    * trigger it - or when the `glitch-run` class is added from script.
