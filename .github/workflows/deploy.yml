@@ -1,0 +1,110 @@
+name: Deploy
+
+# Runs after CI passes on main, or by hand from the Actions tab. Resources and
+# secrets come from infra/azure-setup.sh (see docs/azure.md).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  api:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: |
+          npm run build --workspace packages/shared
+          npm run build --workspace apps/api
+
+      # The package carries its own production node_modules: the hoisted root
+      # ones plus any npm had to keep under apps/api. Workspace links would
+      # point outside it, so the shared package is copied in for real.
+      - name: Package
+        run: |
+          npm ci --omit=dev --workspace apps/api
+          rm -rf node_modules/@hourly node_modules/.bin
+          mkdir -p deploy/api/node_modules/@hourly/shared
+          cp -r apps/api/dist apps/api/prisma apps/api/prisma.config.ts apps/api/package.json deploy/api/
+          cp -r node_modules/. deploy/api/node_modules/
+          if [ -d apps/api/node_modules ]; then cp -r apps/api/node_modules/. deploy/api/node_modules/; fi
+          cp -r packages/shared/package.json packages/shared/dist deploy/api/node_modules/@hourly/shared/
+          (cd deploy/api && zip -qr ../api.zip .)
+
+      - name: Deploy to Azure App Service
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_API_APP }}
+          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+          package: deploy/api.zip
+
+  web:
+    needs: api
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # NEXT_PUBLIC_* values are inlined at build time, not read on the server.
+      - name: Build
+        env:
+          NEXT_PUBLIC_DEMO_MODE: ${{ vars.NEXT_PUBLIC_DEMO_MODE }}
+        run: |
+          npm run build --workspace packages/shared
+          npm run build --workspace apps/web
+
+      # The standalone server does not include static assets on its own.
+      - name: Package
+        run: |
+          cd apps/web
+          cp -r public .next/standalone/apps/web/
+          cp -r .next/static .next/standalone/apps/web/.next/
+          (cd .next/standalone && zip -qr "$GITHUB_WORKSPACE/web.zip" .)
+
+      - name: Deploy to Azure App Service
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEB_APP }}
+          publish-profile: ${{ secrets.AZURE_WEB_PUBLISH_PROFILE }}
+          package: web.zip
+
+      # Through the web app's proxy route, so it checks web -> API -> database.
+      - name: Smoke test
+        run: |
+          for _ in $(seq 1 30); do
+            curl -sf "${{ steps.deploy.outputs.webapp-url }}/api/health/ready" && exit 0
+            sleep 10
+          done
+          echo "The deployed application did not become ready" >&2
+          exit 1

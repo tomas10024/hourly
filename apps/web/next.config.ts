@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Azure App Service gets a self-contained `server.js` with only the traced
+  // dependencies instead of the whole monorepo `node_modules`.
+  output: "standalone",
+
   // Next.js would redirect `/api/docs/` to `/api/docs`, and the API's Swagger
   // UI redirects back - an endless loop through the proxy route. Paths are
   // served as requested instead.

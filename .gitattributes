@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell scripts run in bash (Azure Cloud Shell, CI), which rejects CRLF.
+*.sh text eol=lf
