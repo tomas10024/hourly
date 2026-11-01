@@ -47,6 +47,7 @@ import {
   TaskParams,
 } from './lib/scope.js';
 import { REFRESH_COOKIE } from './lib/refresh-cookie.js';
+import { applyExamples } from './openapi-examples.js';
 
 const bearer = [{ bearerAuth: [] }];
 
@@ -62,6 +63,21 @@ const errors = {
   '404': json(ApiError, 'Not found'),
   '422': json(ApiError, 'Validation failed'),
 };
+
+/*
+ * Reads have no body to validate (a bad query is 400), so they never answer
+ * 422. 401 and 403 stay: any token may be invalid or belong to a blocked user.
+ */
+const without = <K extends keyof typeof errors>(...statuses: K[]) =>
+  Object.fromEntries(
+    Object.entries(errors).filter(([status]) => !statuses.includes(status as K)),
+  ) as Omit<typeof errors, K>;
+
+const readErrors = without('422');
+/** Lists outside a project have no parent that could be missing. */
+const listErrors = without('404', '422');
+const deleteErrors = without('422');
+const createErrors = without('404');
 
 /** Over a brute-force limit (`lib/rate-limit.ts`). */
 const tooMany = {
@@ -316,7 +332,7 @@ export const openApiDocument = createDocument({
           'every project, for the administrator only (403 otherwise).',
         requestParams: { query: ProjectListQuery },
         security: optionalBearer,
-        responses: { '200': json(paginated(LinkedProject), 'Project list'), ...errors },
+        responses: { '200': json(paginated(LinkedProject), 'Project list'), ...listErrors },
       },
       post: {
         tags: ['Projects'],
@@ -328,7 +344,7 @@ export const openApiDocument = createDocument({
           'client, a DIRECT one by a specialist; any other role gets 403.',
         security: bearer,
         requestBody: { content: { 'application/json': { schema: CreateProjectInput } } },
-        responses: { '201': json(LinkedProject, 'Project created'), ...errors },
+        responses: { '201': json(LinkedProject, 'Project created'), ...createErrors },
       },
     },
     '/projects/{id}': {
@@ -340,7 +356,7 @@ export const openApiDocument = createDocument({
           'specialist and the administrator - for everyone else it answers 404.',
         requestParams: { path: pathId },
         security: optionalBearer,
-        responses: { '200': json(LinkedProject, 'Project'), ...errors },
+        responses: { '200': json(LinkedProject, 'Project'), ...readErrors },
       },
       patch: {
         tags: ['Projects'],
@@ -362,7 +378,7 @@ export const openApiDocument = createDocument({
           'of a DIRECT one) and to the administrator.',
         requestParams: { path: pathId },
         security: bearer,
-        responses: { '204': { description: 'Deleted' }, ...errors },
+        responses: { '204': { description: 'Deleted' }, ...deleteErrors },
       },
     },
     '/projects/{id}/report': {
@@ -386,7 +402,7 @@ export const openApiDocument = createDocument({
             },
           },
           '406': json(ApiError, 'The requested media type is not available'),
-          ...errors,
+          ...readErrors,
         },
       },
     },
@@ -402,7 +418,7 @@ export const openApiDocument = createDocument({
           'description) filter it. Each task lives at `/projects/{projectId}/tasks/{taskId}`.',
         requestParams: { query: TaskListQuery },
         security: bearer,
-        responses: { '200': json(paginated(LinkedTask), 'Task list'), ...errors },
+        responses: { '200': json(paginated(LinkedTask), 'Task list'), ...listErrors },
       },
     },
     '/projects/{projectId}/tasks': {
@@ -415,7 +431,7 @@ export const openApiDocument = createDocument({
           'description) filter the list.',
         requestParams: { path: ProjectParams, query: ProjectTaskListQuery },
         security: optionalBearer,
-        responses: { '200': json(paginated(LinkedTask), 'Task list'), ...errors },
+        responses: { '200': json(paginated(LinkedTask), 'Task list'), ...readErrors },
       },
       post: {
         tags: ['Tasks'],
@@ -439,7 +455,7 @@ export const openApiDocument = createDocument({
           'not exist at this address.',
         requestParams: { path: TaskParams },
         security: optionalBearer,
-        responses: { '200': json(LinkedTask, 'Task'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedTask, 'Task'), ...readErrors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Tasks'],
@@ -474,7 +490,7 @@ export const openApiDocument = createDocument({
           'each entry give its address under `/projects/{projectId}/tasks/{taskId}/sessions`.',
         requestParams: { query: SessionListQuery },
         security: bearer,
-        responses: { '200': json(paginated(LinkedWorkSession), 'Session list'), ...errors },
+        responses: { '200': json(paginated(LinkedWorkSession), 'Session list'), ...listErrors },
       },
     },
     '/projects/{projectId}/tasks/{taskId}/sessions': {
@@ -490,7 +506,7 @@ export const openApiDocument = createDocument({
         security: bearer,
         responses: {
           '200': json(paginated(LinkedWorkSession), 'Session list'),
-          ...errors,
+          ...readErrors,
           '404': scopedNotFound,
         },
       },
@@ -521,7 +537,7 @@ export const openApiDocument = createDocument({
         description: 'Readable by the parties of the project and the administrator.',
         requestParams: { path: SessionParams },
         security: bearer,
-        responses: { '200': json(LinkedWorkSession, 'Session'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedWorkSession, 'Session'), ...readErrors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Work sessions'],
@@ -557,7 +573,7 @@ export const openApiDocument = createDocument({
         summary: 'Offers submitted by the actor, with their statuses',
         requestParams: { query: ProposalListQuery },
         security: bearer,
-        responses: { '200': json(paginated(LinkedProposal), 'Proposal list'), ...errors },
+        responses: { '200': json(paginated(LinkedProposal), 'Proposal list'), ...listErrors },
       },
     },
     '/projects/{projectId}/proposals': {
@@ -569,7 +585,7 @@ export const openApiDocument = createDocument({
           'specialist sees only their own. `status` filters the list.',
         requestParams: { path: ProjectParams, query: ProposalListQuery },
         security: bearer,
-        responses: { '200': json(paginated(LinkedProposal), 'Proposal list'), ...errors },
+        responses: { '200': json(paginated(LinkedProposal), 'Proposal list'), ...readErrors },
       },
       post: {
         tags: ['Proposals'],
@@ -597,7 +613,7 @@ export const openApiDocument = createDocument({
           'For anyone else it answers 404, as it is absent from their list.',
         requestParams: { path: ProposalParams },
         security: bearer,
-        responses: { '200': json(LinkedProposal, 'Proposal'), ...errors, '404': scopedNotFound },
+        responses: { '200': json(LinkedProposal, 'Proposal'), ...readErrors, '404': scopedNotFound },
       },
       patch: {
         tags: ['Proposals'],
@@ -641,7 +657,7 @@ export const openApiDocument = createDocument({
           'and expired ones.',
         requestParams: { path: ProjectParams, query: ShareListQuery },
         security: bearer,
-        responses: { '200': json(paginated(LinkedShareLink), 'Share link list'), ...errors },
+        responses: { '200': json(paginated(LinkedShareLink), 'Share link list'), ...readErrors },
       },
       post: {
         tags: ['Share links'],
@@ -666,7 +682,7 @@ export const openApiDocument = createDocument({
           'project was shared is part of its history. Revoking twice answers 204 again.',
         requestParams: { path: ShareParams },
         security: bearer,
-        responses: { '204': { description: 'Revoked' }, ...errors, '404': scopedNotFound },
+        responses: { '204': { description: 'Revoked' }, ...deleteErrors, '404': scopedNotFound },
       },
     },
     '/public/projects/{token}': {
@@ -760,3 +776,5 @@ export const openApiDocument = createDocument({
     },
   },
 });
+
+applyExamples(openApiDocument);

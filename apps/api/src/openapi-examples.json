@@ -1,0 +1,2855 @@
+{
+  "DELETE /projects/{id}": {
+    "204": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/06d67898-9254-4781-96bd-b93f661b49a1",
+        "params": {
+          "id": "06d67898-9254-4781-96bd-b93f661b49a1"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    "403": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only the client who published this project or an administrator may delete it"
+          }
+        }
+      }
+    }
+  },
+  "DELETE /projects/{projectId}/proposals/{proposalId}": {
+    "204": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/be36cf21-74a9-4159-9fae-1d353e84acec",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "proposalId": "be36cf21-74a9-4159-9fae-1d353e84acec"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    "422": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "proposalId": "44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "PROPOSAL_ACCEPTED",
+            "message": "An accepted proposal cannot be deleted - it is the record of how the project was awarded"
+          }
+        }
+      }
+    }
+  },
+  "DELETE /projects/{projectId}/shares/{shareId}": {
+    "204": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares/95af647a-1a61-4566-918d-17c98c9a54c0",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "shareId": "95af647a-1a61-4566-918d-17c98c9a54c0"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  },
+  "DELETE /projects/{projectId}/tasks/{taskId}": {
+    "204": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  },
+  "DELETE /projects/{projectId}/tasks/{taskId}/sessions/{sessionId}": {
+    "204": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/4e40b0b2-1535-49de-b606-2166a89529ca",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "sessionId": "4e40b0b2-1535-49de-b606-2166a89529ca"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  },
+  "DELETE /users/{id}": {
+    "204": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/users/13258052-d16d-4112-813d-253d453b72d7",
+        "params": {
+          "id": "13258052-d16d-4112-813d-253d453b72d7"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    "403": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/users/13258052-d16d-4112-813d-253d453b72d7",
+        "params": {
+          "id": "13258052-d16d-4112-813d-253d453b72d7"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only ADMIN may do this",
+            "details": {
+              "requiredRoles": [
+                "ADMIN"
+              ],
+              "role": "SPECIALIST"
+            }
+          }
+        }
+      }
+    },
+    "409": {
+      "request": {
+        "method": "DELETE",
+        "path": "/api/users/a0000000-0000-4000-8000-000000000003",
+        "params": {
+          "id": "a0000000-0000-4000-8000-000000000003"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "USER_HAS_WORK_HISTORY",
+            "message": "The account takes part in projects or has logged work; block it instead",
+            "details": {
+              "projects": 3,
+              "workSessions": 15
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "name": "Hourly API",
+          "_links": {
+            "self": {
+              "href": "/api"
+            },
+            "marketplace": {
+              "href": "/api/projects?scope=marketplace"
+            },
+            "docs": {
+              "href": "/api/docs"
+            },
+            "openapi": {
+              "href": "/api/openapi.json"
+            },
+            "register": {
+              "href": "/api/auth/register",
+              "method": "POST"
+            },
+            "login": {
+              "href": "/api/auth/login",
+              "method": "POST"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /auth/me": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/auth/me",
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "a0000000-0000-4000-8000-000000000003",
+          "displayName": "Laisvai samdomas programuotojas",
+          "role": "SPECIALIST",
+          "bio": "Saityno taikomosios programos, TypeScript, Node.js.",
+          "createdAt": "2026-11-01T17:34:58.993Z",
+          "email": "specialistas@hourly.lt",
+          "isBlocked": false,
+          "_links": {
+            "self": {
+              "href": "/api/auth/me"
+            },
+            "update": {
+              "href": "/api/auth/me",
+              "method": "PATCH"
+            },
+            "profile": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+            },
+            "logout": {
+              "href": "/api/auth/logout",
+              "method": "POST"
+            }
+          }
+        }
+      }
+    },
+    "401": {
+      "request": {
+        "method": "GET",
+        "path": "/api/auth/me",
+        "bearer": true
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/json",
+        "headers": {
+          "WWW-Authenticate": "Bearer realm=\"hourly\", error=\"invalid_token\", error_description=\"This sign-in has ended; sign in again\""
+        },
+        "body": {
+          "error": {
+            "code": "SESSION_REVOKED",
+            "message": "This sign-in has ended; sign in again"
+          }
+        }
+      }
+    }
+  },
+  "GET /health": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/health"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "status": "ok",
+          "uptime": 16.7575862
+        }
+      }
+    }
+  },
+  "GET /health/ready": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/health/ready"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "status": "ok",
+          "database": "up"
+        }
+      }
+    }
+  },
+  "GET /projects": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects",
+        "query": {
+          "scope": "marketplace",
+          "perPage": "100"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "title": "Demonstracinis projektas",
+              "description": "Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.",
+              "origin": "MARKETPLACE",
+              "status": "PUBLISHED",
+              "taskAuthoring": "SPECIALIST",
+              "budgetMin": 500,
+              "budgetMax": 1500,
+              "hourlyRate": 40,
+              "deadline": null,
+              "externalClientName": null,
+              "clientId": "a0000000-0000-4000-8000-000000000002",
+              "specialistId": null,
+              "createdAt": "2026-11-01T17:35:06.474Z",
+              "updatedAt": "2026-11-01T17:35:06.676Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "tasks": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks"
+                },
+                "client": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000002"
+                }
+              }
+            },
+            {
+              "id": "b0000000-0000-4000-8000-000000000003",
+              "title": "Mokyklos svetainės atnaujinimas",
+              "description": "Esama svetainė pasenusi ir neprisitaiko prie telefono ekrano. Reikia atnaujinti išvaizdą, pridėti naujienų skiltį ir pritaikyti ekrano skaitytuvams.",
+              "origin": "MARKETPLACE",
+              "status": "PUBLISHED",
+              "taskAuthoring": "CLIENT",
+              "budgetMin": 800,
+              "budgetMax": 1500,
+              "hourlyRate": 28,
+              "deadline": "2026-12-16T15:00:00.000Z",
+              "externalClientName": null,
+              "clientId": "a0000000-0000-4000-8000-000000000004",
+              "specialistId": null,
+              "createdAt": "2026-11-01T17:34:59.004Z",
+              "updatedAt": "2026-11-01T17:34:59.004Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/b0000000-0000-4000-8000-000000000003"
+                },
+                "tasks": {
+                  "href": "/api/projects/b0000000-0000-4000-8000-000000000003/tasks"
+                },
+                "client": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000004"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 100,
+          "total": 3,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/projects?scope=marketplace&perPage=100&page=1"
+            },
+            "first": {
+              "href": "/api/projects?scope=marketplace&perPage=100&page=1"
+            },
+            "last": {
+              "href": "/api/projects?scope=marketplace&perPage=100&page=1"
+            }
+          }
+        }
+      }
+    },
+    "400": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects",
+        "query": {
+          "scope": "nesamas"
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "INVALID_QUERY",
+            "message": "Invalid query parameters",
+            "details": {
+              "errors": [],
+              "properties": {
+                "scope": {
+                  "errors": [
+                    "Invalid option: expected one of \"marketplace\"|\"owned\"|\"assigned\"|\"all\""
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "403": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects",
+        "query": {
+          "scope": "all"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only ADMIN may do this",
+            "details": {
+              "requiredRoles": [
+                "ADMIN"
+              ],
+              "role": "CLIENT"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{id}": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "title": "Demonstracinis projektas",
+          "description": "Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.",
+          "origin": "MARKETPLACE",
+          "status": "DRAFT",
+          "taskAuthoring": "SPECIALIST",
+          "budgetMin": 500,
+          "budgetMax": 1500,
+          "hourlyRate": 40,
+          "deadline": null,
+          "externalClientName": null,
+          "clientId": "a0000000-0000-4000-8000-000000000002",
+          "specialistId": null,
+          "createdAt": "2026-11-01T17:35:06.474Z",
+          "updatedAt": "2026-11-01T17:35:06.474Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "tasks": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks"
+            },
+            "proposals": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals"
+            },
+            "client": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000002"
+            },
+            "report": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report"
+            },
+            "shares": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "publish": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "cancel": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "400": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/ne-uuid",
+        "params": {
+          "id": "ne-uuid"
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "INVALID_PATH_PARAM",
+            "message": "Invalid path parameter",
+            "details": {
+              "errors": [],
+              "properties": {
+                "id": {
+                  "errors": [
+                    "Invalid UUID"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/00000000-0000-4000-8000-000000000000",
+        "params": {
+          "id": "00000000-0000-4000-8000-000000000000"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Project 00000000-0000-4000-8000-000000000000 does not exist"
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{id}/report": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "accept": "application/json"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "project": {
+            "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+            "title": "Demonstracinis projektas",
+            "status": "IN_PROGRESS",
+            "hourlyRate": 40
+          },
+          "generatedAt": "2026-11-01T17:35:09.009Z",
+          "lines": [
+            {
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "title": "Demonstracinė užduotis",
+              "status": "IN_PROGRESS",
+              "totalMinutes": 210,
+              "appliedRate": 40,
+              "amount": 140
+            }
+          ],
+          "totalMinutes": 210,
+          "totalAmount": 140,
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            }
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Project 0a58902e-04dc-4b50-ac2d-7ae651b5c044 does not exist"
+          }
+        }
+      }
+    },
+    "406": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "accept": "application/xml"
+      },
+      "response": {
+        "status": 406,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_ACCEPTABLE",
+            "message": "This report is available as application/json or text/csv"
+          }
+        }
+      }
+    },
+    "200 text/csv": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "accept": "text/csv"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "text/csv",
+        "headers": {
+          "Content-Disposition": "attachment; filename=\"report-0a58902e-04dc-4b50-ac2d-7ae651b5c044.csv\""
+        },
+        "body": "﻿Project,Demonstracinis projektas\r\nStatus,IN_PROGRESS\r\nGenerated at,2026-11-01T17:35:09.102Z\r\n\r\nTask,Status,Minutes,Hours,\"Rate, EUR/h\",\"Amount, EUR\"\r\nDemonstracinė užduotis,IN_PROGRESS,210,3.50,40.00,140.00\r"
+      }
+    }
+  },
+  "GET /projects/{projectId}/proposals": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "be36cf21-74a9-4159-9fae-1d353e84acec",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "specialistId": "a0000000-0000-4000-8000-000000000007",
+              "price": 1500,
+              "hourlyRate": null,
+              "estimatedDays": 14,
+              "message": "Galiu atlikti per dvi savaites.",
+              "status": "PENDING",
+              "createdAt": "2026-11-01T17:35:06.970Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/be36cf21-74a9-4159-9fae-1d353e84acec"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "specialist": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000007"
+                },
+                "accept": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/be36cf21-74a9-4159-9fae-1d353e84acec",
+                  "method": "PATCH"
+                },
+                "reject": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/be36cf21-74a9-4159-9fae-1d353e84acec",
+                  "method": "PATCH"
+                }
+              }
+            },
+            {
+              "id": "44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "price": 1200,
+              "hourlyRate": 40,
+              "estimatedDays": 10,
+              "message": "Galiu pradėti šią savaitę.",
+              "status": "PENDING",
+              "createdAt": "2026-11-01T17:35:06.881Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "specialist": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+                },
+                "accept": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+                  "method": "PATCH"
+                },
+                "reject": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+                  "method": "PATCH"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 2,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals?page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals?page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals?page=1&perPage=20"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{projectId}/proposals/{proposalId}": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "proposalId": "44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "specialistId": "a0000000-0000-4000-8000-000000000003",
+          "price": 1200,
+          "hourlyRate": 40,
+          "estimatedDays": 10,
+          "message": "Galiu pradėti šią savaitę.",
+          "status": "PENDING",
+          "createdAt": "2026-11-01T17:35:06.881Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "specialist": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+            },
+            "accept": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+              "method": "PATCH"
+            },
+            "reject": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+              "method": "PATCH"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{projectId}/shares": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "95af647a-1a61-4566-918d-17c98c9a54c0",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "expiresAt": "2026-11-08T17:35:09.177Z",
+              "revokedAt": null,
+              "lastViewedAt": null,
+              "createdAt": "2026-11-01T17:35:09.178Z",
+              "_links": {
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "revoke": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares/95af647a-1a61-4566-918d-17c98c9a54c0",
+                  "method": "DELETE"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 1,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares?page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares?page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares?page=1&perPage=20"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{projectId}/tasks": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "title": "Demonstracinė užduotis",
+              "description": null,
+              "status": "TODO",
+              "position": 0,
+              "hourlyRate": null,
+              "estimatedHours": 8,
+              "approvedAt": null,
+              "createdAt": "2026-11-01T17:35:07.828Z",
+              "updatedAt": "2026-11-01T17:35:07.828Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "sessions": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions"
+                },
+                "update": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+                  "method": "PATCH"
+                },
+                "delete": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+                  "method": "DELETE"
+                },
+                "start-session": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+                  "method": "POST"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 1,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks?page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks?page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks?page=1&perPage=20"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{projectId}/tasks/{taskId}": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "title": "Demonstracinė užduotis",
+          "description": null,
+          "status": "TODO",
+          "position": 0,
+          "hourlyRate": null,
+          "estimatedHours": 8,
+          "approvedAt": null,
+          "createdAt": "2026-11-01T17:35:07.828Z",
+          "updatedAt": "2026-11-01T17:35:07.828Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "sessions": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "method": "DELETE"
+            },
+            "start-session": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+              "method": "POST"
+            }
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/b0000000-0000-4000-8000-000000000003/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+        "params": {
+          "projectId": "b0000000-0000-4000-8000-000000000003",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Task cb7c1343-bb32-4d18-9690-a53de1e95e6f does not exist in project b0000000-0000-4000-8000-000000000003"
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{projectId}/tasks/{taskId}/sessions": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "startedAt": "2026-11-01T16:05:00.000Z",
+              "endedAt": "2026-11-01T17:35:00.000Z",
+              "durationMinutes": 90,
+              "comment": "Vykdoma sesija",
+              "appliedRate": 40,
+              "createdAt": "2026-11-01T17:35:08.328Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+                },
+                "task": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                }
+              }
+            },
+            {
+              "id": "4e40b0b2-1535-49de-b606-2166a89529ca",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "startedAt": "2026-11-01T12:35:00.000Z",
+              "endedAt": "2026-11-01T14:35:00.000Z",
+              "durationMinutes": 120,
+              "comment": "Rankiniu būdu įvesta sesija",
+              "appliedRate": 40,
+              "createdAt": "2026-11-01T17:35:08.633Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/4e40b0b2-1535-49de-b606-2166a89529ca"
+                },
+                "task": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 2,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions?page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions?page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions?page=1&perPage=20"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /projects/{projectId}/tasks/{taskId}/sessions/{sessionId}": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "sessionId": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "specialistId": "a0000000-0000-4000-8000-000000000003",
+          "startedAt": "2026-11-01T16:05:00.000Z",
+          "endedAt": "2026-11-01T17:35:00.000Z",
+          "durationMinutes": 90,
+          "comment": "Vykdoma sesija",
+          "appliedRate": 40,
+          "createdAt": "2026-11-01T17:35:08.328Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+            },
+            "task": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "GET",
+        "path": "/api/projects/b0000000-0000-4000-8000-000000000001/tasks/c0000000-0000-4000-8000-000000000001/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+        "params": {
+          "projectId": "b0000000-0000-4000-8000-000000000001",
+          "taskId": "c0000000-0000-4000-8000-000000000001",
+          "sessionId": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Work session a55cf878-52bf-4965-b61d-f33c6b2e0fb7 does not exist in task c0000000-0000-4000-8000-000000000001"
+          }
+        }
+      }
+    }
+  },
+  "GET /proposals": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/proposals",
+        "query": {
+          "status": "PENDING"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "price": 1200,
+              "hourlyRate": 40,
+              "estimatedDays": 10,
+              "message": "Galiu pradėti šią savaitę.",
+              "status": "PENDING",
+              "createdAt": "2026-11-01T17:35:06.881Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "specialist": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+                },
+                "withdraw": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+                  "method": "PATCH"
+                },
+                "delete": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+                  "method": "DELETE"
+                }
+              }
+            },
+            {
+              "id": "d0000000-0000-4000-8000-000000000003",
+              "projectId": "b0000000-0000-4000-8000-000000000003",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "price": 1200,
+              "hourlyRate": 28,
+              "estimatedDays": 15,
+              "message": "Siūlau pradėti nuo prieinamumo patikros - ji dažnai pakeičia maketo sprendimus.",
+              "status": "PENDING",
+              "createdAt": "2026-11-01T17:34:59.052Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/b0000000-0000-4000-8000-000000000003/proposals/d0000000-0000-4000-8000-000000000003"
+                },
+                "project": {
+                  "href": "/api/projects/b0000000-0000-4000-8000-000000000003"
+                },
+                "specialist": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+                },
+                "withdraw": {
+                  "href": "/api/projects/b0000000-0000-4000-8000-000000000003/proposals/d0000000-0000-4000-8000-000000000003",
+                  "method": "PATCH"
+                },
+                "delete": {
+                  "href": "/api/projects/b0000000-0000-4000-8000-000000000003/proposals/d0000000-0000-4000-8000-000000000003",
+                  "method": "DELETE"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 2,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/proposals?status=PENDING&page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/proposals?status=PENDING&page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/proposals?status=PENDING&page=1&perPage=20"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /public/projects/{token}": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/public/projects/mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8",
+        "params": {
+          "token": "mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "headers": {
+          "X-Robots-Tag": "noindex, nofollow"
+        },
+        "body": {
+          "project": {
+            "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+            "title": "Demonstracinis projektas",
+            "description": "Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.",
+            "status": "IN_PROGRESS",
+            "externalClientName": null
+          },
+          "tasks": [
+            {
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "title": "Demonstracinė užduotis",
+              "status": "IN_PROGRESS",
+              "totalMinutes": 210,
+              "appliedRate": 40,
+              "amount": 140
+            }
+          ],
+          "totalMinutes": 210,
+          "totalAmount": 140,
+          "expiresAt": "2026-11-08T17:35:09.177Z"
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "GET",
+        "path": "/api/public/projects/mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8",
+        "params": {
+          "token": "mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "headers": {
+          "X-Robots-Tag": "noindex, nofollow"
+        },
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "The link is invalid, revoked or expired"
+          }
+        }
+      }
+    }
+  },
+  "GET /sessions": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/sessions",
+        "query": {
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "startedAt": "2026-11-01T16:05:00.000Z",
+              "endedAt": "2026-11-01T17:35:00.000Z",
+              "durationMinutes": 90,
+              "comment": "Vykdoma sesija",
+              "appliedRate": 40,
+              "createdAt": "2026-11-01T17:35:08.328Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+                },
+                "task": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "update": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+                  "method": "PATCH"
+                },
+                "delete": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+                  "method": "DELETE"
+                }
+              }
+            },
+            {
+              "id": "4e40b0b2-1535-49de-b606-2166a89529ca",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "specialistId": "a0000000-0000-4000-8000-000000000003",
+              "startedAt": "2026-11-01T12:35:00.000Z",
+              "endedAt": "2026-11-01T14:35:00.000Z",
+              "durationMinutes": 120,
+              "comment": "Rankiniu būdu įvesta sesija",
+              "appliedRate": 40,
+              "createdAt": "2026-11-01T17:35:08.633Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/4e40b0b2-1535-49de-b606-2166a89529ca"
+                },
+                "task": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "update": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/4e40b0b2-1535-49de-b606-2166a89529ca",
+                  "method": "PATCH"
+                },
+                "delete": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/4e40b0b2-1535-49de-b606-2166a89529ca",
+                  "method": "DELETE"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 2,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/sessions?taskId=cb7c1343-bb32-4d18-9690-a53de1e95e6f&page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/sessions?taskId=cb7c1343-bb32-4d18-9690-a53de1e95e6f&page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/sessions?taskId=cb7c1343-bb32-4d18-9690-a53de1e95e6f&page=1&perPage=20"
+            }
+          }
+        }
+      }
+    },
+    "400": {
+      "request": {
+        "method": "GET",
+        "path": "/api/sessions",
+        "query": {
+          "from": "2026-09-08",
+          "to": "2026-09-01"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "INVALID_QUERY",
+            "message": "Invalid query parameters",
+            "details": {
+              "errors": [],
+              "properties": {
+                "from": {
+                  "errors": [
+                    "`from` must be earlier than `to`"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /tasks": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/tasks",
+        "query": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "title": "Demonstracinė užduotis",
+              "description": null,
+              "status": "TODO",
+              "position": 0,
+              "hourlyRate": null,
+              "estimatedHours": 8,
+              "approvedAt": null,
+              "createdAt": "2026-11-01T17:35:07.828Z",
+              "updatedAt": "2026-11-01T17:35:07.828Z",
+              "_links": {
+                "self": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+                },
+                "project": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+                },
+                "sessions": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions"
+                },
+                "update": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+                  "method": "PATCH"
+                },
+                "delete": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+                  "method": "DELETE"
+                },
+                "start-session": {
+                  "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+                  "method": "POST"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 20,
+          "total": 1,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/tasks?projectId=0a58902e-04dc-4b50-ac2d-7ae651b5c044&page=1&perPage=20"
+            },
+            "first": {
+              "href": "/api/tasks?projectId=0a58902e-04dc-4b50-ac2d-7ae651b5c044&page=1&perPage=20"
+            },
+            "last": {
+              "href": "/api/tasks?projectId=0a58902e-04dc-4b50-ac2d-7ae651b5c044&page=1&perPage=20"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /users": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/users",
+        "query": {
+          "perPage": "100"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "items": [
+            {
+              "id": "13258052-d16d-4112-813d-253d453b72d7",
+              "displayName": "Demonstracinė paskyra",
+              "role": "SPECIALIST",
+              "bio": "Sukurta ir ištrinama demonstracijos metu.",
+              "createdAt": "2026-11-01T17:35:02.029Z",
+              "email": "demo-1793554501506@example.lt",
+              "isBlocked": false,
+              "_links": {
+                "self": {
+                  "href": "/api/users/13258052-d16d-4112-813d-253d453b72d7"
+                }
+              }
+            },
+            {
+              "id": "a0000000-0000-4000-8000-000000000002",
+              "displayName": "UAB „Pavyzdys“",
+              "role": "CLIENT",
+              "bio": "Nedidelė įmonė, perkanti kūrimo darbus iš išorės.",
+              "createdAt": "2026-11-01T17:34:58.993Z",
+              "email": "uzsakovas@hourly.lt",
+              "isBlocked": false,
+              "_links": {
+                "self": {
+                  "href": "/api/users/a0000000-0000-4000-8000-000000000002"
+                }
+              }
+            }
+          ],
+          "page": 1,
+          "perPage": 100,
+          "total": 14,
+          "totalPages": 1,
+          "_links": {
+            "self": {
+              "href": "/api/users?perPage=100&page=1"
+            },
+            "first": {
+              "href": "/api/users?perPage=100&page=1"
+            },
+            "last": {
+              "href": "/api/users?perPage=100&page=1"
+            }
+          }
+        }
+      }
+    },
+    "403": {
+      "request": {
+        "method": "GET",
+        "path": "/api/users",
+        "bearer": true
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only ADMIN may do this",
+            "details": {
+              "requiredRoles": [
+                "ADMIN"
+              ],
+              "role": "CLIENT"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GET /users/{id}": {
+    "200": {
+      "request": {
+        "method": "GET",
+        "path": "/api/users/a0000000-0000-4000-8000-000000000003",
+        "params": {
+          "id": "a0000000-0000-4000-8000-000000000003"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "a0000000-0000-4000-8000-000000000003",
+          "displayName": "Laisvai samdomas programuotojas",
+          "role": "SPECIALIST",
+          "bio": "Saityno taikomosios programos, TypeScript, Node.js.",
+          "createdAt": "2026-11-01T17:34:58.993Z",
+          "_links": {
+            "self": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+            }
+          }
+        }
+      }
+    },
+    "401": {
+      "request": {
+        "method": "GET",
+        "path": "/api/users/a0000000-0000-4000-8000-000000000003",
+        "params": {
+          "id": "a0000000-0000-4000-8000-000000000003"
+        }
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/json",
+        "headers": {
+          "WWW-Authenticate": "Bearer realm=\"hourly\""
+        },
+        "body": {
+          "error": {
+            "code": "AUTH_REQUIRED",
+            "message": "Sign in to use this endpoint"
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "GET",
+        "path": "/api/users/13258052-d16d-4112-813d-253d453b72d7",
+        "params": {
+          "id": "13258052-d16d-4112-813d-253d453b72d7"
+        },
+        "bearer": true
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "User 13258052-d16d-4112-813d-253d453b72d7 does not exist"
+          }
+        }
+      }
+    }
+  },
+  "PATCH /auth/me": {
+    "200": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/auth/me",
+        "bearer": true,
+        "body": {
+          "displayName": "Demonstracinė paskyra",
+          "bio": "Sukurta ir ištrinama demonstracijos metu.",
+          "role": "ADMIN",
+          "isBlocked": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "13258052-d16d-4112-813d-253d453b72d7",
+          "displayName": "Demonstracinė paskyra",
+          "role": "SPECIALIST",
+          "bio": "Sukurta ir ištrinama demonstracijos metu.",
+          "createdAt": "2026-11-01T17:35:02.029Z",
+          "email": "demo-1793554501506@example.lt",
+          "isBlocked": false,
+          "_links": {
+            "self": {
+              "href": "/api/auth/me"
+            },
+            "update": {
+              "href": "/api/auth/me",
+              "method": "PATCH"
+            },
+            "profile": {
+              "href": "/api/users/13258052-d16d-4112-813d-253d453b72d7"
+            },
+            "logout": {
+              "href": "/api/auth/logout",
+              "method": "POST"
+            }
+          }
+        }
+      }
+    },
+    "422": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/auth/me",
+        "bearer": true,
+        "body": {
+          "password": "naujasSlaptazodis1",
+          "currentPassword": "neteisingas"
+        }
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "INVALID_PASSWORD",
+            "message": "The current password is incorrect",
+            "details": {
+              "field": "currentPassword"
+            }
+          }
+        }
+      }
+    }
+  },
+  "PATCH /projects/{id}": {
+    "200": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "body": {
+          "status": "PUBLISHED"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "title": "Demonstracinis projektas",
+          "description": "Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.",
+          "origin": "MARKETPLACE",
+          "status": "PUBLISHED",
+          "taskAuthoring": "SPECIALIST",
+          "budgetMin": 500,
+          "budgetMax": 1500,
+          "hourlyRate": 40,
+          "deadline": null,
+          "externalClientName": null,
+          "clientId": "a0000000-0000-4000-8000-000000000002",
+          "specialistId": null,
+          "createdAt": "2026-11-01T17:35:06.474Z",
+          "updatedAt": "2026-11-01T17:35:06.676Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "tasks": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks"
+            },
+            "proposals": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals"
+            },
+            "client": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000002"
+            },
+            "report": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report"
+            },
+            "shares": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "cancel": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "403": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/b0000000-0000-4000-8000-000000000003",
+        "params": {
+          "id": "b0000000-0000-4000-8000-000000000003"
+        },
+        "bearer": true,
+        "body": {
+          "title": "Bandymas perimti svetimą projektą"
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only the client or the assigned specialist of this project may do that"
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "body": {
+          "title": "Bandymas perimti projektą"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Project 0a58902e-04dc-4b50-ac2d-7ae651b5c044 does not exist"
+          }
+        }
+      }
+    },
+    "422": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+        "params": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "body": {
+          "status": "DRAFT"
+        }
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "INVALID_STATUS_TRANSITION",
+            "message": "Cannot change project status from IN_PROGRESS to DRAFT.",
+            "details": {
+              "from": "IN_PROGRESS",
+              "to": "DRAFT",
+              "allowed": [
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "PATCH /projects/{projectId}/proposals/{proposalId}": {
+    "200": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "proposalId": "44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+        },
+        "bearer": true,
+        "body": {
+          "status": "ACCEPTED"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "specialistId": "a0000000-0000-4000-8000-000000000003",
+          "price": 1200,
+          "hourlyRate": 40,
+          "estimatedDays": 10,
+          "message": "Galiu pradėti šią savaitę.",
+          "status": "ACCEPTED",
+          "createdAt": "2026-11-01T17:35:06.881Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "specialist": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+            }
+          }
+        }
+      }
+    }
+  },
+  "PATCH /projects/{projectId}/tasks/{taskId}": {
+    "200": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true,
+        "body": {
+          "status": "IN_PROGRESS"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "title": "Demonstracinė užduotis",
+          "description": null,
+          "status": "IN_PROGRESS",
+          "position": 0,
+          "hourlyRate": null,
+          "estimatedHours": 8,
+          "approvedAt": null,
+          "createdAt": "2026-11-01T17:35:07.828Z",
+          "updatedAt": "2026-11-01T17:35:08.198Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "sessions": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "method": "DELETE"
+            },
+            "start-session": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+              "method": "POST"
+            }
+          }
+        }
+      }
+    }
+  },
+  "PATCH /projects/{projectId}/tasks/{taskId}/sessions/{sessionId}": {
+    "200": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "sessionId": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+        },
+        "bearer": true,
+        "body": {
+          "endedAt": "2026-11-01T17:35:00.000Z"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "specialistId": "a0000000-0000-4000-8000-000000000003",
+          "startedAt": "2026-11-01T16:05:00.000Z",
+          "endedAt": "2026-11-01T17:35:00.000Z",
+          "durationMinutes": 90,
+          "comment": "Vykdoma sesija",
+          "appliedRate": 40,
+          "createdAt": "2026-11-01T17:35:08.328Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+            },
+            "task": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    }
+  },
+  "PATCH /users/{id}": {
+    "200": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/users/13258052-d16d-4112-813d-253d453b72d7",
+        "params": {
+          "id": "13258052-d16d-4112-813d-253d453b72d7"
+        },
+        "bearer": true,
+        "body": {
+          "isBlocked": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "id": "13258052-d16d-4112-813d-253d453b72d7",
+          "displayName": "Demonstracinė paskyra",
+          "role": "SPECIALIST",
+          "bio": "Sukurta ir ištrinama demonstracijos metu.",
+          "createdAt": "2026-11-01T17:35:02.029Z",
+          "email": "demo-1793554501506@example.lt",
+          "isBlocked": true,
+          "_links": {
+            "self": {
+              "href": "/api/users/13258052-d16d-4112-813d-253d453b72d7"
+            }
+          }
+        }
+      }
+    },
+    "422": {
+      "request": {
+        "method": "PATCH",
+        "path": "/api/users/a0000000-0000-4000-8000-000000000001",
+        "params": {
+          "id": "a0000000-0000-4000-8000-000000000001"
+        },
+        "bearer": true,
+        "body": {
+          "isBlocked": true
+        }
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "CANNOT_MODIFY_SELF",
+            "message": "An administrator cannot block or delete their own account"
+          }
+        }
+      }
+    }
+  },
+  "POST /auth/login": {
+    "200": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "body": {
+          "email": "demo-1793554501506@example.lt",
+          "password": "slaptazodis123"
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiU1BFQ0lBTElTVCIsInNpZCI6IjQxMWE3NTkwLTMxMTItNDVhMi04OGJjLTVkM2UwODFiOTAwMiIsImlhdCI6MTc5MzU1NDUwMiwiZXhwIjoxNzkzNTU1NDAyLCJhdWQiOiJob3VybHkiLCJpc3MiOiJob3VybHktYXBpIiwic3ViIjoiMTMyNTgwNTItZDE2ZC00MTEyLTgxM2QtMjUzZDQ1M2I3MmQ3In0.<signature>",
+          "user": {
+            "id": "13258052-d16d-4112-813d-253d453b72d7",
+            "displayName": "Demonstracinis specialistas",
+            "role": "SPECIALIST",
+            "bio": null,
+            "createdAt": "2026-11-01T17:35:02.029Z",
+            "email": "demo-1793554501506@example.lt",
+            "isBlocked": false
+          }
+        }
+      }
+    },
+    "401": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "body": {
+          "email": "uzsakovas@hourly.lt",
+          "password": "neteisingas"
+        }
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/json",
+        "headers": {
+          "WWW-Authenticate": "Bearer realm=\"hourly\""
+        },
+        "body": {
+          "error": {
+            "code": "INVALID_CREDENTIALS",
+            "message": "Incorrect e-mail or password"
+          }
+        }
+      }
+    },
+    "403": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "body": {
+          "email": "blokuotas@hourly.lt",
+          "password": "slaptazodis123"
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "ACCOUNT_BLOCKED",
+            "message": "This account is blocked"
+          }
+        }
+      }
+    },
+    "429": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/login",
+        "body": {
+          "email": "spejikas-1793554516394@example.lt",
+          "password": "spejamas-slaptazodis"
+        }
+      },
+      "response": {
+        "status": 429,
+        "contentType": "application/json",
+        "headers": {
+          "Retry-After": "897"
+        },
+        "body": {
+          "error": {
+            "code": "TOO_MANY_REQUESTS",
+            "message": "Too many attempts; try again later",
+            "details": {
+              "retryAfterSeconds": 897
+            }
+          }
+        }
+      }
+    }
+  },
+  "POST /auth/logout": {
+    "204": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/logout"
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  },
+  "POST /auth/refresh": {
+    "200": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/refresh"
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json",
+        "body": {
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiU1BFQ0lBTElTVCIsInNpZCI6IjYxOWEyNjgxLTExYTEtNDczNy05NWE0LWY5Zjk0NmFjZDg1MSIsImlhdCI6MTc5MzU1NDUwMiwiZXhwIjoxNzkzNTU1NDAyLCJhdWQiOiJob3VybHkiLCJpc3MiOiJob3VybHktYXBpIiwic3ViIjoiMTMyNTgwNTItZDE2ZC00MTEyLTgxM2QtMjUzZDQ1M2I3MmQ3In0.<signature>",
+          "user": {
+            "id": "13258052-d16d-4112-813d-253d453b72d7",
+            "displayName": "Demonstracinis specialistas",
+            "role": "SPECIALIST",
+            "bio": null,
+            "createdAt": "2026-11-01T17:35:02.029Z",
+            "email": "demo-1793554501506@example.lt",
+            "isBlocked": false
+          }
+        }
+      }
+    },
+    "401": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/refresh"
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/json",
+        "headers": {
+          "WWW-Authenticate": "Bearer realm=\"hourly\""
+        },
+        "body": {
+          "error": {
+            "code": "REFRESH_TOKEN_REUSED",
+            "message": "Refresh token was already used or revoked; sign in again"
+          }
+        }
+      }
+    }
+  },
+  "POST /auth/register": {
+    "201": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/register",
+        "body": {
+          "email": "demo-1793554501506@example.lt",
+          "password": "slaptazodis123",
+          "displayName": "Demonstracinis specialistas",
+          "role": "SPECIALIST"
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/api/users/13258052-d16d-4112-813d-253d453b72d7"
+        },
+        "body": {
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiU1BFQ0lBTElTVCIsInNpZCI6IjYxOWEyNjgxLTExYTEtNDczNy05NWE0LWY5Zjk0NmFjZDg1MSIsImlhdCI6MTc5MzU1NDUwMiwiZXhwIjoxNzkzNTU1NDAyLCJhdWQiOiJob3VybHkiLCJpc3MiOiJob3VybHktYXBpIiwic3ViIjoiMTMyNTgwNTItZDE2ZC00MTEyLTgxM2QtMjUzZDQ1M2I3MmQ3In0.<signature>",
+          "user": {
+            "id": "13258052-d16d-4112-813d-253d453b72d7",
+            "displayName": "Demonstracinis specialistas",
+            "role": "SPECIALIST",
+            "bio": null,
+            "createdAt": "2026-11-01T17:35:02.029Z",
+            "email": "demo-1793554501506@example.lt",
+            "isBlocked": false
+          }
+        }
+      }
+    },
+    "409": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/register",
+        "body": {
+          "email": "demo-1793554501506@example.lt",
+          "password": "slaptazodis123",
+          "displayName": "Antra paskyra",
+          "role": "CLIENT"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "EMAIL_TAKEN",
+            "message": "An account with this e-mail already exists"
+          }
+        }
+      }
+    },
+    "422": {
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/register",
+        "body": {
+          "email": "isilauzelis@example.lt",
+          "password": "slaptazodis123",
+          "displayName": "Norintis būti administratoriumi",
+          "role": "ADMIN"
+        }
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Invalid request payload",
+            "details": {
+              "errors": [],
+              "properties": {
+                "role": {
+                  "errors": [
+                    "Invalid option: expected one of \"CLIENT\"|\"SPECIALIST\""
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "POST /projects": {
+    "201": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects",
+        "bearer": true,
+        "body": {
+          "title": "Demonstracinis projektas",
+          "description": "Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.",
+          "taskAuthoring": "SPECIALIST",
+          "budgetMin": 500,
+          "budgetMax": 1500,
+          "hourlyRate": 40
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "body": {
+          "id": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "title": "Demonstracinis projektas",
+          "description": "Projektas sukurtas automatinės demonstracijos metu ir bus ištrintas pabaigoje.",
+          "origin": "MARKETPLACE",
+          "status": "DRAFT",
+          "taskAuthoring": "SPECIALIST",
+          "budgetMin": 500,
+          "budgetMax": 1500,
+          "hourlyRate": 40,
+          "deadline": null,
+          "externalClientName": null,
+          "clientId": "a0000000-0000-4000-8000-000000000002",
+          "specialistId": null,
+          "createdAt": "2026-11-01T17:35:06.474Z",
+          "updatedAt": "2026-11-01T17:35:06.474Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "tasks": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks"
+            },
+            "proposals": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals"
+            },
+            "client": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000002"
+            },
+            "report": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/report"
+            },
+            "shares": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "publish": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "cancel": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "400": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects",
+        "bearer": true,
+        "body": "{\"title\": "
+      },
+      "response": {
+        "status": 400,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "MALFORMED_JSON",
+            "message": "Request body is not valid JSON"
+          }
+        }
+      }
+    },
+    "401": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects",
+        "body": {
+          "title": "Projektas be naudotojo",
+          "description": "Turėtų būti atmestas: nėra žetono."
+        }
+      },
+      "response": {
+        "status": 401,
+        "contentType": "application/json",
+        "headers": {
+          "WWW-Authenticate": "Bearer realm=\"hourly\""
+        },
+        "body": {
+          "error": {
+            "code": "AUTH_REQUIRED",
+            "message": "Sign in to use this endpoint"
+          }
+        }
+      }
+    },
+    "403": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects",
+        "bearer": true,
+        "body": {
+          "title": "Projektas, kurio sukurti neleidžiama",
+          "description": "Turėtų būti atmestas dėl naudotojo rolės, ne dėl turinio.",
+          "origin": "MARKETPLACE"
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only a client may publish a marketplace project",
+            "details": {
+              "origin": "MARKETPLACE",
+              "requiredRole": "CLIENT",
+              "role": "SPECIALIST"
+            }
+          }
+        }
+      }
+    },
+    "422": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects",
+        "bearer": true,
+        "body": {
+          "title": "ab",
+          "description": "Per trumpas pavadinimas."
+        }
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Invalid request payload",
+            "details": {
+              "errors": [],
+              "properties": {
+                "title": {
+                  "errors": [
+                    "Too small: expected string to have >=3 characters"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "POST /projects/{projectId}/proposals": {
+    "201": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "body": {
+          "price": 1200,
+          "hourlyRate": 40,
+          "estimatedDays": 10,
+          "message": "Galiu pradėti šią savaitę."
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+        },
+        "body": {
+          "id": "44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "specialistId": "a0000000-0000-4000-8000-000000000003",
+          "price": 1200,
+          "hourlyRate": 40,
+          "estimatedDays": 10,
+          "message": "Galiu pradėti šią savaitę.",
+          "status": "PENDING",
+          "createdAt": "2026-11-01T17:35:06.881Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "specialist": {
+              "href": "/api/users/a0000000-0000-4000-8000-000000000003"
+            },
+            "withdraw": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/proposals/44032ad2-4771-4ab5-baf0-d2a4e629dadc",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "403": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/b0000000-0000-4000-8000-000000000003/proposals",
+        "params": {
+          "projectId": "b0000000-0000-4000-8000-000000000003"
+        },
+        "bearer": true,
+        "body": {
+          "price": 500,
+          "message": "Užsakovas bando pasiūlyti kainą."
+        }
+      },
+      "response": {
+        "status": 403,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Only SPECIALIST may do this",
+            "details": {
+              "requiredRoles": [
+                "SPECIALIST"
+              ],
+              "role": "CLIENT"
+            }
+          }
+        }
+      }
+    }
+  },
+  "POST /projects/{projectId}/shares": {
+    "201": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "body": {
+          "expiresInDays": 7
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares/95af647a-1a61-4566-918d-17c98c9a54c0"
+        },
+        "body": {
+          "id": "95af647a-1a61-4566-918d-17c98c9a54c0",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "expiresAt": "2026-11-08T17:35:09.177Z",
+          "revokedAt": null,
+          "lastViewedAt": null,
+          "createdAt": "2026-11-01T17:35:09.178Z",
+          "token": "mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8",
+          "url": "http://localhost:3000/p/mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8",
+          "_links": {
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "revoke": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/shares/95af647a-1a61-4566-918d-17c98c9a54c0",
+              "method": "DELETE"
+            },
+            "public": {
+              "href": "/api/public/projects/mKadtidXF0moyGkH0ZaXAFK1_0-ULXnjaw24iM_o-y8"
+            }
+          }
+        }
+      }
+    }
+  },
+  "POST /projects/{projectId}/tasks": {
+    "201": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+        },
+        "bearer": true,
+        "body": {
+          "title": "Demonstracinė užduotis",
+          "estimatedHours": 8
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "body": {
+          "id": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "title": "Demonstracinė užduotis",
+          "description": null,
+          "status": "TODO",
+          "position": 0,
+          "hourlyRate": null,
+          "estimatedHours": 8,
+          "approvedAt": null,
+          "createdAt": "2026-11-01T17:35:07.828Z",
+          "updatedAt": "2026-11-01T17:35:07.828Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "sessions": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "method": "DELETE"
+            },
+            "start-session": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+              "method": "POST"
+            }
+          }
+        }
+      }
+    },
+    "404": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/00000000-0000-4000-8000-000000000000/tasks",
+        "params": {
+          "projectId": "00000000-0000-4000-8000-000000000000"
+        },
+        "bearer": true,
+        "body": {
+          "title": "Užduotis be projekto"
+        }
+      },
+      "response": {
+        "status": 404,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "NOT_FOUND",
+            "message": "Project 00000000-0000-4000-8000-000000000000 does not exist"
+          }
+        }
+      }
+    },
+    "422": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/b0000000-0000-4000-8000-000000000001/tasks",
+        "params": {
+          "projectId": "b0000000-0000-4000-8000-000000000001"
+        },
+        "bearer": true,
+        "body": {
+          "title": "Užduotis toli sąraše",
+          "position": 2147483648
+        }
+      },
+      "response": {
+        "status": 422,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Invalid request payload",
+            "details": {
+              "errors": [],
+              "properties": {
+                "position": {
+                  "errors": [
+                    "Too big: expected number to be <=100000"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "POST /projects/{projectId}/tasks/{taskId}/sessions": {
+    "201": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true,
+        "body": {
+          "startedAt": "2026-11-01T16:05:00.000Z",
+          "comment": "Vykdoma sesija"
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json",
+        "headers": {
+          "Location": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+        },
+        "body": {
+          "id": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+          "specialistId": "a0000000-0000-4000-8000-000000000003",
+          "startedAt": "2026-11-01T16:05:00.000Z",
+          "endedAt": null,
+          "durationMinutes": null,
+          "comment": "Vykdoma sesija",
+          "appliedRate": null,
+          "createdAt": "2026-11-01T17:35:08.328Z",
+          "_links": {
+            "self": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7"
+            },
+            "task": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+            },
+            "project": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044"
+            },
+            "stop": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "PATCH"
+            },
+            "update": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "PATCH"
+            },
+            "delete": {
+              "href": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions/a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "method": "DELETE"
+            }
+          }
+        }
+      }
+    },
+    "409": {
+      "request": {
+        "method": "POST",
+        "path": "/api/projects/0a58902e-04dc-4b50-ac2d-7ae651b5c044/tasks/cb7c1343-bb32-4d18-9690-a53de1e95e6f/sessions",
+        "params": {
+          "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+          "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f"
+        },
+        "bearer": true,
+        "body": {
+          "startedAt": "2026-11-01T16:05:00.000Z"
+        }
+      },
+      "response": {
+        "status": 409,
+        "contentType": "application/json",
+        "body": {
+          "error": {
+            "code": "SESSION_ALREADY_RUNNING",
+            "message": "You already have a running work session",
+            "details": {
+              "sessionId": "a55cf878-52bf-4965-b61d-f33c6b2e0fb7",
+              "taskId": "cb7c1343-bb32-4d18-9690-a53de1e95e6f",
+              "projectId": "0a58902e-04dc-4b50-ac2d-7ae651b5c044",
+              "startedAt": "2026-11-01T16:05:00.000Z"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -23,7 +23,7 @@ export interface PostmanCollectionLike {
 }
 
 /** `/projects/{projectId}/tasks` -> a pattern matching one path segment per parameter. */
-function templatePattern(template: string): RegExp {
+export function templatePattern(template: string): RegExp {
   const source = template
     .split('/')
     .map((segment) =>

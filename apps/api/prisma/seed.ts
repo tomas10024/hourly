@@ -49,6 +49,12 @@ const user = {
   frontend: 'a0000000-0000-4000-8000-000000000007',
   dataEngineer: 'a0000000-0000-4000-8000-000000000008',
   blocked: 'a0000000-0000-4000-8000-000000000009',
+  // The lighter side of the marketplace, for a smile at the defence. None of
+  // them is a Postman account.
+  granny: 'a0000000-0000-4000-8000-000000000010',
+  startup: 'a0000000-0000-4000-8000-000000000011',
+  junior: 'a0000000-0000-4000-8000-000000000012',
+  cat: 'a0000000-0000-4000-8000-000000000013',
 };
 
 const project = {
@@ -59,6 +65,10 @@ const project = {
   brand: 'b0000000-0000-4000-8000-000000000005', // MARKETPLACE, COMPLETED
   migration: 'b0000000-0000-4000-8000-000000000006', // MARKETPLACE, CANCELLED
   warehouse: 'b0000000-0000-4000-8000-000000000007', // DIRECT, IN_PROGRESS
+  tablet: 'b0000000-0000-4000-8000-000000000008', // MARKETPLACE, IN_PROGRESS
+  dumplings: 'b0000000-0000-4000-8000-000000000009', // MARKETPLACE, PUBLISHED
+  laser: 'b0000000-0000-4000-8000-000000000010', // DIRECT, IN_PROGRESS
+  lab: 'b0000000-0000-4000-8000-000000000011', // DIRECT, IN_PROGRESS
 };
 
 const task = (n: number) => `c0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -231,6 +241,38 @@ async function main() {
         bio: 'Paskyra užblokuota dėl taisyklių pažeidimo.',
         isBlocked: true,
       },
+      {
+        id: user.granny,
+        email: 'aldona@mociute.lt',
+        passwordHash,
+        displayName: 'Močiutė Aldona',
+        role: 'CLIENT',
+        bio: 'Turiu planšetę, du anūkus ir labai daug klausimų. Slaptažodį laikau ant lipnuko prie ekrano.',
+      },
+      {
+        id: user.startup,
+        email: 'ceo@cepelinai.ai',
+        passwordHash,
+        displayName: 'UAB „Cepelinų dirbtinis intelektas“',
+        role: 'CLIENT',
+        bio: 'Keičiame cepelinų rinką iš pagrindų. Biudžeto neturime, bet turime viziją ir 87 skaidres.',
+      },
+      {
+        id: user.junior,
+        email: 'paulius@junior.lt',
+        passwordHash,
+        displayName: 'Paulius, jaunesnysis programuotojas',
+        role: 'SPECIALIST',
+        bio: 'Trys mėnesiai patirties, trisdešimt metų pasitikėjimo savimi. Pas mane veikia.',
+      },
+      {
+        id: user.cat,
+        email: 'murkis@katinas.lt',
+        passwordHash,
+        displayName: 'Katinas Murkis',
+        role: 'SPECIALIST',
+        bio: 'Klaviatūrų testuotojas (vaikštau per jas). Dirbu, kai nemiegu, t. y. dvi valandas per parą.',
+      },
     ],
   });
 
@@ -337,6 +379,64 @@ async function main() {
         hourlyRate: 45,
         externalClientName: 'UAB „Medžio dirbtuvės“',
         specialistId: user.dataEngineer,
+      },
+      {
+        id: project.tablet,
+        title: 'Planšetė, kuri pasako, ar „Facebook“ įrašą sukūrė dirbtinis intelektas',
+        description:
+          'Feisbuke vis matau šuniukus su šešiais pirštais ir 120 metų sulaukusias močiutes, ' +
+          'iškepusias 3 metrų tortą. Anūkas sako, kad tai dirbtinis intelektas. Noriu, kad planšetė ' +
+          'pati perspėtų, kas tikra, o kas ne. Atsiskaitysiu ir koldūnais.',
+        origin: 'MARKETPLACE',
+        status: 'IN_PROGRESS',
+        taskAuthoring: 'SPECIALIST',
+        budgetMin: 50,
+        budgetMax: 150,
+        hourlyRate: 15,
+        deadline: daysAgo(-10, 12),
+        clientId: user.granny,
+        specialistId: user.junior,
+      },
+      {
+        id: project.dumplings,
+        title: 'Cepelinų pristatymas dronais su dirbtiniu intelektu',
+        description:
+          'Ieškome specialisto, kuris už 50 EUR ir 0,001 % akcijų sukurtų „cepelinų Uberį“. ' +
+          'Būtina: blokų grandinė, dirbtinis intelektas, metavisata. Pageidautina: veikiantis ' +
+          'produktas iki pirmadienio.',
+        origin: 'MARKETPLACE',
+        status: 'PUBLISHED',
+        taskAuthoring: 'CLIENT',
+        budgetMin: 30,
+        budgetMax: 50,
+        deadline: daysAgo(-3, 9),
+        clientId: user.startup,
+      },
+      {
+        id: project.laser,
+        title: 'Raudono lazerio taškelio sugavimas',
+        description:
+          'Taškelis pasirodo kasdien 19 val. ir dingsta, vos jį pagavus. Tikėtina, kad tai ne ' +
+          'taškelio, o šeimininko rankos klaida. Sutarta tiesiogiai, prie maisto dubenėlio.',
+        origin: 'DIRECT',
+        status: 'IN_PROGRESS',
+        taskAuthoring: 'SPECIALIST',
+        hourlyRate: 2,
+        externalClientName: 'Šeimininkas (nežino, kad yra užsakovas)',
+        specialistId: user.cat,
+      },
+      {
+        id: project.lab,
+        title: 'Laboratorinis darbas, kuris turi veikti per gynimą',
+        description:
+          'Lokaliai veikia. Debesyje – kaip kada. Gynimas jau greitai, todėl darbas apskaitomas ' +
+          'minutės tikslumu, o įkainis atitinka studento stipendiją.',
+        origin: 'DIRECT',
+        status: 'IN_PROGRESS',
+        taskAuthoring: 'SPECIALIST',
+        hourlyRate: 1,
+        externalClientName: 'Labai griežta komisija',
+        specialistId: user.frontend,
       },
     ],
   });
@@ -456,6 +556,103 @@ async function main() {
       { id: task(18), projectId: project.warehouse, title: 'Duomenų šaltinių auditas', status: 'DONE', position: 0, estimatedHours: 12 },
       { id: task(19), projectId: project.warehouse, title: 'Ataskaitų šablonai', status: 'IN_PROGRESS', position: 1, estimatedHours: 14 },
       { id: task(20), projectId: project.warehouse, title: 'Automatinis siuntimas', status: 'TODO', position: 2, estimatedHours: 8 },
+
+      // Močiutės planšetė
+      { id: task(22), projectId: project.tablet, title: 'Atpažinti šešis pirštus nuotraukose', status: 'DONE', position: 0, estimatedHours: 4, approvedAt: daysAgo(10, 18) },
+      {
+        id: task(23),
+        projectId: project.tablet,
+        title: 'Perspėjimas „Tai DI“ dideliu šriftu',
+        description: '72 pt, kad matytųsi ir be akinių.',
+        status: 'DONE',
+        position: 1,
+        estimatedHours: 1,
+        approvedAt: daysAgo(10, 18),
+      },
+      {
+        id: task(24),
+        projectId: project.tablet,
+        title: 'Atpažinti įrašus „Pažymėk patinka, jei sutinki“',
+        description: 'Kol kas visi tokie įrašai atpažinti kaip DI. Klaidų nerasta.',
+        status: 'IN_PROGRESS',
+        position: 2,
+        estimatedHours: 3,
+        approvedAt: daysAgo(10, 18),
+      },
+      {
+        id: task(25),
+        projectId: project.tablet,
+        title: 'Patikrinti, ar anūko nuotraukos iš Bali tikros',
+        description: 'Anūkas atsisako pateikti duomenis.',
+        status: 'BLOCKED',
+        position: 3,
+        estimatedHours: 2,
+      },
+      {
+        id: task(26),
+        projectId: project.tablet,
+        title: 'Paaiškinti, kodėl perspėjimas rodomas prie visų giminaičių sveikinimų',
+        status: 'TODO',
+        position: 4,
+        estimatedHours: 3,
+      },
+
+      // Cepelinai dronais (paskelbtas, laukia pasiūlymų)
+      { id: task(27), projectId: project.dumplings, title: 'Dirbtinis intelektas, nuspėjantis, kada norėsis cepelinų', status: 'TODO', position: 0, estimatedHours: 200 },
+      { id: task(28), projectId: project.dumplings, title: 'Spirgučių sekimas blokų grandinėje', status: 'TODO', position: 1, estimatedHours: 120 },
+      { id: task(29), projectId: project.dumplings, title: 'Dronas, kuris nenumeta grietinės', status: 'TODO', position: 2, estimatedHours: 80 },
+      { id: task(30), projectId: project.dumplings, title: 'Investuotojų pristatymas (87 skaidrės)', status: 'TODO', position: 3, estimatedHours: 1 },
+
+      // Lazerio taškelis
+      { id: task(31), projectId: project.laser, title: 'Taškelio stebėjimas iš po sofos', status: 'DONE', position: 0, estimatedHours: 5 },
+      {
+        id: task(32),
+        projectId: project.laser,
+        title: 'Šuolis ant sienos',
+        description: 'Antras bandymas. Pirmasis baigėsi vazono netektimi.',
+        status: 'IN_PROGRESS',
+        position: 1,
+        estimatedHours: 1,
+      },
+      {
+        id: task(33),
+        projectId: project.laser,
+        title: 'Ataskaita šeimininkui',
+        description: 'Neturiu nykščių.',
+        status: 'BLOCKED',
+        position: 2,
+        estimatedHours: 1,
+      },
+
+      // Laboratorinis darbas
+      {
+        id: task(34),
+        projectId: project.lab,
+        title: 'Įdiegti į Azure',
+        description: 'Planuota viena valanda. Prireikė septynių bandymų, trijų regionų ir vienos kvotos.',
+        status: 'DONE',
+        position: 0,
+        estimatedHours: 1,
+      },
+      { id: task(35), projectId: project.lab, title: 'Išsiaiškinti, kodėl lokaliai veikia, o debesyje – ne', status: 'DONE', position: 1, estimatedHours: 0.5 },
+      { id: task(36), projectId: project.lab, title: 'Paaiškinti, kad tai ne klaida, o funkcija', status: 'IN_PROGRESS', position: 2, estimatedHours: 2 },
+      {
+        id: task(37),
+        projectId: project.lab,
+        title: 'Išsimiegoti',
+        description: 'Laukiama sesijos pabaigos.',
+        status: 'BLOCKED',
+        position: 3,
+        estimatedHours: 8,
+      },
+      {
+        id: task(38),
+        projectId: project.lab,
+        title: 'Gauti dešimtuką',
+        description: 'Priklauso nuo komisijos nuotaikos ir šio projekto.',
+        status: 'TODO',
+        position: 4,
+      },
     ],
   });
 
@@ -498,8 +695,29 @@ async function main() {
       done(task(19), user.dataEngineer, daysAgo(5, 10), 150, 45, 'Savaitinės ataskaitos šablonas.'),
       done(task(19), user.dataEngineer, daysAgo(3, 11), 90, 45, 'Suvestinės pagal sandėlius.'),
 
-      // The one session still running - deliberately not the demo specialist.
+      // Močiutės planšetė, 15 EUR/h
+      done(task(22), user.junior, daysAgo(9, 10), 45, 15, 'Modelis rado šešis pirštus. Pasirodo, tai buvo dvi rankos.'),
+      done(task(22), user.junior, daysAgo(8, 10), 60, 15, 'Pataisyta. Modelis nebeskaičiuoja bananų kaip pirštų.'),
+      done(task(23), user.junior, daysAgo(7, 14), 90, 15, 'Perspėjimas veikia. Užima visą ekraną.'),
+      done(task(24), user.junior, daysAgo(5, 11), 120, 15, 'Patikrinau 200 įrašų: 199 – DI, vienas – kaimynės pyragas.'),
+      done(task(24), user.junior, daysAgo(3, 15), 30, 15, 'Gavau koldūnų. Darbas tęsiamas.'),
+
+      // Lazerio taškelis, 2 EUR/h
+      done(task(31), user.cat, daysAgo(4, 19), 15, 2, 'Taškelis pastebėtas. Apsimečiau, kad man neįdomu.'),
+      done(task(31), user.cat, daysAgo(3, 19), 20, 2, 'Taškelis pabėgo ant lubų – ne mano kompetencija.'),
+      done(task(32), user.cat, daysAgo(2, 19), 5, 2, 'Šokau. Nukritau. Apsimečiau, kad taip ir planavau.'),
+      done(task(32), user.cat, daysAgo(2, 3), 240, 2, 'Miegojau ant klaviatūros. Įkeltas pakeitimas „ffffffffffff“.'),
+
+      // Laboratorinis darbas, 1 EUR/h
+      done(task(34), user.frontend, daysAgo(2, 21), 30, 1, 'az postgres flexible-server create: unrecognized arguments.'),
+      done(task(34), user.frontend, daysAgo(2, 22), 45, 1, 'SkuNotAvailable. Keičiu regioną.'),
+      done(task(34), user.frontend, daysAgo(2, 23), 60, 1, 'Kvota: 0. Keičiu regioną dar kartą.'),
+      done(task(35), user.frontend, daysAgo(1, 1), 120, 1, 'Paaiškėjo, kad pamiršau įkelti kodą. Dabar veikia.'),
+      done(task(36), user.frontend, daysAgo(1, 10), 90, 1, 'Paruošiau tris paaiškinimus. Visi skamba įtikinamai.'),
+
+      // The sessions still running - deliberately not the demo specialist.
       running(task(19), user.dataEngineer, daysAgo(0, 9), 'Vykdoma: grafikų formatavimas.'),
+      running(task(26), user.junior, daysAgo(0, 8), 'Močiutė skambina paklausti, ar šis skambutis irgi DI.'),
     ],
   });
 
@@ -575,6 +793,43 @@ async function main() {
         message: 'Reikėtų prieigos prie senos duomenų bazės kopijos.',
         status: 'REJECTED',
       },
+      {
+        id: proposal(8),
+        projectId: project.tablet,
+        specialistId: user.junior,
+        price: 100,
+        hourlyRate: 15,
+        estimatedDays: 1,
+        message: 'Padarysiu per vakarą: kodą parašys DI, jis ir patikrins.',
+        status: 'ACCEPTED',
+      },
+      {
+        id: proposal(9),
+        projectId: project.dumplings,
+        specialistId: user.cat,
+        price: 3,
+        estimatedDays: 1,
+        message: 'Sutinku už tris sardines. Dronus gaudyti galiu nemokamai.',
+        status: 'PENDING',
+      },
+      {
+        id: proposal(10),
+        projectId: project.dumplings,
+        specialistId: user.dataEngineer,
+        price: 4800,
+        estimatedDays: 90,
+        message: 'Mano įvertinimas – 4800 EUR. Spirgučių blokų grandinė – papildomai.',
+        status: 'PENDING',
+      },
+      {
+        id: proposal(11),
+        projectId: project.dumplings,
+        specialistId: user.frontend,
+        price: 50,
+        estimatedDays: 3,
+        message: 'Ar „iki pirmadienio“ reiškia šį pirmadienį?',
+        status: 'WITHDRAWN',
+      },
     ],
   });
 
@@ -588,6 +843,7 @@ async function main() {
   const shopToken = randomBytes(32).toString('base64url');
   const warehouseToken = randomBytes(32).toString('base64url');
   const oldSalonToken = randomBytes(32).toString('base64url');
+  const labToken = randomBytes(32).toString('base64url');
   const hash = (token: string) => createHash('sha256').update(token).digest('hex');
 
   await prisma.shareLink.createMany({
@@ -636,6 +892,13 @@ async function main() {
         expiresAt: daysAgo(-5, 12),
         lastViewedAt: daysAgo(15, 18),
         revokedAt: daysAgo(10, 9),
+      },
+      // For the committee: the lab work's progress, open to anyone with it.
+      {
+        id: share(7),
+        projectId: project.lab,
+        tokenHash: hash(labToken),
+        expiresAt: daysAgo(-60, 12),
       },
     ],
   });
@@ -727,6 +990,7 @@ async function main() {
   console.log(`Live share link:    ${WEB_ORIGIN}/p/${liveToken}`);
   console.log(`Expired share link: ${WEB_ORIGIN}/p/${expiredToken}`);
   console.log(`Revoked share link: ${WEB_ORIGIN}/p/${revokedToken}`);
+  console.log(`Lab work share link: ${WEB_ORIGIN}/p/${labToken}`);
   const repoRoot = path.resolve(here, '../../..');
   const relativeOutput = path.relative(repoRoot, outputPath).split(path.sep).join('/');
   console.log(`Identifiers for Postman: ${relativeOutput}`);
