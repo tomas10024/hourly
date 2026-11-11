@@ -144,8 +144,6 @@ Sistemą sudaro trys dalys:
 
 *2.1 pav. Sistemos diegimo diagrama (UML)*
 
- Pavadinimai ir planai sutampa su [infra/azure-setup.sh](infra/azure-setup.sh).
-
 Sistema talpinama Microsoft Azure debesyje:
 
 | Mazgas | Azure paslauga | Kas įdiegta |
@@ -576,15 +574,6 @@ Visos klaidos grąžinamos vienodu formatu: `code` skirtas programai, `message` 
 
 # Priedai
 
-## A. Projekto paleidimas
-
-### Reikalavimai
-
-- Node.js 22 (žr. [.nvmrc](.nvmrc))
-- Docker (PostgreSQL duomenų bazei) arba vietinė PostgreSQL 17
-
-Duomenų bazės konteineris skelbiamas **5433** prievade, o ne įprastame 5432 – taip išvengiama konflikto su kompiuteryje jau veikiančiu PostgreSQL. Prievadas nurodytas [docker-compose.yml](docker-compose.yml) ir `apps/api/.env.example` failuose.
-
 ### Saugyklos sandara
 
 ```
@@ -604,7 +593,7 @@ npm run db:migrate
 npm run db:seed
 ```
 
-### Kasdienis darbas
+### Paleidimas
 
 ```bash
 npm run dev
@@ -626,13 +615,13 @@ npm run dev
 | `npm run db:studio` | Prisma Studio duomenų peržiūrai |
 | `npm run lint` | Statinė analizė |
 | `npm run test` | Testai |
-| `npm run demo` | Sąsajos demonstracija (žr. [priedų 6 skyrių](docs/priedai.md#6-sąsajos-demonstracija-ir-testai)) |
+| `npm run demo` | Sąsajos demonstracija |
 | `npm run openapi:export` | Atnaujinti `api-spec.yaml`, `docs/api.md` ir `docs/openapi.json` |
 | `npm run build` | Sukompiliuoti visas dalis |
 
 ### Demonstracinės paskyros
 
-Po `npm run db:seed` sukuriama 13 paskyrų, visos su slaptažodžiu `slaptazodis123`:
+visos su slaptažodžiu `slaptazodis123`:
 
 | Paskyra | Rolė | Pastaba |
 |---|---|---|
@@ -649,37 +638,3 @@ Po `npm run db:seed` sukuriama 13 paskyrų, visos su slaptažodžiu `slaptazodis
 | `ceo@cepelinai.ai` | Užsakovas | Turi paskelbtą projektą |
 | `paulius@junior.lt` | Specialistas | Vykdo Aldonos projektą, **turi vykdomą darbo sesiją** |
 | `murkis@katinas.lt` | Specialistas | Turi tiesiogiai sutartą projektą |
-
-Duomenyse yra visos projekto ir pasiūlymo būsenos: 11 projektų, 38 užduotys, 41 darbo sesija (iš jų dvi vykdomos), 11 pasiūlymų ir 7 peržiūros nuorodos – galiojančios, pasibaigusi ir atšauktos. Parduotuvės projektas turi penkias užduotis, o jo užduotis „Užsakymų sąrašas su filtrais“ – penkias sesijas, todėl visi trys hierarchijos lygiai ir puslapiavimas rodomi su prasmingu kiekiu duomenų. Seed yra pakartojamas – paleidus iš naujo duomenys atstatomi, o identifikatoriai nesikeičia.
-
-Sukurti identifikatoriai ir peržiūros nuorodų žetonai įrašomi į `docs/postman/demo-data.json` (failas negrįžta į Git, nes generuojamas iš naujo).
-
----
-
-## B. Reikalavimų atitiktis
-
-Inžinerinio projekto ataskaitos vertinimo kriterijai (skliaustuose – balai) ir kur jie tenkinami. Laboratorinių darbų kriterijų atitiktis – [priedų 7 skyriuje](docs/priedai.md#7-laboratorinių-darbų-reikalavimų-atitiktis).
-
-| Kriterijus | Kaip tenkinamas |
-|---|---|
-| **Ataskaitos struktūra, formatavimas ir turinys (3)** | Ataskaita – šis `README.md` GitHub saugykloje; skyriai 1–5 tiksliai atitinka pateiktą struktūrą, papildoma medžiaga – prieduose ir [docs/priedai.md](docs/priedai.md) |
-| **Diegimo diagrama (2)** | 2.1 poskyris: UML diegimo diagrama, sudaryta Cameo įrankiu (mazgai, vykdymo aplinkos, artefaktai su `Deployment` ryšiais, komunikacijos keliai su protokolais), atitinka realų Azure diegimą; ne PlantUML |
-| **Naudotojo sąsaja ir jos projektas (2)** | 3 skyrius: 10 wireframe'ų (SVG, dviem pločiais) ir 17 juos atitinkančių realizacijos ekrano iškarpų |
-| **OpenAPI specifikacija (2)** | 4 skyrius: atskiras [api-spec.yaml](api-spec.yaml); [docs/api.md](docs/api.md) – skaitomas formatas GitHub'e su visais galimais atsako kodais ir užklausos bei atsakymo pavyzdžiais kiekvienam iš 41 metodo |
-| **Išvados (1)** | 5 skyrius: 11 sunumeruotų išvadų, kiekviena – kas padaryta ir kas iš to |
-
----
-
-## C. Dirbtinio intelekto įrankių naudojimas
-
-Kuriant projektą naudotas Claude Code (Anthropic) – programavimo asistentas, veikiantis kaip agentas: jis skaito projekto failus, siūlo ir atlieka pakeitimus, paleidžia testus.
-
-**Kaip buvo dirbama:**
-
-1. **Planas prieš kodą.** Kiekvienam etapui LLM parengdavo darbų planą (`docs/planas*.md`): kas daroma, kokie sprendimai ir kodėl. Planą peržiūrėdavau ir priimdavau sprendimus pats – pvz., šalinti plokščius užduočių ir sesijų adresus, 2FA nedaryti, demonstracijos trukmę palikti.
-2. **Auditas pagal kriterijus.** Prieš 3 lab. LLM palygino kodą su oficialiais vertinimo kriterijais ir paleistam API siuntė ribines užklausas – taip rasti keli atvejai, grąžinę 500, ir trūkstamas trijų lygių adresas ([docs/planas-pataisos.md](docs/planas-pataisos.md)).
-3. **Mažais etapais.** Kiekvienas etapas – vienas commit'as. Po kiekvieno paleidžiami testai, `lint`, `typecheck`, OpenAPI eksportas ir Postman demonstracija. Commit'us darau pats, peržiūrėjęs pakeitimus.
-
-**Kaip LLM buvo valdomas:** nuolatinės taisyklės projekto atmintyje (kodas ir komentarai – angliškai, ataskaita ir duomenys – lietuviškai; commit'ų LLM nedaro), sprendimai užrašomi planuose, o LLM teiginiai netikimi aklai – juos tikrina automatiniai testai, CI ir Postman kolekcija.
-
-**Ką išmokau ir ką moku be LLM:** projekto architektūrą (maršrutai → taisyklės → duomenų bazė), kur aprašomi keliai ir kaip pridėti naują objektą su CRUD – žr. [docs/cheatsheet.md](docs/cheatsheet.md).
