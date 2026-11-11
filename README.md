@@ -398,7 +398,7 @@ Hierarchija atsispindi adresuose: užduotis pasiekiama tik per jos projektą, o 
 
 Kiekvienas identifikatorius ieškomas **savo tėvo viduje** (apimties valdymas per URL, angl. scoping). Todėl kito projekto užduotis, paprašyta šio projekto adresu, grąžina **404** – tokiu adresu resurso tiesiog nėra. Paieška vyksta iš išorės į vidų, tad klaidos pranešimas įvardija pirmą netinkantį lygį („Task … does not exist in project …“). Tai realizuota vienoje vietoje – [lib/scope.ts](apps/api/src/lib/scope.ts). Tas pats principas taikomas pasiūlymams ir peržiūros nuorodoms.
 
-Lentelėse nurodyti klaidų kodai, būdingi konkrečiam metodui. Be jų, bet kuris metodas su netinkamu ar pasibaigusiu prieigos žetonu grąžina **401**, o užblokuoto naudotojo žetonu – **403**. Kas kokį metodą gali kviesti, aprašyta [priedų 4.3 skyriuje](docs/priedai.md#43-rolės-ir-teisės).
+Lentelėse nurodyti klaidų kodai, būdingi konkrečiam metodui. Be jų, bet kuris metodas su netinkamu ar pasibaigusiu prieigos žetonu grąžina **401**, o užblokuoto naudotojo žetonu – **403**. 
 
 **Projektas**
 
@@ -552,14 +552,14 @@ Visos klaidos grąžinamos vienodu formatu: `code` skirtas programai, `message` 
 }
 ```
 
-400 reiškia netvarkingą užklausą (pvz., `id` ne UUID), 422 – tvarkingą užklausą su netinkamu turiniu, o nesamas arba naudotojui nematomas resursas visada grąžina 404. REST principų lentelė, statuso kodų politika ir mašininių klaidų kodų sąrašas pateikti [prieduose](docs/priedai.md#2-rest-principai).
+400 reiškia netvarkingą užklausą (pvz., `id` ne UUID), 422 – tvarkingą užklausą su netinkamu turiniu, o nesamas arba naudotojui nematomas resursas visada grąžina 404.
 
 ---
 
 ## 5. Išvados
 
-1. **Sukurta veikianti trijų dalių sistema** – REST API (41 metodas), Next.js internetinė aplikacija ir PostgreSQL duomenų bazė, įdiegtos Azure debesyje su automatiniu diegimu iš GitHub. Tai rodo, kad studento biudžetu (vienas B1 planas dviem programoms ir mažiausia duomenų bazė) galima talpinti pilną sistemą, jei ji suprojektuota kaip kelios nedidelės nepriklausomos dalys.
-2. **Taikomosios srities hierarchija atspindėta adresuose** (`/projects/{id}/tasks/{id}/sessions/{id}`), o kiekvienas vaikas ieškomas savo tėvo viduje. Dėl to teisių klaidų klasė „pasiekiau svetimą užduotį per kitą projektą“ išnyksta struktūriškai – ji tikrinama vienoje vietoje ([lib/scope.ts](apps/api/src/lib/scope.ts)), o ne kiekviename metode.
+1. **Sukurta veikianti trijų dalių sistema** – REST API (41 metodas), Next.js internetinė aplikacija ir PostgreSQL duomenų bazė, įdiegtos Azure debesyje su automatiniu diegimu iš GitHub.
+2. **Taikomosios srities hierarchija atspindėta adresuose** (`/projects/{id}/tasks/{id}/sessions/{id}`), o kiekvienas vaikas ieškomas savo tėvo viduje. Dėl to teisių klaida „pasiekiau svetimą užduotį per kitą projektą“ išnyksta struktūriškai – ji tikrinama vienoje vietoje lib/scope.ts, o ne kiekviename metode.
 3. **Hypermedia nuorodos (`_links`) skaičiuojamos tomis pačiomis teisių taisyklėmis, kurias vykdo API.** Klientas mygtukus rodo pagal nuorodas, todėl teisių logika neturi antros kopijos naršyklėje ir negali su API išsiskirti – pakeitus taisyklę serveryje, sąsaja prisitaiko be pakeitimų.
 4. **Validavimo schemos (Zod) bendros klientui ir serveriui, o OpenAPI specifikacija generuojama iš jų.** Viena taisyklė tikrina formą naršyklėje, užklausą API ir aprašoma dokumentacijoje; CI patikrina, kad įrašyta specifikacija atitinka kodą. Dokumentacija tapo kodo rezultatu, o ne atskiru darbu, kurį reikia prisiminti atnaujinti.
 5. **API pavyzdžiai užfiksuoti iš tikrų atsakymų** (79 pavyzdžiai, visi 41 metodas). Tai garantuoja, kad pavyzdžiai atitinka realų elgesį, ir atskleidė specifikacijos netikslumą: daliai skaitymo metodų buvo aprašyti kodai (422, 404), kurių jie negali grąžinti, – jie pašalinti.
@@ -568,7 +568,7 @@ Visos klaidos grąžinamos vienodu formatu: `code` skirtas programai, `message` 
 8. **Tarpinis Next.js maršrutas pasiteisino, bet turi kainą.** Jis leidžia atnaujinimo žetoną laikyti `httpOnly` slapuke ir nepriklausyti nuo CORS, tačiau kiekviena užklausa eina per papildomą šuolį, o bandymų ribojimui reikėjo perduoti tikrą kliento IP (`X-Forwarded-For`, `TRUST_PROXY`). Tai išryškėjo tik įdiegus sistemą į Azure, kur tarp naršyklės ir API atsiranda du tarpiniai sluoksniai – lokaliai tokia klaida nepasimato.
 9. **Sąsaja suprojektuota prieš realizaciją.** Wireframe'ai dviem pločiais leido lūžio tašką, modalus ir navigaciją nuspręsti iš anksto; realizacijoje keitėsi tik vizualinis stilius, o ne išdėstymas. Ekrano iškarpos rodo, kad visi 10 suprojektuotų langų realizuoti.
 10. **Kokybė patikrinta automatiškai, ne rankiniu būdu:** 299 vienetiniai ir integraciniai testai, 140 užklausų ir 300 patikrų Postman demonstracija, kuri kviečia visus dokumentuotus metodus, ir CI, kuris tikrina, kad nė vienas metodas neliktų be užklausos. Tai leido drąsiai keisti API po laboratorinių darbų pataisų (pvz., pereiti prie hierarchinių adresų) – sulaužytą elgesį iš karto parodydavo testai.
-11. **Ribojimai ir tolesnė plėtra.** Mokėjimai vyksta už sistemos ribų, dviejų faktorių autentifikacija nerealizuota, o bandymų ribojimo skaitliukai laikomi proceso atmintyje – keliems API egzemplioriams juos reikėtų perkelti į bendrą saugyklą (pvz., Redis). Tai pirmieji darbai, jei sistema būtų naudojama realiai.
+
 
 ---
 
